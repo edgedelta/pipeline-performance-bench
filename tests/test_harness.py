@@ -3,6 +3,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import check_results
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('summarize', ROOT / 'tools/summarize.py')
@@ -49,6 +52,11 @@ class HarnessTest(unittest.TestCase):
     def test_missing_reliability_is_not_assumed_zero(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: 10 logs/sec\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
         self.assertEqual(summary.parse_log(text)['status'], 'invalid')
+
+    def test_release_rejects_empty_results(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "missing recorded version"):
+                check_results.validate(Path(tmp))
 
     def test_report_distinguishes_missing_from_unsupported(self):
         with tempfile.TemporaryDirectory() as tmp:

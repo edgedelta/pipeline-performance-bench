@@ -55,9 +55,11 @@ Each run writes `benchmark_results/<timestamp>/` containing raw `<agent>_<case>.
 
 ```bash
 python3 tools/summarize.py benchmark_results/<timestamp>
+# Before publishing a complete seven-agent release:
+python3 tools/check_results.py benchmark_results/<timestamp>
 ```
 
-Release tables use the tier with the highest final cumulative average, matching the reference release. Peak, log totals, CPU mean, and peak memory come from that same tier. Cross-scenario CPU and peak-memory figures average the supported scenarios; throughput per CPU % divides their mean throughput by mean CPU percentage. All tier data and the mean across tiers are retained in data.json. CPU uses 100% per core. Multi-process competitors retain the upstream process-monitoring method, which may omit auxiliary processes. These figures are not complete host/cgroup resource measurements.
+Release tables use the tier with the highest final cumulative average, matching the reference release. Peak, log totals, CPU mean, and peak memory come from that same tier. Multi-process CPU sums per-process means; memory sums per-process peak RSS. Cross-scenario CPU and peak-memory figures average the supported scenarios; throughput per CPU % divides their mean throughput by mean CPU percentage. All tier data and the mean across tiers are retained in data.json. CPU uses 100% per core. Multi-process competitors retain the upstream process-monitoring method, which may omit auxiliary processes. These figures are not complete host/cgroup resource measurements.
 
 Incomplete runs, HTTP send errors, missing statistics, and detected service restarts invalidate a scenario. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
 
