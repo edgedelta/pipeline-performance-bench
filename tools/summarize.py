@@ -46,8 +46,9 @@ def parse_log(text):
         end = re.match(r'Finished loadgen with (\d+) workers', line)
         if end and int(end[1]) == current['workers']:
             current['complete'] = True
-    valid = len(runs) == 3 and [r['workers'] for r in runs] == [80, 100, 120] and all(r['complete'] and r['avg'] is not None and r['errors'] == 0 for r in runs) and 'ERROR:' not in text
-    result = {'status': 'ok' if valid else 'invalid', 'workers': runs}
+    valid = len(runs) == 3 and [r['workers'] for r in runs] == [80, 100, 120] and all(r['complete'] and r['avg'] is not None and r['errors'] is not None for r in runs) and 'ERROR:' not in text
+    status = ('errors' if any(r['errors'] for r in runs) else 'ok') if valid else 'invalid'
+    result = {'status': status, 'workers': runs}
     if valid:
         best = max(runs, key=lambda r: r['avg'])
         result.update(avg=best['avg'], peak=best['peak'], best_workers=best['workers'], total=best['total'], cpu=sum(statistics.mean(p['cpu']) for p in best['processes'].values()) if best['processes'] else None, mem=sum(max(p['mem']) for p in best['processes'].values()) if best['processes'] else None, tier_mean=statistics.mean(r['avg'] for r in runs))
@@ -62,21 +63,23 @@ def report(result):
     lines = ['# Benchmark Report', '', f"**Date:** {result['date']}", f"**Run ID:** {result['runId']}", '', '## Tested Agent Versions', '', '| Vendor | Version |', '|---|---|']
     for key, name in VENDORS.values():
         lines.append(f"| {name} | {result['versions'].get(key, 'Not recorded')} |")
-    lines += ['', '## Methodology', '', '- Ubuntu 24.04, AWS `c8i.2xlarge`, us-west-2; agents run sequentially on one instance.', '- loadgen 1.1.0, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.', '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU sums each monitored process’s average; memory sums per-process peak RSS (these peaks need not occur simultaneously). CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs and HTTP errors invalidate the scenario.', '']
+    lines += ['', '## Methodology', '', '- Ubuntu 24.04, AWS `c8i.2xlarge`, us-west-2; agents run sequentially on one instance.', '- loadgen 1.1.0, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.', '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU sums each monitored process’s average; memory sums per-process peak RSS (these peaks need not occur simultaneously). CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs invalidate the scenario. Completed runs with HTTP errors retain measured values and an errors status, but are excluded from ranks and cross-scenario charts.', '']
     provenance = result.get('provenance', {})
     if provenance:
         lines += [f"**Benchmark source:** `{provenance.get('benchmark_commit', 'unknown')}`", f"**Rust source:** `{provenance.get('rust_commit', 'unknown')}`", '']
     for case in CASES:
-        lines += [f'## Benchmark Scenario: {case.title()}', '', '### Performance Comparison', '', '| Vendor | Best Workers | Avg Throughput | Peak Throughput | Total Logs | Avg CPU | Peak Memory | Rank |', '|---|---:|---:|---:|---:|---:|---:|---:|']
+        lines += [f'## Benchmark Scenario: {case.title()}', '', '### Performance Comparison', '', '| Vendor | Status | Best Workers | Avg Throughput | Peak Throughput | Total Logs | Avg CPU | Peak Memory | Rank |', '|---|---|---:|---:|---:|---:|---:|---:|---:|']
         rows = [(vendor, name, result['scenarios'][f'{vendor}/{case}']) for vendor, (_, name) in VENDORS.items()]
         rows.sort(key=lambda row: -(row[2].get('avg') or 0))
         rank = 0
         for vendor, name, data in rows:
-            if data['status'] == 'ok':
-                rank += 1
-                lines.append(f"| {name} | {data['best_workers']} | {fmt(data['avg'], ' logs/sec')} | {fmt(data['peak'], ' logs/sec')} | {fmt(data['total'], decimals=0)} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MB', 1)} | {rank} |")
+            if data['status'] in ('ok', 'errors'):
+                if data['status'] == 'ok':
+                    rank += 1
+                ranking = rank if data['status'] == 'ok' else 'N/A'
+                lines.append(f"| {name} | {data['status']} | {data['best_workers']} | {fmt(data['avg'], ' logs/sec')} | {fmt(data['peak'], ' logs/sec')} | {fmt(data['total'], decimals=0)} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MB', 1)} | {ranking} |")
             else:
-                lines.append(f"| {name} | {data['status']} | N/A | N/A | N/A | N/A | N/A | N/A |")
+                lines.append(f"| {name} | {data['status']} | N/A | N/A | N/A | N/A | N/A | N/A | N/A |")
         lines += ['', '### Reliability Comparison', '', '| Vendor | Total Errors (all tiers) | Backpressure (all tiers) | Status |', '|---|---:|---:|---|']
         for vendor, name, data in rows:
             tiers = data.get('workers', [])

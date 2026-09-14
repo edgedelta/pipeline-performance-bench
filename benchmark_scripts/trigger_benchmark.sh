@@ -36,11 +36,15 @@ echo "========================================="
 log_file="$log_dir/${app}_${type}.log"
 
 if ./run_benchmark.sh "$app" | tee "$log_file"; then
-  if ! grep -q "\[STATS\]" "$log_file" || grep -Eq "errors: [1-9][0-9]*" "$log_file"; then
-    echo "ERROR: Missing statistics or HTTP send failures for $app - $type" | tee -a "$log_file"
+  if ! grep -q "\[STATS\]" "$log_file"; then
+    echo "ERROR: Missing statistics for $app - $type" | tee -a "$log_file"
     exit 1
   fi
-  echo "Benchmark for $app - $type completed successfully"
+  if grep -Eq "errors: [1-9][0-9]*" "$log_file"; then
+    echo "WARNING: Completed measurement with HTTP send errors for $app - $type; retain reliability results" | tee -a "$log_file"
+  else
+    echo "Benchmark for $app - $type completed successfully"
+  fi
 else
   echo "Error: Benchmark for $app - $type failed (check $log_file for details)"
   exit 1

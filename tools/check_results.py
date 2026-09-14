@@ -19,7 +19,7 @@ def validate(directory):
             if (vendor, case) in UNSUPPORTED:
                 continue
             entry = data['scenarios'][f'{vendor}/{case}']
-            if entry['status'] != 'ok':
+            if entry['status'] not in ('ok', 'errors'):
                 errors.append(f'{vendor}/{case}: {entry["status"]}')
                 continue
             for field in ['avg', 'peak', 'total', 'cpu', 'mem']:

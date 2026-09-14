@@ -61,7 +61,7 @@ python3 tools/check_results.py benchmark_results/<timestamp>
 
 Release tables use the tier with the highest final cumulative average, matching the reference release. Peak, log totals, CPU mean, and peak memory come from that same tier. Multi-process CPU sums per-process means; memory sums per-process peak RSS. Cross-scenario CPU and peak-memory figures average the supported scenarios; throughput per CPU % divides their mean throughput by mean CPU percentage. All tier data and the mean across tiers are retained in data.json. CPU uses 100% per core. Multi-process competitors retain the upstream process-monitoring method, which may omit auxiliary processes. These figures are not complete host/cgroup resource measurements.
 
-Incomplete runs, HTTP send errors, missing statistics, and detected service restarts invalidate a scenario. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
+Incomplete runs, missing statistics, and detected service restarts invalidate a scenario. Completed measurements with HTTP send errors are retained with an `errors` status and reliability counts; they are excluded from ranks and cross-scenario charts. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
 
 Filter drops events whose `pii.color` is `Green`. Lookup matches `pii.ipv4` against the shared CSV's `ipv4` column and emits `region`/`env`, with miss defaults. Vector uses an indexed enrichment table; Fluent Bit loads the bundled simple unquoted CSV once in Lua. Mask uses the inherited nine regexes in Vector. Inherited vendor implementations vary in which fields they scan. New results are not directly interchangeable with old published results: lookup wiring was corrected in this successor.
 
@@ -84,7 +84,7 @@ python3 tests/smoke.py
 
 Docker smoke tests validate all Vector/Fluent Bit production configs without AWS networking, then send fixture JSON through HTTP sources and assert pass-through, filter, lookup hit/miss, and nine-field Vector masking behavior. They create temporary containers and remove them afterward. Docker images are pinned to the same versions as native installers. [VALIDATION.md](VALIDATION.md) records the checks performed during implementation.
 
-## GitHub Actions (when a remote is created)
+## GitHub Actions
 
 `validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` is manual only and uploads raw logs/reports as workflow artifacts. It has no release, Pages, website, or schedule step.
 

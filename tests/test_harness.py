@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -36,8 +37,15 @@ class HarnessTest(unittest.TestCase):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: {w} logs/sec | errors: 0\n[MONITOR - TARGET] pid: 1 | cpu: 100.0% | memory: 10.0MB\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
         self.assertEqual(summary.parse_log(text)['avg'], 120)
         self.assertEqual(summary.parse_log(text)['tier_mean'], 100)
-        for bad in [text.replace('errors: 0', 'errors: 1'), text.replace('Finished loadgen with 120', 'missing'), text + 'ERROR: service restarted', '']:
+        for bad in [text.replace('Finished loadgen with 120', 'missing'), text + 'ERROR: service restarted', '']:
             self.assertEqual(summary.parse_log(bad)['status'], 'invalid')
+
+    def test_completed_http_errors_remain_visible(self):
+        text = ''.join(f'Starting loadgen with {w} workers for red\n[STATS] avg: 100 logs/sec | errors: 2\nFinished loadgen with {w} workers for red\n' for w in [80, 100, 120])
+        data = summary.parse_log(text)
+        self.assertEqual(data['status'], 'errors')
+        self.assertEqual(data['avg'], 100)
+        self.assertEqual(sum(tier['errors'] for tier in data['workers']), 6)
 
     def test_best_tier_uses_matching_resource_samples(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] current: {rate + 10} logs/sec | avg: {rate} logs/sec | total: {rate * 60} | errors: 0 | backpressure: 0\n[MONITOR - TARGET] pid: 1 | cpu: {w}.0% | memory: {w}.0MB\nFinished loadgen with {w} workers for vector\n' for w, rate in [(80, 100), (100, 300), (120, 200)])
@@ -57,6 +65,26 @@ class HarnessTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "missing recorded version"):
                 check_results.validate(Path(tmp))
+
+    def test_release_retains_errors_without_charting_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / 'versions.csv').write_text('agent,version\n' + ''.join(f'{v},1.0\n' for v in summary.VENDORS))
+            (directory / 'provenance.json').write_text(json.dumps({'benchmark_commit': 'a' * 40, 'rust_commit': 'b' * 40}))
+            for vendor in summary.VENDORS:
+                for case in summary.CASES:
+                    if (vendor, case) in summary.UNSUPPORTED:
+                        continue
+                    errors = 2 if vendor == 'red' else 0
+                    text = ''.join(f'Starting loadgen with {w} workers\n[STATS] current: 100 logs/sec | avg: 100 logs/sec | total: 6000 | errors: {errors} | backpressure: 0\n[MONITOR - TARGET] pid: 1 | cpu: 10.0% | memory: 20.0MB\nFinished loadgen with {w} workers\n' for w in [80, 100, 120])
+                    (directory / f'{vendor}_{case}.log').write_text(text)
+            data = check_results.validate(directory)
+            self.assertEqual(data['scenarios']['red/pass-through']['status'], 'errors')
+            self.assertEqual(data['vendors']['red']['avg'], [None] * 4)
+            report = (directory / 'report.md').read_text()
+            self.assertIn('| Edge Delta (Rust) | errors | 80 | 100.00 logs/sec |', report)
+            self.assertIn('| Edge Delta (Rust) | 6 | 0 | errors |', report)
+            self.assertEqual(len((directory / 'SHA256SUMS').read_text().splitlines()), 30)
 
     def test_report_distinguishes_missing_from_unsupported(self):
         with tempfile.TemporaryDirectory() as tmp:
