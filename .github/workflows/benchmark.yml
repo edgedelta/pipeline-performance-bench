@@ -37,7 +37,7 @@ jobs:
     needs: plan
     strategy:
       fail-fast: false
-      max-parallel: 7
+      max-parallel: 26
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -63,7 +63,7 @@ jobs:
         env:
           VENDORS: ${{ matrix.vendor }}
           CASES: ${{ matrix.cases }}
-          BENCHMARK_EXECUTION_MODE: parallel-agent-shard
+          BENCHMARK_EXECUTION_MODE: parallel-scenario-shard
           BENCHMARK_EXTERNAL_AWS_CLEANUP: "1"
           ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
           ED_API_TOKEN: ${{ secrets.ED_API_TOKEN }}
@@ -86,10 +86,18 @@ jobs:
         if: always()
         run: |
           if test -f aws_resources/terraform.tfstate; then terraform -chdir=aws_resources destroy -auto-approve; fi
+      - name: Remove this scenario's Cribl fleet
+        if: ${{ always() && matrix.vendor == 'cribl' }}
+        env:
+          CRIBL_CLIENT_ID: ${{ secrets.CRIBL_CLIENT_ID }}
+          CRIBL_CLIENT_SECRET: ${{ secrets.CRIBL_CLIENT_SECRET }}
+          CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
+          CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
+        run: python3 tools/cribl_fleet.py delete .cribl-fleet.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pipeline-bench-${{ github.run_id }}-${{ matrix.vendor }}
+          name: pipeline-bench-${{ github.run_id }}-${{ matrix.vendor }}-${{ matrix.cases }}
           path: |
             benchmark_results/*/*.log
             benchmark_results/*/versions.csv

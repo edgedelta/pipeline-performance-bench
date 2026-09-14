@@ -224,6 +224,9 @@ function cleanup_benchmark_environment() {
   if [[ "$cribl_benchmark" -eq 1 ]]; then
     (cd "$runtime_dir/pipelines/cribl" && ./cribl-api.sh cleanup-all) || failed=1
   fi
+  if [[ -f "$git_root/.cribl-fleet.json" && "${BENCHMARK_EXTERNAL_AWS_CLEANUP:-0}" != 1 ]]; then
+    python3 "$git_root/tools/cribl_fleet.py" delete "$git_root/.cribl-fleet.json" || failed=1
+  fi
   if [[ "${BENCHMARK_EXTERNAL_AWS_CLEANUP:-0}" == 1 ]]; then
     echo "AWS cleanup delegated to the workflow after credential refresh."
   else
@@ -297,6 +300,16 @@ function run_cribl_benchmark() {
   echo "Running Cribl benchmark..."
   pushd "$runtime_dir/pipelines/cribl" > /dev/null
 
+  export CRIBL_WORKER_GROUP
+  CRIBL_WORKER_GROUP=$(python3 "$git_root/tools/cribl_fleet.py" create "$git_root/.cribl-fleet.json")
+  python3 - "$runtime_dir/provenance.json" "$CRIBL_WORKER_GROUP" <<'PYTHON'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+data = json.loads(path.read_text())
+data['cribl_fleet_id'] = sys.argv[2]
+path.write_text(json.dumps(data, indent=2) + '\n')
+PYTHON
   cribl_benchmark=1
   export CRIBL_HTTP_INPUT_ID="pipeline_perf_http"
   export CRIBL_PIPELINE_ID="pipeline_perf_benchmark"
@@ -318,7 +331,7 @@ function run_cribl_benchmark() {
     ./cribl-api.sh update-pipeline $type.json
     trigger_benchmark "cribl" $type
   done
-  # Release the shared worker-group configuration before measuring other agents.
+  # Clean up this job's isolated fleet configuration.
   # If cleanup fails, the EXIT handler retries while the flag remains set.
   ./cribl-api.sh cleanup-all
   cribl_benchmark=0

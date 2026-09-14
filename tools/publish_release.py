@@ -19,7 +19,7 @@ def release_notes(report, run_url):
     report = re.sub(r'loadgen [^,]+,', 'loadgen (exact build recorded in provenance),', report)
     report = re.sub(r'^\*\*Rust source:\*\* `None`\n', '', report, flags=re.M)
     return ('All **26 supported scenarios / 78 worker tiers** completed successfully. '
-            'Seven agents ran in parallel on separate identical EC2 instances. '
+            'Each agent/scenario pair ran on a separate identical EC2 instance (26 instances total), with sequential worker tiers. '
             'Agent versions were resolved from their current installation channels for this run.\n\n'
             f'[Workflow run]({run_url})\n\n' + report)
 

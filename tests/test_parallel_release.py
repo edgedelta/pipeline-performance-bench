@@ -44,7 +44,7 @@ class ReleaseTest(unittest.TestCase):
 class ParallelTest(unittest.TestCase):
     def test_plan(self):
         plan = parallel.plan(','.join(parallel.VENDORS), ','.join(parallel.CASES))
-        self.assertEqual(len(plan['include']), 7)
+        self.assertEqual(len(plan['include']), 26)
         fb = next(j for j in plan['include'] if j['vendor'] == 'fluentbit')
         self.assertNotIn('mask', fb['cases'])
         with self.assertRaises(ValueError):
@@ -80,3 +80,25 @@ class ParallelTest(unittest.TestCase):
                     result = json.loads((output/'data.json').read_text())
                     self.assertEqual(result['scenarios']['red/pass-through']['status'], 'ok')
                     self.assertEqual(len(result['provenance']['shards']), 2)
+
+    def test_same_vendor_scenarios_are_isolated_and_versions_match(self):
+        matrix = {'include': [{'vendor': 'vector', 'cases': c} for c in ['filter', 'pass-through']]}
+        for fault in [None, 'version', 'instance', 'duplicate']:
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp) / 'shards'; root.mkdir(); self.shards(root)
+                import shutil
+                shutil.rmtree(root / 'red')
+                second = root / 'vector-filter'
+                shutil.copytree(root / 'vector', second)
+                (second / 'vector_pass-through.log').rename(second / 'vector_filter.log')
+                provenance = json.loads((second / 'provenance.json').read_text())
+                provenance['instance_id'] = 'vector-filter' if fault != 'instance' else 'vector'
+                (second / 'provenance.json').write_text(json.dumps(provenance))
+                if fault == 'version': (second / 'versions.csv').write_text('agent,version\nvector,2.0\n')
+                if fault == 'duplicate': shutil.copytree(second, root / 'duplicate')
+                if fault:
+                    with self.assertRaises(ValueError): parallel.merge(root, Path(tmp) / 'out', matrix)
+                else:
+                    out = parallel.merge(root, Path(tmp) / 'out', matrix)
+                    self.assertEqual(len((out / 'versions.csv').read_text().splitlines()), 2)
+                    self.assertEqual(len(json.loads((out / 'provenance.json').read_text())['shards']), 2)

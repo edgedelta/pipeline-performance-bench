@@ -112,8 +112,10 @@ Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/so
 
 ## Daily releases
 
-The benchmark workflow runs daily at **09:17 UTC**. Each agent gets a separate
-EC2 instance, and all seven jobs run concurrently. Each successful full suite
+The benchmark workflow runs daily at **09:17 UTC**. Each supported agent/scenario pair gets a separate
+EC2 instance: 26 jobs, with up to 26 running concurrently. Each job runs its
+80/100/120-worker tiers sequentially and removes its own resources when done.
+Actual concurrency is subject to GitHub runner and AWS account capacity. Each successful full suite
 publishes a new UTC-dated release, including the measured versions, report,
 raw logs, provenance, and verified checksums. Previous releases remain intact.
 Partial manual runs produce workflow artifacts only. Failed runs do not publish
@@ -138,3 +140,12 @@ Cribl's available version follows the Cloud workspace rollout. Exact installed
 versions are recorded in every release; installation failures do not fall back
 to a pinned version. The load generator and runner tooling remain controlled
 benchmark dependencies, separate from the agents under test.
+
+Scenario isolation: Edge Delta Go creates a uniquely tagged pipeline for each
+instance. Each Cribl job creates a unique temporary self-managed Edge fleet;
+its inputs, routes, pipeline, and destination never touch the shared fleet.
+Fleet deletion runs after AWS teardown, including when a benchmark fails.
+Results must contain 26 distinct instances, distinct Cribl fleet IDs, and a
+consistent installed agent version across each vendor's scenarios before a
+full release can be published. This is a methodology change from prior runs:
+instances are fresh for each scenario rather than reused across scenarios.

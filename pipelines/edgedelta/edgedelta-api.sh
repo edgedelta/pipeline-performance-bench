@@ -60,7 +60,7 @@ create_base_pipeline() {
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
     -d "$(jq -n \
-      --arg tag "http-benchmark" \
+      --arg tag "http-benchmark-${BENCHMARK_INSTANCE_ID:-$(date +%s)-$RANDOM}" \
       --arg env "Linux" \
       --arg desc "HTTP benchmark pipeline" \
       '{tag: $tag, environment: $env, description: $desc}')" | jq -r '.id')

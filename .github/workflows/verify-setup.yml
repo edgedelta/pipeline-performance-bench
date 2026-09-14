@@ -1,10 +1,17 @@
 name: Verify benchmark setup
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      cribl_fleets:
+        description: 'Exercise two isolated Cribl fleets without provisioning EC2'
+        type: boolean
+        default: false
 permissions:
   contents: read
   id-token: write
 jobs:
   verify:
+    if: ${{ !inputs.cribl_fleets }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify required credentials are configured
@@ -33,3 +40,21 @@ jobs:
         run: |
           aws sts get-caller-identity --query Account --output text
           aws ec2 describe-instance-types --instance-types c8i.2xlarge --query 'InstanceTypes[0].InstanceType' --output text
+  cribl-fleets:
+    if: ${{ inputs.cribl_fleets }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CRIBL_CLIENT_ID: ${{ secrets.CRIBL_CLIENT_ID }}
+      CRIBL_CLIENT_SECRET: ${{ secrets.CRIBL_CLIENT_SECRET }}
+      CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
+      CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
+    steps:
+      - uses: actions/checkout@v6
+      - run: python3 tools/check_cribl_fleets.py
+      - name: Retry cleanup of any remaining test fleets
+        if: always()
+        run: |
+          for state in .fleet-check/*/fleet.json; do
+            test ! -f "$state" || python3 tools/cribl_fleet.py delete "$state"
+          done
