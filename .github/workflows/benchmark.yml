@@ -50,11 +50,11 @@ jobs:
         with:
           go-version: "1.26.0"
           cache: false
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.5.7
           terraform_wrapper: false
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
           role-duration-seconds: 7200
@@ -76,7 +76,7 @@ jobs:
         run: timeout --signal=TERM --kill-after=5m 120m ./run.sh --vendors "$VENDORS" --cases "$CASES"
       - name: Refresh credentials for AWS cleanup
         if: always()
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
           role-duration-seconds: 7200
@@ -86,7 +86,7 @@ jobs:
         if: always()
         run: |
           if test -f aws_resources/terraform.tfstate; then terraform -chdir=aws_resources destroy -auto-approve; fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pipeline-bench-${{ github.run_id }}-${{ matrix.vendor }}
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: pipeline-bench-${{ github.run_id }}-*
           path: shards
@@ -112,7 +112,7 @@ jobs:
           MATRIX: ${{ needs.plan.outputs.matrix }}
           TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
         run: python3 tools/parallel.py merge shards "benchmark_results/$TIMESTAMP" "$MATRIX" --require-fixed
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pipeline-bench-${{ github.run_id }}-combined
           path: benchmark_results/
