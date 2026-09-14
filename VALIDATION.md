@@ -51,3 +51,16 @@ All fixture numbers and versions are labeled synthetic, and publication validati
 rejects them. No billable AWS benchmark run or release was launched for this
 implementation. Actual capacity at 10k/25k/50k/75k, EC2 runtime metadata, total
 suite duration and real release publication remain to be validated by a real run.
+
+## Package-lock recovery and release-title compatibility (2026-09-14)
+
+Bootstrap now waits up to ten minutes for cloud-init, sets a ten-minute dpkg lock
+wait for subsequent package installers, and retries only temporary apt package-list
+lock conflicts (12 attempts, five seconds apart). It never removes locks or kills
+an active package manager. Cloud-init failures/timeouts and non-lock apt failures
+remain fatal. Five regression tests exercise ordering, transient recovery, bounded
+failure and immediate failure for repository errors; all 48 Python tests pass.
+
+Release titles retain `Benchmark Report - YYYYMMDD-HHMMSS`. A publication test
+checks the exact format. The existing 20260914-193249 release title was restored
+without altering its report body, assets, tag or publication timestamp.

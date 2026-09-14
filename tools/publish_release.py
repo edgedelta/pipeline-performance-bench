@@ -43,7 +43,7 @@ def publish(directory, repo, commit, run_url):
     if not re.fullmatch(r'\d{8}_\d{6}', directory.name):
         raise ValueError('Expected UTC run timestamp YYYYMMDD_HHMMSS')
     tag = directory.name.replace('_', '-')
-    title = f'Pipeline performance benchmark — {tag[:4]}-{tag[4:6]}-{tag[6:8]} {tag[9:11]}:{tag[11:13]} UTC'
+    title = f'Benchmark Report - {tag}'
     releases = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
     existing = next((r for page in releases for r in page if r['tag_name'] == tag), None)
     if existing and not existing['draft']:

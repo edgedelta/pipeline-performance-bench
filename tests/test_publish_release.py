@@ -68,6 +68,8 @@ class PublicationTest(unittest.TestCase):
             with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',side_effect=gh):publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
             uploads=[c for c in calls if c[:2]==('release','upload')]
             self.assertEqual(len(uploads),9)
+            created = next(c for c in calls if c[:2] == ('release', 'create'))
+            self.assertEqual(created[created.index('--title')+1], 'Benchmark Report - 20260915-091700')
             self.assertTrue(any('/assets?per_page=100' in c[-1] for c in calls))
             self.assertIn('PATCH',calls[-1])
 
