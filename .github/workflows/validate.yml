@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - uses: actions/setup-go@v6
@@ -23,3 +23,21 @@ jobs:
       - run: node --test tools/*.test.mjs
       - run: python3 tests/fixed_smoke.py
       - run: python3 tests/smoke.py
+      - name: Upload fixture artifact to verify release transport
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifact-transport-fixtures
+          path: |
+            payloads/fixed-nginx.ndjson
+            docs/fixed-throughput.md
+          if-no-files-found: error
+          retention-days: 1
+      - name: Download fixture artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: artifact-transport-fixtures
+          path: ${{ runner.temp }}/artifact-transport-fixtures
+      - name: Verify artifact contents are unchanged
+        run: |
+          cmp payloads/fixed-nginx.ndjson "$RUNNER_TEMP/artifact-transport-fixtures/payloads/fixed-nginx.ndjson"
+          cmp docs/fixed-throughput.md "$RUNNER_TEMP/artifact-transport-fixtures/docs/fixed-throughput.md"

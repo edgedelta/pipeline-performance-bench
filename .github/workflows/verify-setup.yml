@@ -7,6 +7,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.5.7
+          terraform_wrapper: false
+      - name: Verify Terraform installation without provisioning
+        run: terraform version -json
       - name: Verify required credentials are configured
         env:
           AWS_BEDROCK_ROLE: ${{ secrets.AWS_BEDROCK_ROLE }}
@@ -25,7 +31,7 @@ jobs:
           assert all(os.environ.get(name) for name in names), 'Required credential missing'
           print('All required credentials are configured.')
           PY
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
           aws-region: us-west-2
