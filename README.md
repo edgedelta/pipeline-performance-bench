@@ -4,7 +4,7 @@ A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Co
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. Cloud runs are manual; release publication is a separate step.
+The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The daily and manual workflow runs up to 26 agent/scenario jobs concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Worker tiers run sequentially within each scenario job. A direct `run.sh` invocation remains sequential on one instance. Successful full workflow runs publish dated releases automatically.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
