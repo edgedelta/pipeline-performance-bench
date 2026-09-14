@@ -21,3 +21,33 @@ Images tested:
 - `fluent/fluent-bit:5.1.2`, digest `sha256:d792375ca8e53be72fc25716c28f291f32c6fc6f4f31d12d0d14bc78cefe9226`
 
 The local checks do not establish S3 delivery under load or full EC2 performance. The cloud run uses a prebuilt Go release and builds private Rust source on EC2. Initial execution reuses the original benchmark repository’s credentials and AWS trust; credentials and OIDC trust for direct execution in this repository remain to be configured.
+
+## Fixed-throughput and hardware extension (2026-09-14)
+
+Implemented and validated locally on branch `fixed-throughput-resources`:
+
+- 43 Python tests: exact resource formulas, time weighting and memory units;
+  2% attainment boundaries; invalid, missing, unsupported, capacity-limited and
+  generator-limited outcomes; retry invariants; old-format compatibility;
+  raw-asset merging; AWS metadata allowlisting and ancestor limits; service cleanup
+  after failure; complete report/release rendering; fixture publication rejection;
+  publication digest pagination for 171 assets; immutable existing releases.
+- Go race tests and `go vet` pass, including six new fixed-mode tests covering all
+  four scheduler rates, worker-independent budgets, bounded catch-up, queue drops,
+  backpressure, post-window acknowledgements, connection recovery, cancellation
+  and missing/observed cgroup counters. Legacy retry tests remain enabled.
+- Local Linux/amd64 Docker integration of the actual built loadgen passes with
+  networking disabled: global offered/acknowledged counts, window accounting,
+  generator CPU/RSS, raw JSON and null agent backlog. This low-rate validation
+  workload is not an agent benchmark or an AWS source-capacity measurement.
+- 14 JavaScript history/report tests pass.
+- Seven latest-image Vector/Fluent Bit production-config and HTTP/transform
+  smoke tests pass locally, using console sinks and no AWS endpoints.
+- Shell syntax, Python compilation and whitespace checks pass.
+
+Local synthetic release preview: `benchmark_results/fixed-preview-final/release-notes.md`.
+Regenerate into a fresh directory using `python3 tools/preview_release.py <directory>`.
+All fixture numbers and versions are labeled synthetic, and publication validation
+rejects them. No billable AWS benchmark run or release was launched for this
+implementation. Actual capacity at 10k/25k/50k/75k, EC2 runtime metadata, total
+suite duration and real release publication remain to be validated by a real run.

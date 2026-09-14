@@ -5,12 +5,15 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import fixed
 from summarize import CASES, UNSUPPORTED, VENDORS, summarize
 
 
 def validate(directory):
+    directory = Path(directory)
+    (directory / 'SHA256SUMS').unlink(missing_ok=True)
     data = summarize(directory)
-    errors = []
+    errors = fixed.validate_fixed(directory, data)
     for vendor, (key, _) in VENDORS.items():
         version = data['versions'].get(key, '')
         if not version or version.strip().lower() in ('unknown', 'not recorded'):
@@ -38,10 +41,14 @@ def validate(directory):
         errors.append('missing Rust source or binary provenance')
     expected_logs = [directory / f'{vendor}_{case}.log' for vendor in VENDORS for case in CASES if (vendor, case) not in UNSUPPORTED]
     files = expected_logs + [directory / name for name in ['versions.csv', 'provenance.json', 'data.json', 'report.md']]
+    if data.get('provenance', {}).get('schema_version', 1) >= 2:
+        files += fixed.required_assets(directory, VENDORS, CASES, UNSUPPORTED)
     secret = re.compile(r'(?:AKIA|ASIA)[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|-----BEGIN (?:OPENSSH |RSA |EC )?PRIVATE KEY-----')
     for path in files:
         if not path.is_file():
             errors.append(f'missing asset {path.name}')
+        elif path.suffix == '.json' and json.loads(path.read_text()).get('synthetic'):
+            errors.append(f'Synthetic fixture asset cannot be published: {path.name}')
         elif secret.search(path.read_text()):
             errors.append(f'possible credential in {path.name}; review required')
     if errors:

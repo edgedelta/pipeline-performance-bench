@@ -89,7 +89,7 @@ trigger_benchmark() {
     set_instance_ip
   fi
   echo "Triggering benchmark on $INSTANCE_IP"
-  ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "cd benchmark_scripts && ./trigger_benchmark.sh $agent $type"
+  ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "cd benchmark_scripts && ./trigger_benchmark.sh $agent $type ${BENCHMARK_MODE:-throughput}"
 }
 
 upload_folder_to_ec2_instance() {

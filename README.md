@@ -4,7 +4,7 @@ A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Co
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. Cloud runs are manual; release publication is a separate step.
+The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -67,6 +67,10 @@ Local verification only, without AWS resources:
 ./tools/build_loadgen.sh --test
 ```
 
+## Fixed-throughput resource comparisons
+
+The daily workflow additionally measures every supported agent/scenario at **10,000, 25,000, 50,000 and 75,000 total input logs/sec**, with a global rate limiter. Reports include whole-service CPU, average and sampled peak memory, throughput per core and per MB, target attainment, delivery counters, client drain measurements and observed/published AWS hardware specifications. These are new measured experiments, not extrapolations from best throughput. See [the methodology, statuses, asset contract and local preview commands](docs/fixed-throughput.md).
+
 ## Results and interpretation
 
 Each run writes `benchmark_results/<timestamp>/` containing raw `<agent>_<case>.log` files, `versions.csv`, `report.md`, and `data.json`. The summary is deterministic Python; it requires no AI service credentials. Rebuild it with:
@@ -97,6 +101,7 @@ python3 -m http.server 8000 --directory site
 python3 -m pip install -r tests/requirements.txt
 python3 -m unittest discover -s tests -v
 node --test tools/*.test.mjs
+python3 tests/fixed_smoke.py
 python3 tests/smoke.py
 ```
 
@@ -113,11 +118,11 @@ Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/so
 ## Daily releases
 
 The benchmark workflow runs daily at **09:17 UTC**. Each agent gets a separate
-EC2 instance, and all seven jobs run concurrently. Each successful full suite
+EC2 instance, and all seven jobs run concurrently. Each complete validated full suite
 publishes a new UTC-dated release, including the measured versions, report,
 raw logs, provenance, and verified checksums. Previous releases remain intact.
-Partial manual runs produce workflow artifacts only. Failed runs do not publish
-results as a successful release; AWS teardown still runs for each agent.
+Partial manual runs produce workflow artifacts only. Invalid, incomplete and generator-limited runs do not publish
+as complete suites; measured capacity limits remain visible without claiming target attainment; AWS teardown still runs for each agent.
 
 To switch to Mondays, change `.github/workflows/benchmark.yml` from
 `17 9 * * *` to `17 9 * * 1`. GitHub schedules use UTC and may start late.

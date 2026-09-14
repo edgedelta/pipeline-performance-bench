@@ -11,17 +11,19 @@ import tempfile
 from check_results import validate
 
 
-def release_notes(report, run_url):
-    """Keep release presentation focused on measured performance."""
-    report = re.sub(r'^- Reliability tables.*\n', '', report, flags=re.M)
-    report = re.sub(r'^\*\*Delivery policy:\*\*.*\n\n', '', report, flags=re.M)
-    report = re.sub(r'### Reliability Comparison\n.*?(?=^## |\Z)', '', report, flags=re.S | re.M)
-    report = re.sub(r'loadgen [^,]+,', 'loadgen (exact build recorded in provenance),', report)
-    report = re.sub(r'^\*\*Rust source:\*\* `None`\n', '', report, flags=re.M)
-    return ('All **26 supported scenarios / 78 worker tiers** completed successfully. '
-            'Seven agents ran in parallel on separate identical EC2 instances. '
-            'Agent versions were resolved from their current installation channels for this run.\n\n'
-            f'[Workflow run]({run_url})\n\n' + report)
+def release_notes(report, run_url, data=None):
+    """Use the same complete report in local preview and the real release."""
+    synthetic = (data or {}).get('synthetic') or 'SYNTHETIC FIXTURE' in report
+    if (data or {}).get('fixed_throughput', {}).get('measured'):
+        tiers = [t for t in data['fixed_throughput']['tiers'].values() if t['status'] != 'unsupported']
+        sustained = sum(t['status'] == 'ok' for t in tiers)
+        intro = (f"26 supported best-throughput scenarios / 78 worker tiers; {len(tiers)} supported fixed-rate tiers recorded, "
+                 f"of which **{sustained} sustain their target**. Capacity limits and invalid outcomes are labeled in the tables. "
+                 "Seven agents use separate instances, with sequential scenarios and tiers.\n\n")
+    else:
+        intro = 'Best-tested-throughput results; fixed-rate resource comparisons were not measured in this result format.\n\n'
+    if synthetic: intro = '> **SYNTHETIC FIXTURE PREVIEW — NOT REAL RESULTS. DO NOT PUBLISH.**\n\n' + intro
+    return intro + f'[Workflow run]({run_url})\n\n' + report
 
 
 def gh(*args):
@@ -49,7 +51,7 @@ def publish(directory, repo, commit, run_url):
         return
     with tempfile.TemporaryDirectory() as temp:
         notes = Path(temp) / 'notes.md'
-        notes.write_text(release_notes((directory / 'report.md').read_text(), run_url))
+        notes.write_text(release_notes((directory / 'report.md').read_text(), run_url, data))
         if not existing:
             gh('release', 'create', tag, '--repo', repo, '--target', commit,
                '--title', title, '--notes-file', str(notes), '--draft')
@@ -57,10 +59,12 @@ def publish(directory, repo, commit, run_url):
             gh('release', 'edit', tag, '--repo', repo, '--title', title, '--notes-file', str(notes))
         assets = [directory / line.split('  ', 1)[1] for line in (directory / 'SHA256SUMS').read_text().splitlines()]
         assets.append(directory / 'SHA256SUMS')
-        gh('release', 'upload', tag, '--repo', repo, '--clobber', *(str(p) for p in assets))
+        for offset in range(0, len(assets), 20):
+            gh('release', 'upload', tag, '--repo', repo, '--clobber', *(str(p) for p in assets[offset:offset+20]))
         pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
         release = next(r for page in pages for r in page if r['tag_name'] == tag)
-        remote = {a['name']: a.get('digest') for a in release['assets']}
+        asset_pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases/{release["id"]}/assets?per_page=100'))
+        remote = {a['name']: a.get('digest') for page in asset_pages for a in page}
         expected = {p.name: 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest() for p in assets}
         if remote != expected:
             raise ValueError('Uploaded assets differ from validated local assets; leaving draft unpublished')

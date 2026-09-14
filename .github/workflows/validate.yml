@@ -21,4 +21,5 @@ jobs:
       - run: pip install -r tests/requirements.txt
       - run: python3 -m unittest discover -s tests -v
       - run: node --test tools/*.test.mjs
+      - run: python3 tests/fixed_smoke.py
       - run: python3 tests/smoke.py

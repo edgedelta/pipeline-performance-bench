@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import fixed
 from summarize import VENDORS, CASES, UNSUPPORTED, parse_log, summarize
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,13 +22,16 @@ def plan(vendors, cases):
         raise ValueError('No supported scenarios selected')
     return {'include': jobs}
 
-def merge(source, output, matrix):
+def merge(source, output, matrix, require_fixed=False):
     source, output = Path(source), Path(output)
     if output.exists():
         raise ValueError('Output directory must not exist')
     expected = {job['vendor']: job['cases'].split(',') for job in matrix['include']}
     shards, files, versions, instances = {}, [], [], set()
+    hardware = {}
+    corpus_bytes = None
     for version_file in source.rglob('versions.csv'):
+        if any(part.endswith('-combined') for part in version_file.relative_to(source).parts): continue
         with version_file.open() as stream:
             rows = list(csv.DictReader(stream))
         if len(rows) != 1 or rows[0]['agent'] not in expected:
@@ -37,6 +41,7 @@ def merge(source, output, matrix):
             raise ValueError('Duplicate shard or missing version')
         directory = version_file.parent
         provenance = json.loads((directory / 'provenance.json').read_text())
+        if require_fixed and provenance.get('schema_version', 1) < 2: raise ValueError('Daily suite requires measured fixed-rate results')
         instance = provenance.get('instance_id')
         if not instance or instance in instances:
             raise ValueError('Missing or shared instance identity')
@@ -47,13 +52,24 @@ def merge(source, output, matrix):
             if data['status'] not in ('ok', 'errors') or any(data.get(k) is None for k in ['avg', 'peak', 'total', 'cpu', 'mem']):
                 raise ValueError(f'Incomplete measurement: {vendor}/{case}')
             files.append(log)
+        if provenance.get('schema_version', 1) >= 2:
+            hardware[vendor] = {'runtime': json.loads((directory/'hardware.json').read_text()), 'published': json.loads((directory/'hardware-aws.json').read_text())}
+            corpus = (directory/'fixed-nginx.ndjson').read_bytes()
+            if corpus_bytes is not None and corpus != corpus_bytes: raise ValueError('Shard payloads differ')
+            corpus_bytes = corpus
+            for rate in fixed.RATES:
+                files.append(directory/f'{vendor}_{rate}.calibration.json')
+                for case in expected[vendor]:
+                    entry = fixed.tier(directory, vendor, case, rate, provenance['fixed_rate']['payload_sha256'])
+                    if entry['status'] not in ('ok', 'capacity_limited'): raise ValueError(f'{vendor}/{case}/{rate}: {entry["status"]}: {entry["reason"]}')
+                    files.append(directory/f'{vendor}_{case}_{rate}.fixed.json')
         shards[vendor] = provenance
         versions += rows
     if set(shards) != set(expected):
         raise ValueError('Missing agent shards')
     first = next(iter(shards.values()))
     for shard in shards.values():
-        for key in ['benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256']:
+        for key in ['benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256', 'schema_version', 'fixed_rate']:
             if shard.get(key) != first.get(key):
                 raise ValueError(f'Shard methodology differs: {key}')
     combined = dict(first, execution_mode='parallel agents on separate identical EC2 instances; sequential cases and tiers per agent', shards=shards)
@@ -63,6 +79,9 @@ def merge(source, output, matrix):
             combined[key] = shards['red'][key]
     combined.pop('instance_id', None)
     output.mkdir(parents=True)
+    for vendor, facts in hardware.items():
+        (output/f'hardware_{vendor}.json').write_text(json.dumps(facts, indent=2)+'\n')
+    if corpus_bytes is not None: (output/'fixed-nginx.ndjson').write_bytes(corpus_bytes)
     for log in files:
         shutil.copyfile(log, output / log.name)
     with (output / 'versions.csv').open('w') as stream:
@@ -78,7 +97,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('plan'); p.add_argument('vendors'); p.add_argument('cases')
-    p = sub.add_parser('merge'); p.add_argument('source'); p.add_argument('output'); p.add_argument('matrix')
+    p = sub.add_parser('merge'); p.add_argument('source'); p.add_argument('output'); p.add_argument('matrix'); p.add_argument('--require-fixed', action='store_true')
     args = parser.parse_args()
     if args.command == 'plan': print(json.dumps(plan(args.vendors, args.cases)))
-    else: print(merge(args.source, args.output, json.loads(args.matrix)))
+    else: print(merge(args.source, args.output, json.loads(args.matrix), args.require_fixed))
