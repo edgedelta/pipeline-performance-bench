@@ -31,9 +31,19 @@ class HarnessTest(unittest.TestCase):
 
     def test_report_rejects_failed_or_partial_runs(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: {w} logs/sec | errors: 0\n[MONITOR - TARGET] pid: 1 | cpu: 100.0% | memory: 10.0MB\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
-        self.assertEqual(summary.parse_log(text)['avg'], 100)
+        self.assertEqual(summary.parse_log(text)['avg'], 120)
+        self.assertEqual(summary.parse_log(text)['tier_mean'], 100)
         for bad in [text.replace('errors: 0', 'errors: 1'), text.replace('Finished loadgen with 120', 'missing'), text + 'ERROR: service restarted', '']:
             self.assertEqual(summary.parse_log(bad)['status'], 'invalid')
+
+    def test_best_tier_uses_matching_resource_samples(self):
+        text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] current: {rate + 10} logs/sec | avg: {rate} logs/sec | total: {rate * 60} | errors: 0 | backpressure: 0\n[MONITOR - TARGET] pid: 1 | cpu: {w}.0% | memory: {w}.0MB\nFinished loadgen with {w} workers for vector\n' for w, rate in [(80, 100), (100, 300), (120, 200)])
+        data = summary.parse_log(text)
+        self.assertEqual((data['best_workers'], data['avg'], data['peak'], data['cpu'], data['mem']), (100, 300, 310, 100, 100))
+
+    def test_missing_reliability_is_not_assumed_zero(self):
+        text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: 10 logs/sec\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
+        self.assertEqual(summary.parse_log(text)['status'], 'invalid')
 
     def test_report_distinguishes_missing_from_unsupported(self):
         with tempfile.TemporaryDirectory() as tmp:
