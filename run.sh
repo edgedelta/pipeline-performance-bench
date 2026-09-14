@@ -217,8 +217,12 @@ function cleanup_benchmark_environment() {
   if [[ "$cribl_benchmark" -eq 1 ]]; then
     (cd "$runtime_dir/pipelines/cribl" && ./cribl-api.sh cleanup-all) || failed=1
   fi
-  echo "Destroying benchmark resources..."
-  destroy_benchmark_resources || failed=1
+  if [[ "${BENCHMARK_EXTERNAL_AWS_CLEANUP:-0}" == 1 ]]; then
+    echo "AWS cleanup delegated to the workflow after credential refresh."
+  else
+    echo "Destroying benchmark resources..."
+    destroy_benchmark_resources || failed=1
+  fi
   if [[ $failed != 0 ]]; then
     echo "Cleanup failed; retain aws_resources state and .runtime directory for recovery." >&2
   fi

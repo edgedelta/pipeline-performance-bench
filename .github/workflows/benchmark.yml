@@ -58,12 +58,13 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
-          role-duration-seconds: 21600
+          role-duration-seconds: 7200
           aws-region: us-west-2
       - name: Run benchmark
         env:
           VENDORS: ${{ inputs.vendors }}
           CASES: ${{ inputs.cases }}
+          BENCHMARK_EXTERNAL_AWS_CLEANUP: "1"
           ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
           ED_API_TOKEN: ${{ secrets.ED_API_TOKEN }}
           CRIBL_CLIENT_ID: ${{ secrets.CRIBL_CLIENT_ID }}
@@ -74,10 +75,19 @@ jobs:
           CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
           RED_SRC_DIR: ${{ github.workspace }}/red-src
         run: ./run.sh --vendors "$VENDORS" --cases "$CASES"
-      - name: Retry infrastructure cleanup after failure
-        if: failure()
+      - name: Refresh credentials for AWS cleanup
+        if: always()
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
+          role-duration-seconds: 7200
+          retry-max-attempts: 2
+          aws-region: us-west-2
+      - name: Clean up AWS resources
+        if: always()
         working-directory: aws_resources
-        run: terraform destroy -auto-approve
+        run: |
+          if test -f terraform.tfstate; then terraform destroy -auto-approve; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -85,6 +95,7 @@ jobs:
           path: |
             benchmark_results/*/*.log
             benchmark_results/*/versions.csv
+            benchmark_results/*/provenance.json
             benchmark_results/*/data.json
             benchmark_results/*/report.md
           if-no-files-found: warn
