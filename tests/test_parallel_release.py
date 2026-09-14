@@ -102,3 +102,26 @@ class ParallelTest(unittest.TestCase):
                     out = parallel.merge(root, Path(tmp) / 'out', matrix)
                     self.assertEqual(len((out / 'versions.csv').read_text().splitlines()), 2)
                     self.assertEqual(len(json.loads((out / 'provenance.json').read_text())['shards']), 2)
+
+    def test_full_scenario_matrix_and_fleet_isolation(self):
+        matrix = parallel.plan(','.join(parallel.VENDORS), ','.join(parallel.CASES))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'shards'; root.mkdir()
+            for job in matrix['include']:
+                vendor, case = job['vendor'], job['cases']
+                directory = root / f'{vendor}-{case}'; directory.mkdir()
+                (directory / 'versions.csv').write_text(f'agent,version\n{vendor},1.0\n')
+                provenance = {'instance_id': directory.name, 'benchmark_commit': 'a' * 40, 'loadgen_version': 'patched', 'loadgen': {'retry_ambiguous': True}}
+                if vendor == 'red': provenance['red_binary_sha256'] = 'b' * 64
+                if vendor == 'cribl': provenance['cribl_fleet_id'] = 'fleet-' + case
+                (directory / 'provenance.json').write_text(json.dumps(provenance))
+                (directory / f'{vendor}_{case}.log').write_text(''.join(f'Starting loadgen with {w} workers\n[STATS] current: 100 logs/sec | avg: 100 logs/sec | total: 6000 | errors: 0 | connection_errors: 0 | retry_attempts: 0 | recovered_requests: 0 | ambiguous_deliveries: 0\n[MONITOR - TARGET] pid: 1 | cpu: 10.0% | memory: 10.0MB\nFinished loadgen with {w} workers\n' for w in [80, 100, 120]))
+            output = parallel.merge(root, Path(tmp) / 'out', matrix)
+            self.assertTrue((output / 'SHA256SUMS').exists())
+            self.assertEqual(len((output / 'versions.csv').read_text().splitlines()), 8)
+            self.assertEqual(len(json.loads((output / 'provenance.json').read_text())['shards']), 26)
+            bad = root / 'cribl-filter' / 'provenance.json'
+            provenance = json.loads(bad.read_text()); provenance['cribl_fleet_id'] = 'fleet-mask'
+            bad.write_text(json.dumps(provenance))
+            with self.assertRaisesRegex(ValueError, 'shared Cribl fleet'):
+                parallel.merge(root, Path(tmp) / 'bad', matrix)
