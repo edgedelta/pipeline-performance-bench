@@ -31,9 +31,8 @@ Options:
                      Example: --cases pass-through,mask
   --vendors <list>   Comma- or space-separated vendors to run.
                      Valid: ${ALL_VENDORS[*]}
-                     (red = Edge Delta agent written in Rust; built on the
-                     instance from \$RED_SRC_DIR, default ../red, or installed
-                     from a prebuilt linux/amd64 binary at \$RED_BINARY)
+                     (red defaults to the latest stable released binary;
+                     set RED_VERSION to pin a stable version)
                      Example: --vendors edgedelta,cribl
   --dry-run         Print the selected supported matrix without credentials or AWS.
   -h, --help         Show this help and exit.
@@ -167,14 +166,20 @@ if [[ "$has_work" == 0 ]]; then
 fi
 
 function check_prerequisites() {
-  for cmd in terraform jq curl ssh scp python3 tar; do
+  for cmd in terraform jq curl ssh scp python3 tar git go; do
     command -v "$cmd" >/dev/null || { echo "Missing prerequisite: $cmd" >&2; exit 1; }
   done
   if is_vendor_selected red; then
     if [[ -n "${RED_BINARY:-}" ]]; then
       [[ -f "$RED_BINARY" ]] || { echo "RED_BINARY does not exist" >&2; exit 1; }
+    elif [[ "${RED_BUILD_FROM_SOURCE:-0}" == 1 ]]; then
+      [[ -f "${RED_SRC_DIR:-$git_root/../red}/Cargo.toml" ]] || { echo "Set RED_SRC_DIR for a source build" >&2; exit 1; }
     else
-      [[ -f "${RED_SRC_DIR:-$git_root/../red}/Cargo.toml" ]] || { echo "Set RED_SRC_DIR or RED_BINARY" >&2; exit 1; }
+      local release_dir
+      release_dir=$(mktemp -d "$git_root/.red-release.XXXXXX")
+      python3 "$git_root/tools/fetch_red.py" "$release_dir"
+      export RED_BINARY="$release_dir/red"
+      export RED_RELEASE_METADATA="$release_dir/release.json"
     fi
   fi
   [[ -z "${ED_BINARY:-}" || -f "$ED_BINARY" ]] || { echo "ED_BINARY does not exist" >&2; exit 1; }
@@ -192,6 +197,7 @@ function check_prerequisites() {
 }
 
 function create_benchmark_environment() {
+  "$git_root/tools/build_loadgen.sh"
   echo "Creating benchmark resources..."
   create_benchmark_resources
   echo "Benchmark resources created successfully"
@@ -200,6 +206,7 @@ function create_benchmark_environment() {
 function prepare_for_benchmark() {
   runtime_dir=$(mktemp -d "$git_root/.runtime.XXXXXX")
   chmod 700 "$runtime_dir"
+  export BENCHMARK_INSTANCE_ID=$(terraform -chdir="$git_root/aws_resources" output -raw instance_id)
   python3 "$git_root/tools/provenance.py" "$runtime_dir/provenance.json"
   cp -R "$git_root/pipelines" "$runtime_dir/pipelines"
   cp -R "$git_root/scripts" "$runtime_dir/scripts"

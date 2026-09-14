@@ -10,47 +10,47 @@ on:
         description: 'Cases: pass-through,filter,mask,lookup'
         default: 'pass-through,filter,mask,lookup'
         required: true
-      red_ref:
-        description: 'edgedelta/red source ref'
-        default: main
-        required: true
+      red_version:
+        description: 'RED stable version (blank resolves latest stable)'
+        default: ''
+        required: false
 permissions:
   contents: read
 concurrency:
   group: pipeline-performance-bench
   cancel-in-progress: false
 jobs:
-  benchmark:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      timestamp: ${{ steps.plan.outputs.timestamp }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: plan
+        env:
+          VENDORS: ${{ inputs.vendors }}
+          CASES: ${{ inputs.cases }}
+        run: |
+          echo "matrix=$(python3 tools/parallel.py plan "$VENDORS" "$CASES")" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date -u +%Y%m%d_%H%M%S)" >> "$GITHUB_OUTPUT"
+  benchmark:
+    needs: plan
+    strategy:
+      fail-fast: false
+      max-parallel: 7
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Validate selections before accessing credentials
-        env:
-          VENDORS: ${{ inputs.vendors }}
-          CASES: ${{ inputs.cases }}
-        run: ./run.sh --dry-run --vendors "$VENDORS" --cases "$CASES"
-      - name: Token for private Rust source
-        if: contains(inputs.vendors, 'red')
-        id: app-token
-        uses: actions/create-github-app-token@v2
+      - uses: actions/setup-go@v6
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: edgedelta
-          repositories: red
-      - name: Checkout Rust source
-        if: contains(inputs.vendors, 'red')
-        uses: actions/checkout@v6
-        with:
-          repository: edgedelta/red
-          ref: ${{ inputs.red_ref }}
-          token: ${{ steps.app-token.outputs.token }}
-          path: red-src
-          persist-credentials: false
+          go-version: "1.26.0"
+          cache: false
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
@@ -60,10 +60,12 @@ jobs:
           role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
           role-duration-seconds: 7200
           aws-region: us-west-2
-      - name: Run benchmark
+      - name: Run isolated agent benchmark
         env:
-          VENDORS: ${{ inputs.vendors }}
-          CASES: ${{ inputs.cases }}
+          VENDORS: ${{ matrix.vendor }}
+          CASES: ${{ matrix.cases }}
+          RED_VERSION: ${{ inputs.red_version }}
+          BENCHMARK_EXECUTION_MODE: parallel-agent-shard
           BENCHMARK_EXTERNAL_AWS_CLEANUP: "1"
           ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
           ED_API_TOKEN: ${{ secrets.ED_API_TOKEN }}
@@ -73,7 +75,6 @@ jobs:
           CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
           CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
           CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
-          RED_SRC_DIR: ${{ github.workspace }}/red-src
         run: ./run.sh --vendors "$VENDORS" --cases "$CASES"
       - name: Refresh credentials for AWS cleanup
         if: always()
@@ -83,19 +84,35 @@ jobs:
           role-duration-seconds: 7200
           retry-max-attempts: 2
           aws-region: us-west-2
-      - name: Clean up AWS resources
+      - name: Clean up this agent's AWS resources
         if: always()
-        working-directory: aws_resources
         run: |
-          if test -f terraform.tfstate; then terraform destroy -auto-approve; fi
+          if test -f aws_resources/terraform.tfstate; then terraform -chdir=aws_resources destroy -auto-approve; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pipeline-bench-${{ github.run_id }}
+          name: pipeline-bench-${{ github.run_id }}-${{ matrix.vendor }}
           path: |
             benchmark_results/*/*.log
             benchmark_results/*/versions.csv
             benchmark_results/*/provenance.json
-            benchmark_results/*/data.json
-            benchmark_results/*/report.md
-          if-no-files-found: warn
+          if-no-files-found: error
+  report:
+    needs: [plan, benchmark]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pipeline-bench-${{ github.run_id }}-*
+          path: shards
+      - name: Validate and combine agent results
+        env:
+          MATRIX: ${{ needs.plan.outputs.matrix }}
+          TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
+        run: python3 tools/parallel.py merge shards "benchmark_results/$TIMESTAMP" "$MATRIX"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-bench-${{ github.run_id }}-combined
+          path: benchmark_results/
+          if-no-files-found: error

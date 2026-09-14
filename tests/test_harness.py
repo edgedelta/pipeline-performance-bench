@@ -36,6 +36,7 @@ class HarnessTest(unittest.TestCase):
     def test_report_rejects_failed_or_partial_runs(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: {w} logs/sec | errors: 0\n[MONITOR - TARGET] pid: 1 | cpu: 100.0% | memory: 10.0MB\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
         self.assertEqual(summary.parse_log(text)['avg'], 120)
+        self.assertEqual(summary.parse_log(text, require_retries=True)['status'], 'invalid')
         self.assertEqual(summary.parse_log(text)['tier_mean'], 100)
         for bad in [text.replace('Finished loadgen with 120', 'missing'), text + 'ERROR: service restarted', '']:
             self.assertEqual(summary.parse_log(bad)['status'], 'invalid')
@@ -46,6 +47,21 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(data['status'], 'errors')
         self.assertEqual(data['avg'], 100)
         self.assertEqual(sum(tier['errors'] for tier in data['workers']), 6)
+
+    def test_recovered_errors_are_ranked_and_counters_preserved(self):
+        text = ''.join(f'Starting loadgen with {w} workers\n[STATS] current: 100 logs/sec | avg: 100 logs/sec | total: 6000 | errors: 0 | backpressure: 0 | connection_errors: 3 | retry_attempts: 3 | recovered_requests: 2 | ambiguous_deliveries: 2\nFinished loadgen with {w} workers\n' for w in [80, 100, 120])
+        parsed = summary.parse_log(text)
+        self.assertEqual(parsed['status'], 'ok')
+        self.assertEqual(sum(t['connection_errors'] for t in parsed['workers']), 9)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            (path / 'red_pass-through.log').write_text(text)
+            data = summary.summarize(path)
+            self.assertEqual(data['vendors']['red']['avg'][0], 100)
+            self.assertIn('| Edge Delta (Rust) | 9 | 9 | 6 | 6 |', (path / 'report.md').read_text())
+        self.assertEqual(summary.parse_log(text.replace(' | retry_attempts: 3', ''))['status'], 'invalid')
+        self.assertEqual(summary.parse_log(text.replace('recovered_requests: 2', 'recovered_requests: 4'))['status'], 'invalid')
+        self.assertEqual(summary.parse_log(text.replace('errors: 0 | backpressure', 'errors: 1 | backpressure'))['status'], 'errors')
 
     def test_best_tier_uses_matching_resource_samples(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] current: {rate + 10} logs/sec | avg: {rate} logs/sec | total: {rate * 60} | errors: 0 | backpressure: 0\n[MONITOR - TARGET] pid: 1 | cpu: {w}.0% | memory: {w}.0MB\nFinished loadgen with {w} workers for vector\n' for w, rate in [(80, 100), (100, 300), (120, 200)])

@@ -27,9 +27,15 @@ def validate(directory):
                     errors.append(f'{vendor}/{case}: missing {field}')
             if entry['avg'] <= 0 or (entry.get('total') or 0) <= 0:
                 errors.append(f'{vendor}/{case}: no measured throughput')
-    for field in ['benchmark_commit', 'rust_commit']:
+    for field in ['benchmark_commit']:
         if not re.fullmatch(r'[a-f0-9]{40}', data.get('provenance', {}).get(field) or ''):
             errors.append(f'missing {field} provenance')
+    provenance = data.get('provenance', {})
+    release = provenance.get('rust_release', {})
+    if not (re.fullmatch(r'[a-f0-9]{40}', provenance.get('rust_commit') or '') or
+            re.fullmatch(r'[a-f0-9]{64}', release.get('binary_sha256') or '') or
+            re.fullmatch(r'[a-f0-9]{64}', provenance.get('red_binary_sha256') or '')):
+        errors.append('missing Rust source or binary provenance')
     expected_logs = [directory / f'{vendor}_{case}.log' for vendor in VENDORS for case in CASES if (vendor, case) not in UNSUPPORTED]
     files = expected_logs + [directory / name for name in ['versions.csv', 'provenance.json', 'data.json', 'report.md']]
     secret = re.compile(r'(?:AKIA|ASIA)[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|-----BEGIN (?:OPENSSH |RSA |EC )?PRIVATE KEY-----')

@@ -1,0 +1,475 @@
+diff --git a/main.go b/main.go
+index 420e30d..131c9c9 100644
+--- a/main.go
++++ b/main.go
+@@ -36,6 +36,8 @@ type Config struct {
+ 	MonitorSelf     bool
+ 	MonitorInterval time.Duration
+ 	PayloadPoolSize int
++	MaxRetries      int
++	RetryAmbiguous  bool
+ }
+ 
+ // LogMessage represents a structured log entry.
+@@ -85,16 +87,20 @@ type PayloadPool struct {
+ 
+ // Stats tracks performance metrics.
+ type Stats struct {
+-	mu                sync.Mutex
+-	successfulLogs    int64
+-	totalLogs         int64
+-	totalBytes        int64
+-	httpErrors        int64
+-	backpressureCount int64
+-	startTime         time.Time
+-	lastPrintTime     time.Time
+-	lastPrintLogs     int64
+-	lastPrintBytes    int64
++	mu                  sync.Mutex
++	successfulLogs      int64
++	totalLogs           int64
++	totalBytes          int64
++	httpErrors          int64
++	connectionErrors    int64
++	retryAttempts       int64
++	recoveredRequests   int64
++	ambiguousDeliveries int64
++	backpressureCount   int64
++	startTime           time.Time
++	lastPrintTime       time.Time
++	lastPrintLogs       int64
++	lastPrintBytes      int64
+ }
+ 
+ func (s *Stats) recordSuccess(bytes int) {
+@@ -157,11 +163,11 @@ func (s *Stats) print() {
+ 	}
+ 
+ 	if currentLogsPerSec > 0 {
+-		fmt.Printf("[STATS] current: %.2f logs/sec, %.2f MB/s | avg: %.2f logs/sec | total: %d | errors: %d | backpressure: %d (%.1f%%)\n",
+-			currentLogsPerSec, currentThroughputMBps, avgLogsPerSec, s.totalLogs, s.httpErrors, s.backpressureCount, backpressurePct)
++		fmt.Printf("[STATS] current: %.2f logs/sec, %.2f MB/s | avg: %.2f logs/sec | total: %d | errors: %d | backpressure: %d (%.1f%%) | connection_errors: %d | retry_attempts: %d | recovered_requests: %d | ambiguous_deliveries: %d\n",
++			currentLogsPerSec, currentThroughputMBps, avgLogsPerSec, s.totalLogs, s.httpErrors, s.backpressureCount, backpressurePct, s.connectionErrors, s.retryAttempts, s.recoveredRequests, s.ambiguousDeliveries)
+ 	} else {
+-		fmt.Printf("[STATS] avg: %.2f logs/sec | total: %d | throughput: %.2f MB/s | errors: %d | backpressure: %d (%.1f%%)\n",
+-			avgLogsPerSec, s.totalLogs, avgThroughputMBps, s.httpErrors, s.backpressureCount, backpressurePct)
++		fmt.Printf("[STATS] avg: %.2f logs/sec | total: %d | throughput: %.2f MB/s | errors: %d | backpressure: %d (%.1f%%) | connection_errors: %d | retry_attempts: %d | recovered_requests: %d | ambiguous_deliveries: %d\n",
++			avgLogsPerSec, s.totalLogs, avgThroughputMBps, s.httpErrors, s.backpressureCount, backpressurePct, s.connectionErrors, s.retryAttempts, s.recoveredRequests, s.ambiguousDeliveries)
+ 	}
+ }
+ 
+@@ -277,7 +283,12 @@ func parseFlags() *Config {
+ 	monitorSelf := flag.Bool("monitor-self", false, "Monitor loadgen's own resource usage")
+ 	monitorInterval := flag.Duration("monitor-interval", 5*time.Second, "Interval for process monitoring stats")
+ 	payloadPoolSize := flag.Int("payload-pool-size", 100, "Number of unique payloads to generate in the pool")
++	maxRetries := flag.Int("max-retries", 2, "Maximum additional attempts for connection failures (0 disables retries)")
++	retryAmbiguous := flag.Bool("retry-ambiguous", false, "Retry potentially delivered POSTs; may ingest duplicates (at-least-once semantics)")
+ 	flag.Parse()
++	if *maxRetries < 0 || *maxRetries > 2 {
++		log.Fatal("max-retries must be between 0 and 2")
++	}
+ 
+ 	return &Config{
+ 		Endpoint:        *endpoint,
+@@ -294,6 +305,8 @@ func parseFlags() *Config {
+ 		MonitorSelf:     *monitorSelf,
+ 		MonitorInterval: *monitorInterval,
+ 		PayloadPoolSize: *payloadPoolSize,
++		MaxRetries:      *maxRetries,
++		RetryAmbiguous:  *retryAmbiguous,
+ 	}
+ }
+ 
+@@ -410,13 +423,16 @@ func run(ctx context.Context, config *Config) error {
+ 		DisableKeepAlives:   false,
+ 	}
+ 
++	stats := &Stats{startTime: time.Now()}
++	// Retries bypass the idle pool without evicting other workers' connections.
++	fresh := transport.Clone()
++	fresh.DisableKeepAlives = true
++	defer transport.CloseIdleConnections()
++	defer fresh.CloseIdleConnections()
+ 	client := &http.Client{
+-		Timeout:   config.Timeout,
+-		Transport: transport,
+-	}
+-
+-	stats := &Stats{
+-		startTime: time.Now(),
++		Timeout: config.Timeout, // Covers all attempts, backoff and response reading.
++		Transport: &retryTransport{base: transport, fresh: fresh, stats: stats,
++			maxRetries: config.MaxRetries, retryAmbiguous: config.RetryAmbiguous},
+ 	}
+ 
+ 	// Print stats every 5 seconds.
+@@ -628,7 +644,7 @@ func sendBatch(client *http.Client, config *Config, numLogs int, stats *Stats, p
+ 		return fmt.Errorf("failed to send HTTP request: %w", err)
+ 	}
+ 
+-	_, _ = io.Copy(io.Discard, resp.Body)
++	_, readErr := io.Copy(io.Discard, resp.Body)
+ 	_ = resp.Body.Close()
+ 
+ 	if resp.StatusCode >= 400 {
+@@ -640,6 +656,10 @@ func sendBatch(client *http.Client, config *Config, numLogs int, stats *Stats, p
+ 		return fmt.Errorf("HTTP request failed with status %d", resp.StatusCode)
+ 	}
+ 
++	if readErr != nil {
++		stats.recordError(len(body))
++		return fmt.Errorf("failed to read HTTP response: %w", readErr)
++	}
+ 	stats.recordSuccess(len(body))
+ 	return nil
+ }
+diff --git a/retry.go b/retry.go
+new file mode 100644
+index 0000000..63d83da
+--- /dev/null
++++ b/retry.go
+@@ -0,0 +1,118 @@
++package main
++
++import (
++	"errors"
++	"fmt"
++	"io"
++	"net"
++	"net/http"
++	"net/http/httptrace"
++	"sync/atomic"
++	"syscall"
++	"time"
++)
++
++// retryTransport retries connection failures only. It never retries HTTP status
++// errors, cancellation or timeouts. http.Client.Timeout spans this entire call.
++// Counters describe attempts visible here; net/http may also retry internally
++// when it knows that replay is safe.
++type retryTransport struct {
++	base, fresh    http.RoundTripper
++	stats          *Stats
++	maxRetries     int
++	retryAmbiguous bool
++}
++
++func connectionFailure(err error) bool {
++	return errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
++		errors.Is(err, net.ErrClosed) || errors.Is(err, syscall.ECONNRESET) ||
++		errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNREFUSED) ||
++		err.Error() == "http: server closed idle connection"
++}
++
++func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
++	ambiguousRecorded := false
++	for attempt := 0; ; attempt++ {
++		if err := req.Context().Err(); err != nil {
++			return nil, err
++		}
++		current := req.Clone(req.Context())
++		if attempt > 0 {
++			body, err := req.GetBody()
++			if err != nil {
++				return nil, fmt.Errorf("rewind request: %w", err)
++			}
++			current.Body = body
++		}
++		// WroteHeaders is conservative: even a partially written request may have
++		// reached the server. Do not equate a missing response with non-delivery.
++		var wrote atomic.Bool
++		trace := &httptrace.ClientTrace{WroteHeaders: func() { wrote.Store(true) },
++			WroteRequest: func(httptrace.WroteRequestInfo) { wrote.Store(true) }}
++		current = current.WithContext(httptrace.WithClientTrace(current.Context(), trace))
++		transport := t.base
++		if attempt > 0 {
++			transport = t.fresh
++			t.stats.mu.Lock()
++			t.stats.retryAttempts++
++			t.stats.mu.Unlock()
++		}
++		resp, err := transport.RoundTrip(current)
++		if err == nil {
++			if attempt > 0 && resp.StatusCode < 400 {
++				resp.Body = &recoveredBody{ReadCloser: resp.Body, stats: t.stats}
++			}
++			return resp, nil
++		}
++		if resp != nil && resp.Body != nil {
++			resp.Body.Close()
++		}
++		if !connectionFailure(err) {
++			return nil, err
++		}
++		t.stats.mu.Lock()
++		t.stats.connectionErrors++
++		if wrote.Load() && !ambiguousRecorded {
++			t.stats.ambiguousDeliveries++
++			ambiguousRecorded = true
++		}
++		t.stats.mu.Unlock()
++		if attempt >= t.maxRetries || req.GetBody == nil || (wrote.Load() && !t.retryAmbiguous) {
++			return nil, err
++		}
++		// Bound reconnect pressure, and include the delay in the original deadline.
++		timer := time.NewTimer(time.Duration(attempt+1) * 10 * time.Millisecond)
++		select {
++		case <-req.Context().Done():
++			timer.Stop()
++			return nil, req.Context().Err()
++		case <-timer.C:
++		}
++	}
++}
++
++// A recovered response only counts after its body has been read successfully.
++type recoveredBody struct {
++	io.ReadCloser
++	stats   *Stats
++	counted bool
++}
++
++func (b *recoveredBody) Read(p []byte) (int, error) {
++	n, err := b.ReadCloser.Read(p)
++	if err == io.EOF && !b.counted {
++		b.stats.mu.Lock()
++		b.stats.recoveredRequests++
++		b.stats.mu.Unlock()
++		b.counted = true
++	}
++	return n, err
++}
++
++func (t *retryTransport) CloseIdleConnections() {
++	for _, transport := range []http.RoundTripper{t.base, t.fresh} {
++		if closer, ok := transport.(interface{ CloseIdleConnections() }); ok {
++			closer.CloseIdleConnections()
++		}
++	}
++}
+diff --git a/retry_test.go b/retry_test.go
+new file mode 100644
+index 0000000..9b12529
+--- /dev/null
++++ b/retry_test.go
+@@ -0,0 +1,220 @@
++package main
++
++import (
++	"bytes"
++	"context"
++	"errors"
++	"io"
++	"net/http"
++	"net/http/httptest"
++	"net/http/httptrace"
++	"sync/atomic"
++	"testing"
++	"time"
++)
++
++type roundTripFunc func(*http.Request) (*http.Response, error)
++
++func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
++
++func testClient(stats *Stats, ambiguous bool, timeout time.Duration) *http.Client {
++	base := http.DefaultTransport.(*http.Transport).Clone()
++	fresh := base.Clone()
++	fresh.DisableKeepAlives = true
++	return &http.Client{Timeout: timeout, Transport: &retryTransport{base: base, fresh: fresh, stats: stats, maxRetries: 2, retryAmbiguous: ambiguous}}
++}
++func post(t *testing.T, client *http.Client, url string) error {
++	t.Helper()
++	resp, err := client.Post(url, "application/json", bytes.NewReader([]byte(`{"message":"test"}`)))
++	if err == nil {
++		_, err = io.Copy(io.Discard, resp.Body)
++		resp.Body.Close()
++	}
++	return err
++}
++
++func TestConnectionRotation(t *testing.T) {
++	for _, tc := range []struct {
++		name                                                    string
++		closes                                                  int
++		allow                                                   bool
++		wantAttempts, wantRetries, wantRecovered, wantAmbiguous int64
++		fail                                                    bool
++	}{
++		{"recovered", 1, true, 2, 1, 1, 1, false},
++		{"bounded", 10, true, 3, 2, 0, 1, true},
++		{"ambiguous_disabled", 1, false, 1, 0, 0, 1, true},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			var attempts atomic.Int64
++			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++				body, _ := io.ReadAll(r.Body)
++				r.Body.Close()
++				if string(body) != `{"message":"test"}` {
++					t.Errorf("payload changed: %s", body)
++				}
++				if attempts.Add(1) <= int64(tc.closes) {
++					conn, _, err := w.(http.Hijacker).Hijack()
++					if err != nil {
++						t.Error(err)
++						return
++					}
++					conn.Close()
++					return
++				}
++				w.WriteHeader(200)
++			}))
++			defer server.Close()
++			stats := &Stats{}
++			client := testClient(stats, tc.allow, time.Second)
++			defer client.CloseIdleConnections()
++			err := post(t, client, server.URL)
++			if (err != nil) != tc.fail {
++				t.Fatalf("err=%v", err)
++			}
++			if attempts.Load() != tc.wantAttempts || stats.retryAttempts != tc.wantRetries || stats.recoveredRequests != tc.wantRecovered || stats.ambiguousDeliveries != tc.wantAmbiguous || stats.connectionErrors != int64(min(tc.closes, 3)) {
++				t.Fatalf("attempts=%d stats=%+v", attempts.Load(), stats)
++			}
++		})
++	}
++}
++
++func TestGracefulCloseNeedsNoApplicationRetry(t *testing.T) {
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if _, err := io.Copy(io.Discard, r.Body); err != nil {
++			t.Error(err)
++		}
++		w.Header().Set("Connection", "close")
++		w.WriteHeader(200)
++	}))
++	defer server.Close()
++	stats := &Stats{}
++	client := testClient(stats, true, time.Second)
++	defer client.CloseIdleConnections()
++	for i := 0; i < 20; i++ {
++		if err := post(t, client, server.URL); err != nil {
++			t.Fatal(err)
++		}
++	}
++	if stats.connectionErrors != 0 || stats.retryAttempts != 0 {
++		t.Fatalf("stats=%+v", stats)
++	}
++}
++
++func TestRequestDeadlineSpansRetries(t *testing.T) {
++	stats := &Stats{}
++	var attempts atomic.Int64
++	transport := roundTripFunc(func(r *http.Request) (*http.Response, error) {
++		attempts.Add(1)
++		select {
++		case <-time.After(40 * time.Millisecond):
++		case <-r.Context().Done():
++			return nil, r.Context().Err()
++		}
++		httptrace.ContextClientTrace(r.Context()).WroteHeaders()
++		return nil, io.EOF
++	})
++	client := &http.Client{Timeout: 65 * time.Millisecond, Transport: &retryTransport{base: transport, fresh: transport, stats: stats, maxRetries: 2, retryAmbiguous: true}}
++	start := time.Now()
++	err := post(t, client, "http://example.invalid")
++	if !errors.Is(err, context.DeadlineExceeded) || attempts.Load() != 2 || time.Since(start) > 250*time.Millisecond {
++		t.Fatalf("err=%v attempts=%d elapsed=%s", err, attempts.Load(), time.Since(start))
++	}
++}
++
++func TestHTTPFailuresAreNotRetried(t *testing.T) {
++	for _, status := range []int{400, 429, 500, 503} {
++		var attempts atomic.Int64
++		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { attempts.Add(1); w.WriteHeader(status) }))
++		stats := &Stats{}
++		client := testClient(stats, true, time.Second)
++		config := &Config{Endpoint: server.URL, ContentType: "application/json", FormatStyle: "single"}
++		err := sendBatch(client, config, 1, stats, &PayloadPool{nginxLogsBytes: [][]byte{[]byte(`{}`)}})
++		client.CloseIdleConnections()
++		server.Close()
++		if err == nil || attempts.Load() != 1 || stats.httpErrors != 1 || stats.retryAttempts != 0 || stats.totalLogs != 1 {
++			t.Fatalf("status=%d stats=%+v attempts=%d err=%v", status, stats, attempts.Load(), err)
++		}
++	}
++}
++
++func TestRecoveredBatchCountedOnce(t *testing.T) {
++	var attempts atomic.Int64
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if _, err := io.Copy(io.Discard, r.Body); err != nil {
++			t.Error(err)
++		}
++		if attempts.Add(1) == 1 {
++			conn, _, _ := w.(http.Hijacker).Hijack()
++			conn.Close()
++			return
++		}
++		w.WriteHeader(200)
++	}))
++	defer server.Close()
++	stats := &Stats{}
++	client := testClient(stats, true, time.Second)
++	defer client.CloseIdleConnections()
++	err := sendBatch(client, &Config{Endpoint: server.URL, ContentType: "application/json", FormatStyle: "single"}, 1, stats, &PayloadPool{nginxLogsBytes: [][]byte{[]byte(`{}`)}})
++	if err != nil || stats.totalLogs != 1 || stats.successfulLogs != 1 || stats.httpErrors != 0 || stats.recoveredRequests != 1 {
++		t.Fatalf("err=%v stats=%+v", err, stats)
++	}
++}
++
++func TestSafeRetryDoesNotRequireAmbiguousOptIn(t *testing.T) {
++	stats := &Stats{}
++	base := roundTripFunc(func(r *http.Request) (*http.Response, error) { r.Body.Close(); return nil, io.EOF })
++	fresh := roundTripFunc(func(r *http.Request) (*http.Response, error) {
++		r.Body.Close()
++		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(nil)), Request: r}, nil
++	})
++	client := &http.Client{Transport: &retryTransport{base: base, fresh: fresh, stats: stats, maxRetries: 2}}
++	if err := post(t, client, "http://example.invalid"); err != nil {
++		t.Fatal(err)
++	}
++	if stats.retryAttempts != 1 || stats.ambiguousDeliveries != 0 || stats.recoveredRequests != 1 {
++		t.Fatalf("stats=%+v", stats)
++	}
++}
++
++func TestTruncatedResponseIsNotRecovered(t *testing.T) {
++	var attempts atomic.Int64
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if _, err := io.Copy(io.Discard, r.Body); err != nil {
++			t.Error(err)
++		}
++		conn, _, _ := w.(http.Hijacker).Hijack()
++		defer conn.Close()
++		if attempts.Add(1) > 1 {
++			if _, err := io.WriteString(conn, "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nshort"); err != nil {
++				t.Error(err)
++			}
++		}
++	}))
++	defer server.Close()
++	stats := &Stats{}
++	client := testClient(stats, true, time.Second)
++	defer client.CloseIdleConnections()
++	err := sendBatch(client, &Config{Endpoint: server.URL, ContentType: "application/json", FormatStyle: "single"}, 1, stats, &PayloadPool{nginxLogsBytes: [][]byte{[]byte(`{}`)}})
++	if err == nil || stats.totalLogs != 1 || stats.successfulLogs != 0 || stats.httpErrors != 1 || stats.recoveredRequests != 0 || attempts.Load() != 2 {
++		t.Fatalf("err=%v stats=%+v attempts=%d", err, stats, attempts.Load())
++	}
++}
++
++func TestCanceledRequestDoesNotRetry(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	cancel()
++	stats := &Stats{}
++	transport := roundTripFunc(func(_ *http.Request) (*http.Response, error) {
++		t.Error("transport called after cancellation")
++		return nil, io.EOF
++	})
++	req, _ := http.NewRequestWithContext(ctx, "POST", "http://example.invalid", bytes.NewReader([]byte(`{}`)))
++	resp, err := (&retryTransport{base: transport, fresh: transport, stats: stats, maxRetries: 2, retryAmbiguous: true}).RoundTrip(req)
++	if resp != nil {
++		resp.Body.Close()
++	}
++	if !errors.Is(err, context.Canceled) || stats.retryAttempts != 0 {
++		t.Fatalf("err=%v stats=%+v", err, stats)
++	}
++}

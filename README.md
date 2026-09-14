@@ -4,7 +4,7 @@ A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Co
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. Agents run sequentially on one Ubuntu 24.04 `c8i.2xlarge` instance. Cloud runs are manual; release publication is a separate step.
+The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. Cloud runs are manual; release publication is a separate step.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -20,7 +20,7 @@ Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped a
 
 ## Run
 
-Prerequisites: Bash, Python 3, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
+Prerequisites: Bash, Python 3, Go 1.26.0, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
 
 ```bash
 ./run.sh --dry-run
@@ -36,7 +36,7 @@ Lists accept commas or spaces. `passthrough` aliases `pass-through`. The script 
 Agent source stays in its own repository; proprietary agent code and credentials are not copied into this repository.
 
 - Go source: `../edgedelta` (the existing `/Users/yildiz/workspace/gocode/src/github.com/edgedelta/edgedelta` checkout). By default the inherited installer uses the candidate release. Set `ED_BINARY` to an existing Linux/amd64 agent binary from that checkout to replace the installed executable before timing. The Go agent still needs its cloud pipeline credentials.
-- Rust source: `RED_SRC_DIR`, default `../red` (the existing `/Users/yildiz/workspace/gocode/src/github.com/edgedelta/red` checkout). The source is built on EC2 with `cargo build --locked --release`. Alternatively set `RED_BINARY` to a prebuilt Linux/amd64 executable. Rust loads the local YAML config.
+- Rust defaults to the latest stable Linux/amd64 release from `release.edgedelta.com/red`, verified against its published SHA-256. Set `RED_VERSION` to pin a stable version, or `RED_BINARY` to supply a prebuilt executable. Source compilation is opt-in with `RED_BUILD_FROM_SOURCE=1` and `RED_SRC_DIR` (default `../red`). Rust loads the local YAML config.
 - Vector and Fluent Bit use pinned release versions in their install scripts and smoke tests. Update both together. Other vendors retain the upstream installation channels; `versions.csv` records the actual version of each selected agent.
 
 Reuse the same environment variables as the existing benchmark:
@@ -51,6 +51,22 @@ Use a dedicated Cribl benchmark worker group. The inherited Cribl adapter instal
 
 Private rendered configs and generated installers live in ignored `.runtime.*` directories with mode 0700. Templates stay unchanged between runs. These directories and Terraform state can contain credentials; they are not result artifacts. On failure the harness attempts result collection and cleanup. If cleanup fails, retain the runtime directory and `aws_resources` state, resolve the error, and run `terraform -chdir=aws_resources destroy`. Remove private runtime files after cloud cleanup is confirmed.
 
+## Loadgen connection recovery
+
+Before creating AWS resources, `tools/build_loadgen.sh` builds Linux/amd64 loadgen from upstream commit `801c3c369a0e8ff6f40a0af21aa5203f3689d65d` (v1.1.0) plus [the retry patch](patches/loadgen-retry.patch). This is a local patched build, not a published loadgen release. Terraform uploads that executable; every agent receives the same policy. Results record the source commit, patch and executable SHA-256, Go version, and policy. No agent build is involved in this step.
+
+The benchmark explicitly enables `--max-retries 2 --retry-ambiguous`. Connection failures may receive two additional attempts on fresh connections, with 10/20 ms backoff inside the original 30-second request timeout. HTTP error responses, timeouts, and cancellation are not retried. A response whose body cannot be read completely remains a failure.
+
+Delivery uses at-least-once semantics with possible duplicates and remaining failures. An EOF after sending a POST does not reveal whether the server accepted it. Retrying may therefore send the same batch twice; the benchmark does not claim deduplication or exactly-once delivery. Loadgen defaults to **not** retrying ambiguous requests unless explicitly enabled.
+
+`errors` counts final failed logical requests, while `connection_errors`, `retry_attempts`, `recovered_requests`, and `ambiguous_deliveries` expose recovery separately. Ambiguous deliveries count each affected logical request once, even if it later succeeds. They are neither confirmed losses nor confirmed duplicates. These counters cover failures visible to the retry wrapper; Go can also recover safe failures internally. Acknowledged batches count once toward logs/sec, including retry time (this benchmark sends one log per batch). Recovered failures remain eligible for ranking; final failures do not. Old results have N/A recovery counters and are not reclassified.
+
+Local verification only, without AWS resources:
+
+```bash
+./tools/build_loadgen.sh --test
+```
+
 ## Results and interpretation
 
 Each run writes `benchmark_results/<timestamp>/` containing raw `<agent>_<case>.log` files, `versions.csv`, `report.md`, and `data.json`. The summary is deterministic Python; it requires no AI service credentials. Rebuild it with:
@@ -63,7 +79,7 @@ python3 tools/check_results.py benchmark_results/<timestamp>
 
 Release tables use the tier with the highest final cumulative average, matching the reference release. Peak, log totals, CPU mean, and peak memory come from that same tier. Multi-process CPU sums per-process means; memory sums per-process peak RSS. Cross-scenario CPU and peak-memory figures average the supported scenarios; throughput per CPU % divides their mean throughput by mean CPU percentage. All tier data and the mean across tiers are retained in data.json. CPU uses 100% per core. Multi-process competitors retain the upstream process-monitoring method, which may omit auxiliary processes. These figures are not complete host/cgroup resource measurements.
 
-Incomplete runs, missing statistics, and detected service restarts invalidate a scenario. Completed measurements with HTTP send errors are retained with an `errors` status and reliability counts; they are excluded from ranks and cross-scenario charts. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
+Incomplete runs, missing statistics, and detected service restarts invalidate a scenario. Completed measurements with unrecovered HTTP send errors are retained with an `errors` status and reliability counts; they are excluded from ranks and cross-scenario charts. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
 
 Filter drops events whose `pii.color` is `Green`. Lookup matches `pii.ipv4` against the shared CSV's `ipv4` column and emits `region`/`env`, with miss defaults. Vector uses an indexed enrichment table; Fluent Bit loads the bundled simple unquoted CSV once in Lua. Mask uses the inherited nine regexes in Vector. Inherited vendor implementations vary in which fields they scan. New results are not directly interchangeable with old published results: lookup wiring was corrected in this successor.
 
@@ -90,6 +106,6 @@ Docker smoke tests validate all Vector/Fluent Bit production configs without AWS
 
 `validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` is manual only and uploads raw logs/reports as workflow artifacts. It has no release, Pages, website, or schedule step.
 
-Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, and `APP_ID`/`APP_PRIVATE_KEY` for private Rust checkout. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release used [a temporary workflow in the existing benchmark repository](https://github.com/edgedelta/benchmark/actions/runs/34809968062), reusing its secrets and OIDC trust. Temporary read-only checkout access and the bootstrap branch were removed after publication. Inputs are passed through environment variables and validated before use.
+Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, for the selected agents. Released RED binaries require no private checkout credentials. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release used [a temporary workflow in the existing benchmark repository](https://github.com/edgedelta/benchmark/actions/runs/34809968062), reusing its secrets and OIDC trust. Temporary read-only checkout access and the bootstrap branch were removed after publication. Inputs are passed through environment variables and validated before use.
 
 Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/sources/http_server/), [Vector S3](https://vector.dev/docs/reference/configuration/sinks/aws_s3/), [Fluent Bit S3](https://docs.fluentbit.io/manual/data-pipeline/outputs/s3), [Fluent Bit Lua](https://docs.fluentbit.io/manual/data-pipeline/filters/lua).

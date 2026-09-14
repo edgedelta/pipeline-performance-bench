@@ -57,3 +57,7 @@ site/data/
 !.env.example
 scripts/install_agent_cribl.sh
 __pycache__/
+
+.red-release.*/
+
+.loadgen-build/
