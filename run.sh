@@ -311,6 +311,10 @@ function run_cribl_benchmark() {
     ./cribl-api.sh update-pipeline $type.json
     trigger_benchmark "cribl" $type
   done
+  # Release the shared worker-group configuration before measuring other agents.
+  # If cleanup fails, the EXIT handler retries while the flag remains set.
+  ./cribl-api.sh cleanup-all
+  cribl_benchmark=0
   popd > /dev/null
 }
 
