@@ -2,7 +2,9 @@
 
 A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Compare HTTP log ingestion by Edge Delta's Go and Rust agents, Cribl, OpenTelemetry Collector, Fluentd, Vector, and Fluent Bit. Source provenance is recorded in [UPSTREAM.md](UPSTREAM.md).
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. Agents run sequentially on one Ubuntu 24.04 `c8i.2xlarge` instance. It does not publish releases, deploy a website, or run scheduled cloud benchmarks.
+Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
+
+The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. Agents run sequentially on one Ubuntu 24.04 `c8i.2xlarge` instance. Cloud runs are manual; release publication is a separate step.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -88,6 +90,6 @@ Docker smoke tests validate all Vector/Fluent Bit production configs without AWS
 
 `validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` is manual only and uploads raw logs/reports as workflow artifacts. It has no release, Pages, website, or schedule step.
 
-Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, and `APP_ID`/`APP_PRIVATE_KEY` for private Rust checkout. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release can use a temporary workflow in the existing benchmark repository so its secrets and OIDC trust remain in place. Inputs are passed through environment variables and validated before use.
+Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, and `APP_ID`/`APP_PRIVATE_KEY` for private Rust checkout. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release used [a temporary workflow in the existing benchmark repository](https://github.com/edgedelta/benchmark/actions/runs/34809968062), reusing its secrets and OIDC trust. Temporary read-only checkout access and the bootstrap branch were removed after publication. Inputs are passed through environment variables and validated before use.
 
 Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/sources/http_server/), [Vector S3](https://vector.dev/docs/reference/configuration/sinks/aws_s3/), [Fluent Bit S3](https://docs.fluentbit.io/manual/data-pipeline/outputs/s3), [Fluent Bit Lua](https://docs.fluentbit.io/manual/data-pipeline/filters/lua).
