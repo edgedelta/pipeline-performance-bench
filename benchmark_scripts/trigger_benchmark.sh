@@ -40,7 +40,7 @@ if ./run_benchmark.sh "$app" | tee "$log_file"; then
     echo "ERROR: Missing statistics for $app - $type" | tee -a "$log_file"
     exit 1
   fi
-  if grep -Eq "errors: [1-9][0-9]*" "$log_file"; then
+  if grep -Eq "(^|[[:space:]|])errors: [1-9][0-9]*" "$log_file"; then
     echo "WARNING: Completed measurement with HTTP send errors for $app - $type; retain reliability results" | tee -a "$log_file"
   else
     echo "Benchmark for $app - $type completed successfully"

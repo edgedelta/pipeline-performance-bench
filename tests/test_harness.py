@@ -14,6 +14,16 @@ summary = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(summary)
 
 class HarnessTest(unittest.TestCase):
+    def test_trigger_warns_only_for_final_failures(self):
+        for errors in [0, 1]:
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp)
+                script = path / 'run_benchmark.sh'
+                script.write_text('#!/bin/bash\necho "[STATS] avg: 100 logs/sec | errors: ' + str(errors) + ' | connection_errors: 2 | retry_attempts: 2 | recovered_requests: 2"\n')
+                script.chmod(0o755)
+                result = subprocess.run(['bash', str(ROOT / 'benchmark_scripts/trigger_benchmark.sh'), 'red', 'pass-through'], cwd=tmp, text=True, capture_output=True, check=True)
+                self.assertEqual('WARNING:' in result.stdout, errors > 0)
+
     def test_shell_syntax(self):
         for path in ROOT.rglob('*.sh'):
             subprocess.run(['bash', '-n', str(path)], check=True)
