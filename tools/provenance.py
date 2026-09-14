@@ -23,8 +23,11 @@ def sha256(path):
 result = {
     'started_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'benchmark_commit': revision(root),
-    'rust_commit': revision(Path(os.environ.get('RED_SRC_DIR', root.parent / 'red'))),
-    'loadgen_version': '1.1.0',
+    'rust_commit': revision(Path(os.environ.get('RED_SRC_DIR', root.parent / 'red'))) if os.environ.get('RED_BUILD_FROM_SOURCE') == '1' else None,
+    'instance_id': os.environ.get('BENCHMARK_INSTANCE_ID'),
+    'execution_mode': os.environ.get('BENCHMARK_EXECUTION_MODE', 'sequential'),
+    'loadgen_version': '1.1.0+connection-retries.1',
+    'loadgen': json.loads((root / '.loadgen-build/provenance.json').read_text()),
     'workers': [80, 100, 120],
     'duration_per_tier_seconds': 60,
     'period': '1ms',
@@ -35,4 +38,6 @@ result = {
 for env in ['ED_BINARY', 'RED_BINARY']:
     if os.environ.get(env):
         result[env.lower() + '_sha256'] = sha256(Path(os.environ[env]))
+if os.environ.get('RED_RELEASE_METADATA'):
+    result['rust_release'] = json.loads(Path(os.environ['RED_RELEASE_METADATA']).read_text())
 Path(sys.argv[1]).write_text(json.dumps(result, indent=2) + '\n')

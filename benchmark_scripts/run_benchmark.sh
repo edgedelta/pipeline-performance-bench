@@ -134,6 +134,7 @@ for i in 80 100 120; do
     fi
 
     loadgen \
+      --max-retries 2 --retry-ambiguous \
       --endpoint "$endpoint" \
       --format nginx_log \
       --number 1 \
@@ -150,6 +151,7 @@ for i in 80 100 120; do
     red_pid=$(systemctl show -p MainPID --value "$service")
     [[ -z "$red_pid" || "$red_pid" == "0" ]] && echo "Warning: could not find red main PID"
     loadgen \
+      --max-retries 2 --retry-ambiguous \
       --endpoint "$endpoint" \
       --format nginx_log \
       --number 1 \
@@ -160,6 +162,7 @@ for i in 80 100 120; do
       --monitor-pid "${red_pid}"
   elif [[ "$app" == "otelcol" ]]; then
     loadgen \
+      --max-retries 2 --retry-ambiguous \
       --endpoint "$endpoint" \
       --format nginx_log \
       --number 1 \
@@ -174,6 +177,7 @@ for i in 80 100 120; do
     [[ -z "$fd_pid" ]] && fd_pid=$(pgrep -f '[f]luentd' | tail -1)
     [[ -z "$fd_pid" ]] && echo "Warning: could not find fluentd worker process"
     loadgen \
+      --max-retries 2 --retry-ambiguous \
       --endpoint "$endpoint" \
       --format nginx_log \
       --number 1 \
@@ -184,6 +188,7 @@ for i in 80 100 120; do
       --monitor-pid "${fd_pid}"
   else
     loadgen \
+      --max-retries 2 --retry-ambiguous \
       --endpoint "$endpoint" \
       --format nginx_log \
       --number 1 \

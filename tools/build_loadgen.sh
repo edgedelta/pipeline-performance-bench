@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Build the pinned loadgen with the reviewed local retry patch before any EC2 work.
+set -euo pipefail
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+source_commit=801c3c369a0e8ff6f40a0af21aa5203f3689d65d
+build_dir="$root/.loadgen-build"
+mkdir -p "$build_dir"
+source_dir=$(mktemp -d "$build_dir/source.XXXXXX")
+trap 'rm -rf "$source_dir"' EXIT
+# Fetch the exact Git object; do not follow a moving branch or release tag.
+git -C "$source_dir" init -q
+git -C "$source_dir" fetch -q --depth 1 https://github.com/edgedelta/loadgen.git "$source_commit"
+git -C "$source_dir" checkout -q --detach FETCH_HEAD
+[[ $(git -C "$source_dir" rev-parse HEAD) == "$source_commit" ]]
+git -C "$source_dir" apply "$root/patches/loadgen-retry.patch"
+if [[ "${1:-}" == "--test" ]]; then
+  (cd "$source_dir" && go test -race ./... && go vet ./...)
+fi
+(cd "$source_dir" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=false -o "$build_dir/loadgen" .)
+python3 - "$root" "$source_commit" <<'PY'
+import hashlib, json, pathlib, subprocess, sys
+root = pathlib.Path(sys.argv[1])
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+metadata = {'version': '1.1.0+connection-retries.1', 'source_commit': sys.argv[2],
+            'patch_sha256': sha(root / 'patches/loadgen-retry.patch'),
+            'binary_sha256': sha(root / '.loadgen-build/loadgen'),
+            'go_version': subprocess.check_output(['go', 'version'], text=True).strip(),
+            'max_retries': 2, 'retry_ambiguous': True,
+            'delivery_semantics': 'at-least-once; possible duplicates; failures may remain'}
+(root / '.loadgen-build/provenance.json').write_text(json.dumps(metadata, indent=2) + '\n')
+PY

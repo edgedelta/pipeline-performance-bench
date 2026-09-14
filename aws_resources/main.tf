@@ -241,6 +241,11 @@ resource "aws_instance" "benchmark" {
     private_key = tls_private_key.ec2_key.private_key_pem
   }
 
+  provisioner "file" {
+    source      = "../.loadgen-build/loadgen"
+    destination = "/tmp/benchmark-loadgen"
+  }
+
   provisioner "remote-exec" {
     script = "../scripts/install_loadgen.sh"
   }
