@@ -1,0 +1,11 @@
+{
+  "id": "benchmark",
+  "conf": {
+    "asyncFuncTimeout": 1000,
+    "streamtags": [
+      "benchmark"
+    ],
+    "functions": [],
+    "groups": {}
+  }
+}

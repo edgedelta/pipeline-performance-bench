@@ -1,0 +1,1 @@
+Based on https://github.com/edgedelta/benchmark at commit `00a4f36f4ee4f2769f793e66c5e04def8ebdfa08` (local checkout). This includes the upstream Rust integration. Agent source code stays in its own repository. No historical results are presented as runs of this suite.

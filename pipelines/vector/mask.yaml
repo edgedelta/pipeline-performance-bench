@@ -1,0 +1,55 @@
+data_dir: /var/lib/vector
+sources:
+  http:
+    type: http_server
+    address: 0.0.0.0:4085
+    decoding:
+      codec: json
+    framing:
+      method: bytes
+    acknowledgements:
+      enabled: false
+transforms:
+  process:
+    type: remap
+    inputs:
+    - http
+    source: 'if is_string(.pii.ipv4) { .pii.ipv4 = replace(string!(.pii.ipv4), r''((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}'', "REDACTED") }
+
+      if is_string(.pii.email) { .pii.email = replace(string!(.pii.email), r''[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'', "REDACTED") }
+
+      if is_string(.pii.mastercard) { .pii.mastercard = replace(string!(.pii.mastercard), r''(5[1-5][0-9]{14}|222[1-9][0-9]{12}|22[3-9][0-9]{13}|2[3-6][0-9]{14}|27[01][0-9]{13}|2720[0-9]{12})'',
+      "REDACTED") }
+
+      if is_string(.pii.amex) { .pii.amex = replace(string!(.pii.amex), r''3[47][0-9]{13}'', "REDACTED") }
+
+      if is_string(.pii.visa) { .pii.visa = replace(string!(.pii.visa), r''4[0-9]{12}(?:[0-9]{3})?'', "REDACTED") }
+
+      if is_string(.pii.discover) { .pii.discover = replace(string!(.pii.discover), r''6(?:011|4[4-9][0-9]|5[0-9][0-9])[0-9]{12}'', "REDACTED") }
+
+      if is_string(.pii.iban) { .pii.iban = replace(string!(.pii.iban), r''[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}'', "REDACTED") }
+
+      if is_string(.pii.ipv6) { .pii.ipv6 = replace(string!(.pii.ipv6), r''(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))'',
+      "REDACTED") }
+
+      if is_string(.pii.mac) { .pii.mac = replace(string!(.pii.mac), r''([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})'', "REDACTED") }'
+sinks:
+  s3:
+    type: aws_s3
+    inputs:
+    - process
+    bucket: '{S3_PLACEHOLDER}'
+    region: us-west-2
+    key_prefix: vector/%Y/%m/%d/%H/
+    compression: gzip
+    encoding:
+      codec: json
+    batch:
+      max_bytes: 8388608
+      timeout_secs: 30
+    buffer:
+      type: memory
+      max_events: 20000
+      when_full: block
+    acknowledgements:
+      enabled: false

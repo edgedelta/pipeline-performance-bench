@@ -1,0 +1,90 @@
+name: Pipeline performance bench (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      vendors:
+        description: 'Agents: edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit'
+        default: 'edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit'
+        required: true
+      cases:
+        description: 'Cases: pass-through,filter,mask,lookup'
+        default: 'pass-through,filter,mask,lookup'
+        required: true
+      red_ref:
+        description: 'edgedelta/red source ref'
+        default: main
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: pipeline-performance-bench
+  cancel-in-progress: false
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate selections before accessing credentials
+        env:
+          VENDORS: ${{ inputs.vendors }}
+          CASES: ${{ inputs.cases }}
+        run: ./run.sh --dry-run --vendors "$VENDORS" --cases "$CASES"
+      - name: Token for private Rust source
+        if: contains(inputs.vendors, 'red')
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: edgedelta
+          repositories: red
+      - name: Checkout Rust source
+        if: contains(inputs.vendors, 'red')
+        uses: actions/checkout@v6
+        with:
+          repository: edgedelta/red
+          ref: ${{ inputs.red_ref }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: red-src
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
+          role-duration-seconds: 21600
+          aws-region: us-west-2
+      - name: Run benchmark
+        env:
+          VENDORS: ${{ inputs.vendors }}
+          CASES: ${{ inputs.cases }}
+          ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
+          ED_API_TOKEN: ${{ secrets.ED_API_TOKEN }}
+          CRIBL_CLIENT_ID: ${{ secrets.CRIBL_CLIENT_ID }}
+          CRIBL_CLIENT_SECRET: ${{ secrets.CRIBL_CLIENT_SECRET }}
+          CRIBL_LEADER_TOKEN: ${{ secrets.CRIBL_LEADER_TOKEN }}
+          CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
+          CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
+          CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
+          RED_SRC_DIR: ${{ github.workspace }}/red-src
+        run: ./run.sh --vendors "$VENDORS" --cases "$CASES"
+      - name: Retry infrastructure cleanup after failure
+        if: failure()
+        working-directory: aws_resources
+        run: terraform destroy -auto-approve
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-bench-${{ github.run_id }}
+          path: |
+            benchmark_results/*/*.log
+            benchmark_results/*/versions.csv
+            benchmark_results/*/data.json
+            benchmark_results/*/report.md
+          if-no-files-found: warn

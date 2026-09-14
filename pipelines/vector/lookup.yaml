@@ -1,0 +1,48 @@
+data_dir: /var/lib/vector
+sources:
+  http:
+    type: http_server
+    address: 0.0.0.0:4085
+    decoding:
+      codec: json
+    framing:
+      method: bytes
+    acknowledgements:
+      enabled: false
+enrichment_tables:
+  locations:
+    type: file
+    file:
+      path: /tmp/lookup-benchmark.csv
+      encoding:
+        type: csv
+transforms:
+  process:
+    type: remap
+    inputs:
+    - http
+    source: 'row, err = get_enrichment_table_record("locations", {"ipv4": string(.pii.ipv4) ?? ""})
+
+      .region = if err == null { row.region } else { "Unknown" }
+
+      .env = if err == null { row.env } else { "Unknown" }'
+sinks:
+  s3:
+    type: aws_s3
+    inputs:
+    - process
+    bucket: '{S3_PLACEHOLDER}'
+    region: us-west-2
+    key_prefix: vector/%Y/%m/%d/%H/
+    compression: gzip
+    encoding:
+      codec: json
+    batch:
+      max_bytes: 8388608
+      timeout_secs: 30
+    buffer:
+      type: memory
+      max_events: 20000
+      when_full: block
+    acknowledgements:
+      enabled: false
