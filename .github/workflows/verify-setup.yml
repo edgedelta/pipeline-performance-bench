@@ -58,3 +58,10 @@ jobs:
           for state in .fleet-check/*/fleet.json; do
             test ! -f "$state" || python3 tools/cribl_fleet.py delete "$state"
           done
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cribl-fleet-cleanup-state
+          include-hidden-files: true
+          path: .fleet-check/*/fleet.json
+          if-no-files-found: ignore

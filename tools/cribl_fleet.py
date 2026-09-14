@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import urllib.error
 import urllib.request
 import uuid
@@ -16,9 +17,18 @@ def request(url, method='GET', token=None, body=None):
         headers['Authorization'] = f'Bearer {token}'
     req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None,
                                  headers=headers, method=method)
-    with urllib.request.urlopen(req, timeout=60) as response:
-        content = response.read()
-        return json.loads(content) if content else {}
+    try:
+        with urllib.request.urlopen(req, timeout=60) as response:
+            content = response.read()
+            return json.loads(content) if content else {}
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            detail = error.read().decode(errors='replace')
+            for value in [token, *(v for k, v in os.environ.items() if k.startswith('CRIBL_'))]:
+                if value:
+                    detail = detail.replace(value, '[redacted]')
+            print(f'Cribl {method} HTTP {error.code}: {detail[:2000]}', file=sys.stderr)
+        raise
 
 
 def credentials():
