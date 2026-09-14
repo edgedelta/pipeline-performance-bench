@@ -41,6 +41,11 @@ class HarnessTest(unittest.TestCase):
         data = summary.parse_log(text)
         self.assertEqual((data['best_workers'], data['avg'], data['peak'], data['cpu'], data['mem']), (100, 300, 310, 100, 100))
 
+    def test_multiple_processes_are_summed(self):
+        text = ''.join(f'Starting loadgen with {w} workers for cribl\n[STATS] avg: 100 logs/sec | errors: 0\n[MONITOR - TARGET] pid: 1 | cpu: 10.0% | memory: 20.0MB\n[MONITOR - TARGET] pid: 2 | cpu: 100.0% | memory: 200.0MB\nFinished loadgen with {w} workers for cribl\n' for w in [80, 100, 120])
+        data = summary.parse_log(text)
+        self.assertEqual((data['cpu'], data['mem']), (110, 220))
+
     def test_missing_reliability_is_not_assumed_zero(self):
         text = ''.join(f'Starting loadgen with {w} workers for vector\n[STATS] avg: 10 logs/sec\nFinished loadgen with {w} workers for vector\n' for w in [80, 100, 120])
         self.assertEqual(summary.parse_log(text)['status'], 'invalid')

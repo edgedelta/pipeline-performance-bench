@@ -19,7 +19,7 @@ def parse_log(text):
     for line in text.splitlines():
         start = re.match(r'Starting loadgen with (\d+) workers', line)
         if start:
-            current = {'workers': int(start[1]), 'avg': None, 'peak': None, 'total': None, 'errors': None, 'backpressure': None, 'cpu': [], 'mem': [], 'complete': False}
+            current = {'workers': int(start[1]), 'avg': None, 'peak': None, 'total': None, 'errors': None, 'backpressure': None, 'cpu': [], 'mem': [], 'processes': {}, 'complete': False}
             runs.append(current)
         if current is None:
             continue
@@ -39,6 +39,10 @@ def parse_log(text):
             if values:
                 current['cpu'].append(float(values[1]))
                 current['mem'].append(float(values[2]))
+                pid = re.search(r'pid: (\d+)', line)
+                process = current['processes'].setdefault(pid[1] if pid else 'unknown', {'cpu': [], 'mem': []})
+                process['cpu'].append(float(values[1]))
+                process['mem'].append(float(values[2]))
         end = re.match(r'Finished loadgen with (\d+) workers', line)
         if end and int(end[1]) == current['workers']:
             current['complete'] = True
@@ -46,7 +50,7 @@ def parse_log(text):
     result = {'status': 'ok' if valid else 'invalid', 'workers': runs}
     if valid:
         best = max(runs, key=lambda r: r['avg'])
-        result.update(avg=best['avg'], peak=best['peak'], best_workers=best['workers'], total=best['total'], cpu=statistics.mean(best['cpu']) if best['cpu'] else None, mem=max(best['mem']) if best['mem'] else None, tier_mean=statistics.mean(r['avg'] for r in runs))
+        result.update(avg=best['avg'], peak=best['peak'], best_workers=best['workers'], total=best['total'], cpu=sum(statistics.mean(p['cpu']) for p in best['processes'].values()) if best['processes'] else None, mem=sum(max(p['mem']) for p in best['processes'].values()) if best['processes'] else None, tier_mean=statistics.mean(r['avg'] for r in runs))
     return result
 
 
@@ -58,7 +62,7 @@ def report(result):
     lines = ['# Benchmark Report', '', f"**Date:** {result['date']}", f"**Run ID:** {result['runId']}", '', '## Tested Agent Versions', '', '| Vendor | Version |', '|---|---|']
     for key, name in VENDORS.values():
         lines.append(f"| {name} | {result['versions'].get(key, 'Not recorded')} |")
-    lines += ['', '## Methodology', '', '- Ubuntu 24.04, AWS `c8i.2xlarge`, us-west-2; agents run sequentially on one instance.', '- loadgen 1.1.0, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.', '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU averages target-process samples; memory is the maximum target-process sample. CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs and HTTP errors invalidate the scenario.', '']
+    lines += ['', '## Methodology', '', '- Ubuntu 24.04, AWS `c8i.2xlarge`, us-west-2; agents run sequentially on one instance.', '- loadgen 1.1.0, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.', '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU sums each monitored process’s average; memory sums per-process peak RSS (these peaks need not occur simultaneously). CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs and HTTP errors invalidate the scenario.', '']
     provenance = result.get('provenance', {})
     if provenance:
         lines += [f"**Benchmark source:** `{provenance.get('benchmark_commit', 'unknown')}`", f"**Rust source:** `{provenance.get('rust_commit', 'unknown')}`", '']
