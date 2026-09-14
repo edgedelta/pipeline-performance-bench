@@ -70,6 +70,9 @@ class HarnessTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             (directory / 'versions.csv').write_text('agent,version\n' + ''.join(f'{v},1.0\n' for v in summary.VENDORS))
+            # "unknown" is a legitimate part of Rust's target triple.
+            versions = directory / 'versions.csv'
+            versions.write_text(versions.read_text().replace('vector,1.0', 'vector,vector 0.55.0 (x86_64-unknown-linux-gnu)'))
             (directory / 'provenance.json').write_text(json.dumps({'benchmark_commit': 'a' * 40, 'rust_commit': 'b' * 40}))
             for vendor in summary.VENDORS:
                 for case in summary.CASES:

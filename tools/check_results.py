@@ -13,7 +13,7 @@ def validate(directory):
     errors = []
     for vendor, (key, _) in VENDORS.items():
         version = data['versions'].get(key, '')
-        if not version or 'unknown' in version.lower():
+        if not version or version.strip().lower() in ('unknown', 'not recorded'):
             errors.append(f'{vendor}: missing recorded version')
         for case in CASES:
             if (vendor, case) in UNSUPPORTED:
