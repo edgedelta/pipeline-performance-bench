@@ -55,7 +55,7 @@ fi
 # -----------------------------------------------------------------------------
 create_base_pipeline() {
   echo "Creating base pipeline..."
-  PIPELINE_ID=$(curl -s -X POST \
+  PIPELINE_ID=$(curl -fsS -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/base" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -64,7 +64,9 @@ create_base_pipeline() {
       --arg env "Linux" \
       --arg desc "HTTP benchmark pipeline" \
       '{tag: $tag, environment: $env, description: $desc}')" | jq -r '.id')
-  echo "Base pipeline created successfully with ID: $PIPELINE_ID"
+  [[ -n "$PIPELINE_ID" && "$PIPELINE_ID" != null ]] || { echo "Pipeline creation returned no ID" >&2; exit 1; }
+  if [[ "${GITHUB_ACTIONS:-}" == true ]]; then echo "::add-mask::$PIPELINE_ID"; fi
+  echo "Base pipeline created successfully"
   echo "$PIPELINE_ID" > pipeline_id.txt
   # Response includes pipeline id – capture it and set PIPELINE_ID for the next step.
 }
@@ -75,7 +77,7 @@ create_base_pipeline() {
 # -----------------------------------------------------------------------------
 validate_config() {
   echo "Validating configuration..."
-  VALID=$(curl -s -X POST \
+  VALID=$(curl -fsS -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/validate" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -83,11 +85,12 @@ validate_config() {
   echo "Validation result: $VALID"
   if [[ "$VALID" != "true" ]]; then
     echo "Validation failed. Errors:"
-    curl -s -X POST \
+    curl -fsS -X POST \
       "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/validate" \
       -H "$(auth_header)" \
       -H "Content-Type: application/json" \
       -d "{\"content\": ${CONTENT_JSON}}" | jq .
+    exit 1
   fi
 }
 
@@ -101,7 +104,7 @@ update_pipeline() {
     exit 1
   fi
   echo "Saving pipeline ${PIPELINE_ID} with content from edgedelta.yaml..."
-  curl -s -X POST \
+  curl -fsS -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/save" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -117,7 +120,7 @@ get_history() {
     echo "PIPELINE_ID is not set."
     exit 1
   fi
-  curl -s -X GET \
+  curl -fsS -X GET \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/history" \
     -H "$(auth_header)" | jq .
   # Use .[0].timestamp as VERSION_ID for deploy.
@@ -134,7 +137,7 @@ deploy_version() {
     exit 1
   fi
   echo "Deploying version ${version_id}..."
-  curl -s -X POST \
+  curl -fsS -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/deploy/${version_id}" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" | jq .
@@ -147,7 +150,7 @@ validate_save_deploy() {
   validate_config
   update_pipeline
   echo "Fetching history for deploy..."
-  version_id=$(curl -s -X GET \
+  version_id=$(curl -fsS -X GET \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/history?only_latest=true" \
     -H "$(auth_header)" | jq -r '.[0].timestamp')
   if [[ -z "$version_id" || "$version_id" == "null" ]]; then
@@ -163,7 +166,7 @@ delete_pipeline() {
     exit 1
   fi
   echo "Deleting pipeline ${PIPELINE_ID}..."
-  curl -s -X DELETE \
+  curl -fsS -X DELETE \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/${PIPELINE_ID}" \
     -H "$(auth_header)" | jq .
 }

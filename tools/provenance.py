@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Record source provenance without recording credentials or the environment."""
+import datetime
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path(__file__).resolve().parents[1]
+def revision(path):
+    result = subprocess.run(['git', '-C', str(path), 'rev-parse', 'HEAD'], capture_output=True, text=True)
+    return result.stdout.strip() if result.returncode == 0 else None
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1048576), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+result = {
+    'started_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    'benchmark_commit': revision(root),
+    'rust_commit': revision(Path(os.environ.get('RED_SRC_DIR', root.parent / 'red'))),
+    'loadgen_version': '1.1.0',
+    'workers': [80, 100, 120],
+    'duration_per_tier_seconds': 60,
+    'period': '1ms',
+    'instance_type': 'c8i.2xlarge',
+    'region': 'us-west-2',
+    'pipeline_sha256': {str(p.relative_to(root)): sha256(p) for p in sorted((root / 'pipelines').rglob('*')) if p.is_file()},
+}
+for env in ['ED_BINARY', 'RED_BINARY']:
+    if os.environ.get(env):
+        result[env.lower() + '_sha256'] = sha256(Path(os.environ[env]))
+Path(sys.argv[1]).write_text(json.dumps(result, indent=2) + '\n')

@@ -200,6 +200,7 @@ function create_benchmark_environment() {
 function prepare_for_benchmark() {
   runtime_dir=$(mktemp -d "$git_root/.runtime.XXXXXX")
   chmod 700 "$runtime_dir"
+  python3 "$git_root/tools/provenance.py" "$runtime_dir/provenance.json"
   cp -R "$git_root/pipelines" "$runtime_dir/pipelines"
   cp -R "$git_root/scripts" "$runtime_dir/scripts"
   update_s3_placeholder
@@ -358,6 +359,7 @@ function download_benchmark_results() {
   mkdir -p "$git_root/benchmark_results/"
   download_folder_from_ec2_instance "/home/ubuntu/benchmark_scripts/benchmark_results/" "$git_root/benchmark_results/"
   mv "$git_root/benchmark_results/benchmark_results/" "$git_root/benchmark_results/$date_tag/"
+  cp "$runtime_dir/provenance.json" "$git_root/benchmark_results/$date_tag/provenance.json"
   echo "Benchmark results downloaded successfully"
   python3 "$git_root/tools/summarize.py" "$git_root/benchmark_results/$date_tag"
 }
