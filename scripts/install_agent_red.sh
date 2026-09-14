@@ -22,7 +22,7 @@ else
   rm -rf "$HOME/red-src" && mkdir -p "$HOME/red-src"
   tar -xzf /tmp/red-src.tgz -C "$HOME/red-src"
   src_dir=$(find "$HOME/red-src" -maxdepth 2 -name Cargo.toml -exec dirname {} \; | head -1)
-  (cd "$src_dir" && cargo build --locked --release 2>&1 | tail -n 5)
+  (cd "$src_dir" && cargo build --locked --release 2>&1 | tee /tmp/red-build.log)
   sudo install -m 0755 "$src_dir/target/release/red" /opt/red/red
 fi
 

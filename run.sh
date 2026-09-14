@@ -383,7 +383,7 @@ function generate_versions_csv() {
       vector) command='/usr/local/bin/vector --version' ;;
       fluentbit) command='/opt/fluent-bit/bin/fluent-bit --version' ;;
     esac
-    version=$(ssh -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "ubuntu@$INSTANCE_IP" "$command" 2>/dev/null | head -1) || version=unknown
+    version=$(ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "ubuntu@$INSTANCE_IP" "$command" 2>/dev/null | head -1) || version=unknown
     version=${version//\"/\"\"}
     printf '%s,"%s"\n' "$vendor" "${version:-unknown}" >> "$csv_file"
   done

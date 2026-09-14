@@ -47,7 +47,7 @@ run_command_on_ec2_instance() {
     set_instance_ip
   fi
   echo "Connecting to EC2 instance at $INSTANCE_IP"
-  ssh -t -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "$command"
+  ssh -t -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "$command"
 }
 
 run_scripts_on_ec2_instance() {
@@ -56,7 +56,7 @@ run_scripts_on_ec2_instance() {
     set_instance_ip
   fi
   echo "Running script $script on EC2 instance at $INSTANCE_IP"
-  ssh -t -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "bash -se" < "$script"
+  ssh -t -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "bash -se" < "$script"
 }
 
 get_s3_bucket_name() {
@@ -89,7 +89,7 @@ trigger_benchmark() {
     set_instance_ip
   fi
   echo "Triggering benchmark on $INSTANCE_IP"
-  ssh -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "cd benchmark_scripts && ./trigger_benchmark.sh $agent $type"
+  ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "cd benchmark_scripts && ./trigger_benchmark.sh $agent $type"
 }
 
 upload_folder_to_ec2_instance() {
@@ -98,7 +98,7 @@ upload_folder_to_ec2_instance() {
     set_instance_ip
   fi
   echo "Uploading files to $INSTANCE_IP"
-  scp -r -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "$folder" ubuntu@"$INSTANCE_IP":/home/ubuntu
+  scp -r -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "$folder" ubuntu@"$INSTANCE_IP":/home/ubuntu
 }
 
 upload_file_to_ec2_instance() {
@@ -108,7 +108,7 @@ upload_file_to_ec2_instance() {
     set_instance_ip
   fi
   echo "Uploading file $file to $destination on $INSTANCE_IP"
-  scp -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "$file" ubuntu@"$INSTANCE_IP":"$destination"
+  scp -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" "$file" ubuntu@"$INSTANCE_IP":"$destination"
 }
 
 download_folder_from_ec2_instance() {
@@ -118,5 +118,5 @@ download_folder_from_ec2_instance() {
     set_instance_ip
   fi
   echo "Downloading folder $source_folder from $INSTANCE_IP"
-  scp -r -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP":"$source_folder" "$destination_folder"
+  scp -r -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP":"$source_folder" "$destination_folder"
 }
