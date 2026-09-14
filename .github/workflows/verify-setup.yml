@@ -1,0 +1,35 @@
+name: Verify benchmark setup
+on: workflow_dispatch
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required credentials are configured
+        env:
+          AWS_BEDROCK_ROLE: ${{ secrets.AWS_BEDROCK_ROLE }}
+          ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
+          ED_API_TOKEN: ${{ secrets.ED_API_TOKEN }}
+          CRIBL_CLIENT_ID: ${{ secrets.CRIBL_CLIENT_ID }}
+          CRIBL_CLIENT_SECRET: ${{ secrets.CRIBL_CLIENT_SECRET }}
+          CRIBL_LEADER_TOKEN: ${{ secrets.CRIBL_LEADER_TOKEN }}
+          CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
+          CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
+          CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
+        run: |
+          python3 - <<'PY'
+          import os
+          names = ['AWS_BEDROCK_ROLE', 'ED_ORG_ID', 'ED_API_TOKEN', 'CRIBL_CLIENT_ID', 'CRIBL_CLIENT_SECRET', 'CRIBL_LEADER_TOKEN', 'CRIBL_ORG', 'CRIBL_WORKSPACE', 'CRIBL_WORKER_GROUP']
+          assert all(os.environ.get(name) for name in names), 'Required credential missing'
+          print('All required credentials are configured.')
+          PY
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BEDROCK_ROLE }}
+          aws-region: us-west-2
+      - name: Verify read-only AWS access without provisioning resources
+        run: |
+          aws sts get-caller-identity --query Account --output text
+          aws ec2 describe-instance-types --instance-types c8i.2xlarge --query 'InstanceTypes[0].InstanceType' --output text

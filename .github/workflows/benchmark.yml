@@ -1,5 +1,8 @@
-name: Pipeline performance bench (manual)
+name: Pipeline performance bench
 on:
+  schedule:
+    # Daily at 09:17 UTC. For Mondays only, change to: 17 9 * * 1
+    - cron: '17 9 * * *'
   workflow_dispatch:
     inputs:
       vendors:
@@ -10,10 +13,6 @@ on:
         description: 'Cases: pass-through,filter,mask,lookup'
         default: 'pass-through,filter,mask,lookup'
         required: true
-      red_version:
-        description: 'RED stable version (blank resolves latest stable)'
-        default: ''
-        required: false
 permissions:
   contents: read
 concurrency:
@@ -29,8 +28,8 @@ jobs:
       - uses: actions/checkout@v6
       - id: plan
         env:
-          VENDORS: ${{ inputs.vendors }}
-          CASES: ${{ inputs.cases }}
+          VENDORS: ${{ inputs.vendors || 'edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit' }}
+          CASES: ${{ inputs.cases || 'pass-through,filter,mask,lookup' }}
         run: |
           echo "matrix=$(python3 tools/parallel.py plan "$VENDORS" "$CASES")" >> "$GITHUB_OUTPUT"
           echo "timestamp=$(date -u +%Y%m%d_%H%M%S)" >> "$GITHUB_OUTPUT"
@@ -64,7 +63,6 @@ jobs:
         env:
           VENDORS: ${{ matrix.vendor }}
           CASES: ${{ matrix.cases }}
-          RED_VERSION: ${{ inputs.red_version }}
           BENCHMARK_EXECUTION_MODE: parallel-agent-shard
           BENCHMARK_EXTERNAL_AWS_CLEANUP: "1"
           ED_ORG_ID: ${{ secrets.ED_ORG_ID }}
@@ -98,6 +96,8 @@ jobs:
             benchmark_results/*/provenance.json
           if-no-files-found: error
   report:
+    permissions:
+      contents: write
     needs: [plan, benchmark]
     runs-on: ubuntu-latest
     steps:
@@ -116,3 +116,8 @@ jobs:
           name: pipeline-bench-${{ github.run_id }}-combined
           path: benchmark_results/
           if-no-files-found: error
+      - name: Publish dated release for the full suite
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
+        run: python3 tools/publish_release.py "benchmark_results/$TIMESTAMP" --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -88,7 +88,7 @@ auth_header() {
 ###############################################################################
 
 agent_install_command() {
-  command=$(curl "https://${CRIBL_WORKSPACE}-${CRIBL_ORG}.cribl.cloud/init/install-edge.sh?group=${CRIBL_WORKER_GROUP}&token=${CRIBL_LEADER_TOKEN}&user=cribl&user_group=cribl&install_dir=%2Fopt%2Fcribl")
+  command=$(curl --fail --silent --show-error --retry 3 "https://${CRIBL_WORKSPACE}-${CRIBL_ORG}.cribl.cloud/init/install-edge.sh?group=${CRIBL_WORKER_GROUP}&token=${CRIBL_LEADER_TOKEN}&user=cribl&user_group=cribl&install_dir=%2Fopt%2Fcribl")
 
   printf '%s' "$command"
 }

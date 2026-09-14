@@ -13,8 +13,8 @@ The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload
 | `cribl` | Cribl | Yes | Yes | Yes | Yes |
 | `otelcol` | OpenTelemetry Collector | Yes | Yes | Yes | N/A |
 | `fluentd` | Fluentd | Yes | Yes | Yes | Yes |
-| `vector` | Vector 0.55.0 | Yes | Yes | Yes | Yes |
-| `fluentbit` | Fluent Bit 5.1.2 | Yes | Yes | N/A | Yes (Lua) |
+| `vector` | Vector | Yes | Yes | Yes | Yes |
+| `fluentbit` | Fluent Bit | Yes | Yes | N/A | Yes (Lua) |
 
 Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped and reported as `unsupported`, never as zero throughput. This suite does not implement Fluent Bit regex masking: its bundled Lua string patterns do not match the upstream regex workload. OpenTelemetry's inherited config has no CSV lookup processor.
 
@@ -37,7 +37,7 @@ Agent source stays in its own repository; proprietary agent code and credentials
 
 - Go source: `../edgedelta` (the existing `/Users/yildiz/workspace/gocode/src/github.com/edgedelta/edgedelta` checkout). By default the inherited installer uses the candidate release. Set `ED_BINARY` to an existing Linux/amd64 agent binary from that checkout to replace the installed executable before timing. The Go agent still needs its cloud pipeline credentials.
 - Rust defaults to the latest stable Linux/amd64 release from `release.edgedelta.com/red`, verified against its published SHA-256. Set `RED_VERSION` to pin a stable version, or `RED_BINARY` to supply a prebuilt executable. Source compilation is opt-in with `RED_BUILD_FROM_SOURCE=1` and `RED_SRC_DIR` (default `../red`). Rust loads the local YAML config.
-- Vector and Fluent Bit use pinned release versions in their install scripts and smoke tests. Update both together. Other vendors retain the upstream installation channels; `versions.csv` records the actual version of each selected agent.
+- Agents resolve their current installation versions on every run; `versions.csv` records the actual version of each selected agent. See Daily releases below for the channel used by each vendor.
 
 Reuse the same environment variables as the existing benchmark:
 
@@ -83,7 +83,7 @@ Incomplete runs, missing statistics, and detected service restarts invalidate a 
 
 Filter drops events whose `pii.color` is `Green`. Lookup matches `pii.ipv4` against the shared CSV's `ipv4` column and emits `region`/`env`, with miss defaults. Vector uses an indexed enrichment table; Fluent Bit loads the bundled simple unquoted CSV once in Lua. Mask uses the inherited nine regexes in Vector. Inherited vendor implementations vary in which fields they scan. New results are not directly interchangeable with old published results: lookup wiring was corrected in this successor.
 
-The inherited `site/` chart viewer and history utilities now recognize all seven agents. Nothing is automatically published. To preview a real local report:
+The inherited `site/` chart viewer and history utilities now recognize all seven agents. Daily full runs publish GitHub releases; website publishing remains separate. To preview a real local report:
 
 ```bash
 mkdir -p site/data
@@ -100,12 +100,41 @@ node --test tools/*.test.mjs
 python3 tests/smoke.py
 ```
 
-Docker smoke tests validate all Vector/Fluent Bit production configs without AWS networking, then send fixture JSON through HTTP sources and assert pass-through, filter, lookup hit/miss, and nine-field Vector masking behavior. They create temporary containers and remove them afterward. Docker images are pinned to the same versions as native installers. [VALIDATION.md](VALIDATION.md) records the checks performed during implementation.
+Docker smoke tests validate all Vector/Fluent Bit production configs without AWS networking, then send fixture JSON through HTTP sources and assert pass-through, filter, lookup hit/miss, and nine-field Vector masking behavior. They create temporary containers and remove them afterward. Docker smoke tests pull the latest stable images before running. [VALIDATION.md](VALIDATION.md) records the checks performed during implementation.
 
 ## GitHub Actions
 
-`validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` is manual only and uploads raw logs/reports as workflow artifacts. It has no release, Pages, website, or schedule step.
+`validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` runs daily and supports manual dispatch. Full successful suites publish dated GitHub releases; all runs upload available artifacts. It does not update Pages or the website.
 
 Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, for the selected agents. Released RED binaries require no private checkout credentials. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release used [a temporary workflow in the existing benchmark repository](https://github.com/edgedelta/benchmark/actions/runs/34809968062), reusing its secrets and OIDC trust. Temporary read-only checkout access and the bootstrap branch were removed after publication. Inputs are passed through environment variables and validated before use.
 
 Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/sources/http_server/), [Vector S3](https://vector.dev/docs/reference/configuration/sinks/aws_s3/), [Fluent Bit S3](https://docs.fluentbit.io/manual/data-pipeline/outputs/s3), [Fluent Bit Lua](https://docs.fluentbit.io/manual/data-pipeline/filters/lua).
+
+## Daily releases
+
+The benchmark workflow runs daily at **09:17 UTC**. Each agent gets a separate
+EC2 instance, and all seven jobs run concurrently. Each successful full suite
+publishes a new UTC-dated release, including the measured versions, report,
+raw logs, provenance, and verified checksums. Previous releases remain intact.
+Partial manual runs produce workflow artifacts only. Failed runs do not publish
+results as a successful release; AWS teardown still runs for each agent.
+
+To switch to Mondays, change `.github/workflows/benchmark.yml` from
+`17 9 * * *` to `17 9 * * 1`. GitHub schedules use UTC and may start late.
+
+Every run installs fresh agents without fixed agent version numbers:
+
+| Agent | Current installation channel |
+|---|---|
+| Edge Delta Go | Latest candidate installer (the existing Go benchmark channel) |
+| Edge Delta Rust | Latest stable released binary, checksum verified |
+| Vector | Latest stable GitHub release |
+| Fluent Bit | Latest package in the vendor's Ubuntu repository |
+| Fluentd | Latest fluent-package generation, then latest stable Fluentd gem |
+| OpenTelemetry Collector | Latest stable contrib GitHub release |
+| Cribl | Current installer supplied by the configured Cribl Cloud workspace |
+
+Cribl's available version follows the Cloud workspace rollout. Exact installed
+versions are recorded in every release; installation failures do not fall back
+to a pinned version. The load generator and runner tooling remain controlled
+benchmark dependencies, separate from the agents under test.
