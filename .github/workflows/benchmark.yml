@@ -40,7 +40,7 @@ jobs:
       max-parallel: 7
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     permissions:
       contents: read
       id-token: write
@@ -73,7 +73,7 @@ jobs:
           CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
           CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
           CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
-        run: ./run.sh --vendors "$VENDORS" --cases "$CASES"
+        run: timeout --signal=TERM --kill-after=5m 120m ./run.sh --vendors "$VENDORS" --cases "$CASES"
       - name: Refresh credentials for AWS cleanup
         if: always()
         uses: aws-actions/configure-aws-credentials@v4
@@ -93,7 +93,8 @@ jobs:
           path: |
             benchmark_results/*/*.log
             benchmark_results/*/versions.csv
-            benchmark_results/*/provenance.json
+            benchmark_results/*/*.json
+            benchmark_results/*/*.ndjson
           if-no-files-found: error
   report:
     permissions:
@@ -110,7 +111,7 @@ jobs:
         env:
           MATRIX: ${{ needs.plan.outputs.matrix }}
           TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
-        run: python3 tools/parallel.py merge shards "benchmark_results/$TIMESTAMP" "$MATRIX"
+        run: python3 tools/parallel.py merge shards "benchmark_results/$TIMESTAMP" "$MATRIX" --require-fixed
       - uses: actions/upload-artifact@v4
         with:
           name: pipeline-bench-${{ github.run_id }}-combined

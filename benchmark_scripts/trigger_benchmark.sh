@@ -9,6 +9,8 @@ set -o pipefail
 # App identifiers: edgedelta (Edge Delta), red (Edge Delta Rust agent), cribl (Cribl), otelcol (OpenTelemetry Collector), fluentd (Fluentd)
 app=$1
 type=$2
+mode=${3:-throughput}
+if [[ "$mode" == fixed ]]; then exec python3 ./run_fixed.py "$app" "$type"; fi
 
 if [[ -z "$app" ]]; then
   echo "Select app for benchmark:"

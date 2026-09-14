@@ -211,7 +211,15 @@ function prepare_for_benchmark() {
   cp -R "$git_root/pipelines" "$runtime_dir/pipelines"
   cp -R "$git_root/scripts" "$runtime_dir/scripts"
   update_s3_placeholder
+  local topology="sequential agents on one instance; sequential scenarios and tiers; colocated loadgen"
+  if [[ "${BENCHMARK_EXECUTION_MODE:-}" == parallel-agent-shard ]]; then
+    topology="separate instance per agent; parallel agents; sequential scenarios and tiers; colocated loadgen"
+  fi
   upload_folder_to_ec2_instance "$git_root/benchmark_scripts"
+  upload_file_to_ec2_instance "$git_root/payloads/fixed-nginx.ndjson" "/home/ubuntu/benchmark_scripts/fixed-nginx.ndjson"
+  python3 "$git_root/tools/aws_machine.py" "$BENCHMARK_INSTANCE_ID" "$runtime_dir/hardware-aws.json"
+  upload_file_to_ec2_instance "$runtime_dir/hardware-aws.json" "/home/ubuntu/benchmark_scripts/hardware-aws.json"
+  run_command_on_ec2_instance "mkdir -p /home/ubuntu/benchmark_scripts/benchmark_results && python3 /home/ubuntu/benchmark_scripts/collect_machine.py --topology '$topology' > /home/ubuntu/benchmark_scripts/benchmark_results/hardware.json && cp /home/ubuntu/benchmark_scripts/hardware-aws.json /home/ubuntu/benchmark_scripts/benchmark_results/hardware-aws.json && cp /home/ubuntu/benchmark_scripts/fixed-nginx.ndjson /home/ubuntu/benchmark_scripts/benchmark_results/fixed-nginx.ndjson"
   upload_file_to_ec2_instance "$runtime_dir/pipelines/lookup-benchmark.csv" "/tmp/lookup-benchmark.csv"
   run_command_on_ec2_instance "chmod 777 /tmp/lookup-benchmark.csv"
 }
@@ -253,9 +261,11 @@ function run_ed_benchmark() {
     upload_file_to_ec2_instance "$ED_BINARY" /tmp/edgedelta-benchmark
     run_command_on_ec2_instance "sudo systemctl stop edgedelta; sudo install -m 0755 /tmp/edgedelta-benchmark /opt/edgedelta/agent/edgedelta"
   fi
-  for type in $(cases_for edgedelta); do
-    ./edgedelta-api.sh full $type.yaml
-    trigger_benchmark "edgedelta" $type
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for edgedelta); do
+      ./edgedelta-api.sh full $type.yaml
+      trigger_benchmark "edgedelta" $type
+    done
   done
   popd > /dev/null
 }
@@ -280,16 +290,18 @@ function run_red_benchmark() {
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/red"
   local red_bucket
   red_bucket=$(get_s3_bucket_name)
-  for type in $(cases_for red); do
-    run_command_on_ec2_instance "sudo cp /home/ubuntu/red/$type.yaml /etc/red/config.yaml"
-    trigger_benchmark "red" $type
-    # Evidence that archives reached S3: red's own flush/upload log lines and,
-    # when the aws CLI is available on the runner, the object count in the bucket.
-    run_command_on_ec2_instance "sudo journalctl -u red.service --no-pager -n 400 | grep -E 'flushed object|s3 put_object|failed|panicked' | tail -n 12" || true
-    if command -v aws >/dev/null 2>&1; then
-      echo "S3 objects under edgedelta/ after red $type:"
-      aws s3 ls "s3://$red_bucket/edgedelta/" --recursive --summarize 2>/dev/null | tail -n 2 || true
-    fi
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for red); do
+      run_command_on_ec2_instance "sudo cp /home/ubuntu/red/$type.yaml /etc/red/config.yaml"
+      trigger_benchmark "red" $type
+      # Evidence that archives reached S3: red's own flush/upload log lines and,
+      # when the aws CLI is available on the runner, the object count in the bucket.
+      run_command_on_ec2_instance "sudo journalctl -u red.service --no-pager -n 400 | grep -E 'flushed object|s3 put_object|failed|panicked' | tail -n 12" || true
+      if command -v aws >/dev/null 2>&1; then
+        echo "S3 objects under edgedelta/ after red $type:"
+        aws s3 ls "s3://$red_bucket/edgedelta/" --recursive --summarize 2>/dev/null | tail -n 2 || true
+      fi
+    done
   done
 }
 
@@ -314,9 +326,11 @@ function run_cribl_benchmark() {
   run_command_on_ec2_instance "chmod +x /tmp/install_agent_cribl.sh"
   run_command_on_ec2_instance "sudo -E /tmp/install_agent_cribl.sh"
 
-  for type in $(cases_for cribl); do
-    ./cribl-api.sh update-pipeline $type.json
-    trigger_benchmark "cribl" $type
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for cribl); do
+      ./cribl-api.sh update-pipeline $type.json
+      trigger_benchmark "cribl" $type
+    done
   done
   # Release the shared worker-group configuration before measuring other agents.
   # If cleanup fails, the EXIT handler retries while the flag remains set.
@@ -332,9 +346,11 @@ function run_otelcol_benchmark() {
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/otelcol"
   # No lookup scenario: OTel contrib has no shipped CSV lookup processor
   # (lookup is excluded automatically by cases_for).
-  for type in $(cases_for otelcol); do
-    run_command_on_ec2_instance "sudo cp /home/ubuntu/otelcol/$type.yaml /etc/otelcol-contrib/config.yaml"
-    trigger_benchmark "otelcol" $type
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for otelcol); do
+      run_command_on_ec2_instance "sudo cp /home/ubuntu/otelcol/$type.yaml /etc/otelcol-contrib/config.yaml"
+      trigger_benchmark "otelcol" $type
+    done
   done
 }
 
@@ -343,9 +359,11 @@ function run_fluentd_benchmark() {
   echo "Installing Fluentd agent..."
   run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_fluentd.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/fluentd"
-  for type in $(cases_for fluentd); do
-    run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentd/$type.conf /etc/fluent/fluentd.conf"
-    trigger_benchmark "fluentd" $type
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for fluentd); do
+      run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentd/$type.conf /etc/fluent/fluentd.conf"
+      trigger_benchmark "fluentd" $type
+    done
   done
 }
 
@@ -353,9 +371,11 @@ function run_fluentd_benchmark() {
 function run_vector_benchmark() {
   run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_vector.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/vector"
-  for type in $(cases_for vector); do
-    run_command_on_ec2_instance "sudo cp /home/ubuntu/vector/$type.yaml /etc/vector/vector.yaml; sudo /usr/local/bin/vector validate --skip-healthchecks /etc/vector/vector.yaml"
-    trigger_benchmark vector "$type"
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for vector); do
+      run_command_on_ec2_instance "sudo cp /home/ubuntu/vector/$type.yaml /etc/vector/vector.yaml; sudo /usr/local/bin/vector validate --skip-healthchecks /etc/vector/vector.yaml"
+      trigger_benchmark vector "$type"
+    done
   done
 }
 
@@ -363,9 +383,11 @@ function run_fluentbit_benchmark() {
   run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_fluentbit.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/fluentbit"
   run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentbit/lookup.lua /etc/fluent-bit/lookup.lua"
-  for type in $(cases_for fluentbit); do
-    run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentbit/$type.conf /etc/fluent-bit/fluent-bit.conf; sudo /opt/fluent-bit/bin/fluent-bit --dry-run -c /etc/fluent-bit/fluent-bit.conf"
-    trigger_benchmark fluentbit "$type"
+  for BENCHMARK_MODE in throughput fixed; do
+    for type in $(cases_for fluentbit); do
+      run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentbit/$type.conf /etc/fluent-bit/fluent-bit.conf; sudo /opt/fluent-bit/bin/fluent-bit --dry-run -c /etc/fluent-bit/fluent-bit.conf"
+      trigger_benchmark fluentbit "$type"
+    done
   done
 }
 

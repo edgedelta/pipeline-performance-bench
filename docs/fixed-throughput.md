@@ -1,0 +1,177 @@
+# Fixed-throughput methodology and result contract
+
+The daily suite preserves the 26 supported best-throughput scenarios and their
+80/100/120-worker measurements. It then measures 104 additional fixed-rate tiers:
+each supported agent/scenario at 10,000, 25,000, 50,000 and 75,000 **total input
+logs/second**. Fixed-rate results are independent measurements, never estimates
+from maximum-throughput results. These two workloads are separate experiments.
+
+## Workload and topology
+
+Seven daily jobs run concurrently, each with its own AWS instance and resources.
+Within each job, installation happens once, all legacy scenarios run first, then
+fixed scenarios and their four rates run sequentially. Direct `run.sh` remains
+sequential on one instance; runtime topology records that distinction.
+
+Fixed mode uses 256 workers with one global scheduler. A 1 ms scheduling tick
+releases cumulative target tokens, capped at 5 ms of catch-up. A delayed scheduler
+records missed tokens; a full worker queue records dropped tokens. Workers never
+create rate tokens. The queue is bounded to 256 entries. Requests expired at the
+measurement deadline are counted separately. There is no unbounded catch-up burst.
+
+All fixed tiers use the exact bytes in `payloads/fixed-nginx.ndjson` (100 repeated
+nginx-shaped JSON events, retained and SHA-256 checked across shards). One line is
+one log and one HTTP request. The corpus includes 25% Green filter matches, lookup
+hits/misses and PII fields. It is deterministic and differs from the legacy
+randomized corpus. Identical inputs do not imply identical product transforms or
+output schemas: the inherited semantic limitations still apply.
+
+Each measured tier starts its service, waits for 30 seconds of continuous active
+state and listening port, offers warm-up traffic for 10 seconds, drains warm-up
+HTTP requests, then measures for 60 seconds. It drains outstanding HTTP requests
+within their original 30-second timeouts and observes the service for another
+60 seconds before stopping it. Service invocation changes invalidate the tier.
+This does **not** prove that agent buffers or S3 writes drained.
+
+Before each target is first used on an instance, the service is stopped and the
+generator is calibrated against a local fast-acknowledgement server using the
+same corpus, workers and delivery policy (2-second warm-up, 10-second measure).
+The calibration includes server CPU in the generator process. It establishes
+source capability in isolation; it does not establish capacity when an agent
+competes for host resources. Calibration is reused across scenarios on that
+instance. Failed calibration remains an explicit generator-limited outcome.
+
+Retries preserve the existing two-retry, fresh-connection, 10/20 ms backoff policy
+inside the original request timeout. Ambiguous requests may be retried, so delivery
+is at least once with possible duplicates. HTTP status failures, timeouts and
+cancellation are not retried. Fixed mode exposes redirects as invalid endpoints,
+rather than following them. No metric claims durable delivery.
+
+## Windows, counters and attainment
+
+- Offered logs are logical requests fully written during the measurement window,
+  once per request despite retries. A failed write is not proof of a full offer.
+- Acknowledged logs are successful HTTP responses whose bodies were completely
+  read within that window. Acknowledgements after the window remain separate.
+- Final errors include backpressure (HTTP 429/503); do not add backpressure to
+  errors. Final outcomes include completion during HTTP drain. Counters cover
+  logical requests dispatched in the phase, not individual retry attempts.
+- Scheduled = dispatched + scheduler missed + worker queue dropped + expired
+  before dispatch. Dispatched = window acknowledgements + late acknowledgements
+  + final errors. Validation checks these identities and retry invariants.
+- Resource samples and CPU deltas cover the measurement window, excluding warm-up
+  and drain. The actual duration must be within ±2% of its configured duration.
+
+**Sustains target** requires offered rate within ±2% of target; acknowledged rate
+at least 98% of target and 98% of actual offered rate; no final errors/backpressure;
+valid duration, resources, service continuity and completed HTTP drain. Calibration
+must meet the same rate criterion, with scheduler misses at most 2%; the measured
+phase must also have no more than 2% scheduler misses.
+
+| Status | Meaning | Complete-release eligibility |
+|---|---|---|
+| `ok` | Meets the sustained-target criterion | Yes |
+| `capacity_limited` | Calibrated source; rejection/failure or acknowledgement shortfall in the colocated setup | Yes, visibly failed attainment; excluded from efficiency comparisons |
+| `generator_limited` | Calibration/scheduler failure or inconclusive under-offering without explicit agent rejection | No |
+| `invalid` | Missing/broken counters, resource window, service continuity, policy or malformed endpoint/payload evidence | No |
+| `missing` | Expected measurement file absent | No |
+| `unsupported` | Suite does not implement that agent/scenario | Expected exclusion |
+| `not_measured` | Historical format lacks fixed-rate measurements | Historical reports only |
+
+A 4xx response other than 429 is invalid configuration evidence, not a capacity
+claim. Request failures and 5xx responses are reported as limits of this tested
+setup, not proof of an agent-only CPU bottleneck. Standalone calibration cannot
+rule out colocated host contention; unexplained under-offering is conservatively
+source-limited. Host busy and generator CPU/RSS counters are retained for diagnosis.
+
+Agent backlog before/after and stability are **N/A, not measured**. Client queue
+and in-flight counts at the window boundary, late acknowledgements and elapsed
+HTTP drain are available. These are not agent backlog or durable-delivery metrics.
+
+## Resource scope and efficiency
+
+Fixed-rate CPU and memory use the entire systemd service cgroup v2, including child
+processes. The generator must be in a different cgroup. CPU 100% means one logical
+core. CPU mean = change in `cpu.stat` usage_usec / elapsed seconds / 10,000.
+Memory uses `memory.current`, including descendants, page cache and charged kernel
+memory. MB means 1,000,000 bytes. Average memory integrates approximately 1-second
+samples with the trapezoidal rule; peak is the largest sample (not an unsampled
+high-water mark). Missing/reset samples invalidate the measurement. Field semantics follow the
+[Linux cgroup v2 documentation](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html).
+
+For each measured agent/scenario/target:
+
+| Metric | Formula | Better direction |
+|---|---|---|
+| Logs/sec/core | Acknowledged logs/sec / (CPU% / 100) | Higher |
+| CPU microseconds/acknowledged log | (CPU% / 100) × 1,000,000 / acknowledged logs/sec | Lower |
+| Logs/sec/MB average memory | Acknowledged logs/sec / average memory MB | Higher |
+
+Zero denominators remain N/A. Metrics from failed attainment can describe those
+runs but cannot establish equal-throughput resource wins. Cross-agent aggregates
+use only pass-through and filter, supported by all seven agents. Each included
+agent must sustain both at the selected target. Aggregate ratios divide summed
+acknowledged rates by summed measured cores or average memory, on those same
+scenarios. No agent gets a different scenario set to improve its aggregate.
+
+Legacy best-throughput CPU and RSS fields remain unchanged in data.json. Legacy
+memory was labeled MB by upstream but is MiB (1,048,576 bytes); report labels now
+clarify that. Its per-process peaks may occur at different times and auxiliary
+processes may be omitted. Do not compare those values directly with fixed cgroup
+memory or call legacy averages across differing supported scenarios a ranking.
+
+## Hardware and reproducibility
+
+Runtime inspection captures IMDS instance type/region/AZ, logical CPUs, CPU model,
+architecture, sockets/cores/threads, OS-accessible installed memory, OS/kernel,
+block-device sizes/types, virtualization and service/generator cgroup limits and
+CPU affinities. Effective quotas include ancestors. Published EC2 API fields
+provide CPU and memory specifications, network baseline/maximum Gbps, EBS baseline/
+maximum Mbps, MB/s and IOPS, and provisioned volume type/GiB/IOPS/MiB/s. Observed
+and published values are separate; unavailable fields stay null/N/A. Advertised
+bandwidth is not measured bandwidth. No hardware asset retains infrastructure
+IDs, hostnames, private addresses, tags, credentials or serial numbers.
+
+The merge/publication gate checks matching corpus, methodology, actual machine
+configuration, provisioned storage configuration and service limits. Daily merge
+requires schema 2; old result files can still be summarized without new metrics.
+
+A full release retains 170 measured assets plus SHA256SUMS: 26 legacy logs,
+104 fixed tier JSON files (embedding complete loadgen warm-up and measurement
+records), 28 calibration JSON files, seven hardware JSON files, the corpus,
+versions.csv, provenance.json, data.json and report.md. Upload verification uses
+paginated GitHub asset listings and SHA-256 digests. Synthetic fixtures cannot
+pass publication validation. Invalid/incomplete/source-limited suites retain
+workflow shard artifacts but cannot publish as complete releases. Capacity limits
+remain visible and are not advertised as successful target attainment.
+
+## Local preview, validation and real collection
+
+These commands create no AWS resources and publish nothing:
+
+```bash
+./tools/build_loadgen.sh --test
+python3 -m unittest discover -s tests -v
+node --test tools/*.test.mjs
+python3 tests/fixed_smoke.py
+python3 tests/smoke.py
+python3 tools/preview_release.py benchmark_results/fixed-preview
+```
+
+The preview contains **synthetic fixture numbers** throughout. It exercises the
+same renderer used for report.md and the actual release body, but is not a real
+performance comparison. Use a new output directory when regenerating it.
+
+After this change is reviewed and merged to main, this command launches the real
+billable daily suite and publishes a dated release only if validation passes:
+
+```bash
+gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref main
+```
+
+The existing daily 09:17 UTC schedule, latest agent installation channels and
+seven-agent parallelism are preserved. The job allows 120 minutes for provisioning,
+installation and both workloads; timeout/failure still triggers cleanup, with
+refreshed AWS credentials. The extended suite duration has not been measured in
+AWS yet. Real results must be collected; no fixture or old maximum is substituted.
+Historical releases and the website are not changed by local rendering.

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 import statistics
+import fixed
+import fixed_report
 
 VENDORS = {'edgedelta': ('ed', 'Edge Delta (Go)'), 'red': ('red', 'Edge Delta (Rust)'), 'cribl': ('cribl', 'Cribl'), 'otelcol': ('otel', 'OpenTelemetry Collector'), 'fluentd': ('fluentd', 'Fluentd'), 'vector': ('vector', 'Vector'), 'fluentbit': ('fluentbit', 'Fluent Bit')}
 RETRY_FIELDS = ['connection_errors', 'retry_attempts', 'recovered_requests', 'ambiguous_deliveries']
@@ -72,7 +74,7 @@ def report(result):
     lines = ['# Benchmark Report', '', f"**Date:** {result['date']}", f"**Run ID:** {result['runId']}", '', '## Tested Agent Versions', '', '| Vendor | Version |', '|---|---|']
     for key, name in VENDORS.values():
         lines.append(f"| {name} | {result['versions'].get(key, 'Not recorded')} |")
-    lines += ['', '## Methodology', '', '- Ubuntu 24.04, AWS `c8i.2xlarge`, us-west-2; execution topology is recorded in provenance.', f"- loadgen {result.get('provenance', {}).get('loadgen_version', 'version not recorded')}, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.", '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU sums each monitored process’s average; memory sums per-process peak RSS (these peaks need not occur simultaneously). CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs invalidate the scenario. Completed runs with unrecovered request failures retain measured values and an errors status, but are excluded from ranks and cross-scenario charts. Recovered connection failures do not exclude a result.', '']
+    lines += ['', '## Methodology', '', '- Best-throughput harness configuration and execution topology are recorded in provenance; runtime hardware is listed below when available. Historical missing hardware remains N/A.', f"- loadgen {result.get('provenance', {}).get('loadgen_version', 'version not recorded')}, nginx JSON, 80 / 100 / 120 workers, 1 ms send period, 60 seconds per tier, 60-second drain intervals.", '- The tier with the highest final cumulative average is reported for each scenario, matching the reference release’s best-tier convention. Peak, total logs, CPU, and memory come from that same tier. All tiers remain in data.json and the raw logs.', '- Peak throughput is the largest sampled interval rate (approximately 5 seconds). CPU sums each monitored process’s average; memory sums per-process peak RSS (these peaks need not occur simultaneously). CPU uses 100% per core.', '- These are HTTP ingestion measurements, not verified durable S3 throughput. Buffering, compression, schemas, and acknowledgment semantics differ by product. Process monitoring can omit auxiliary processes, particularly for multi-process agents.', '- Reliability tables aggregate cumulative errors/backpressure once per tier across all three tiers. Missing fields remain N/A; incomplete runs invalidate the scenario. Completed runs with unrecovered request failures retain measured values and an errors status, but are excluded from ranks and cross-scenario charts. Recovered connection failures do not exclude a result.', '']
     provenance = result.get('provenance', {})
     if provenance.get('loadgen', {}).get('retry_ambiguous'):
         lines += ['**Delivery policy:** At least once with possible duplicates; up to two connection-failure retries on fresh connections within the original request timeout. HTTP error responses and timeouts are not retried. Throughput counts acknowledged logical batches once and includes retry time; this suite sends one log per batch. Ambiguous deliveries count logical requests that might have been accepted before a connection failure, including recovered requests. These are not confirmed losses or duplicate counts. Connection and retry counters exclude safe retries internal to Go’s HTTP transport.', '']
@@ -80,7 +82,8 @@ def report(result):
         lines += [f"**Execution:** {provenance.get('execution_mode', 'sequential (one instance)')}", '']
         if provenance.get('rust_release'):
             lines += [f"**Rust release:** {provenance['rust_release']['version']} (verified released binary)", '']
-        lines += [f"**Benchmark source:** `{provenance.get('benchmark_commit', 'unknown')}`", f"**Rust source:** `{provenance.get('rust_commit', 'unknown')}`", '']
+        lines += [f"**Benchmark source:** `{provenance.get('benchmark_commit', 'unknown')}`", f"**Rust source:** `{provenance.get('rust_commit') or 'N/A (released binary)' }`", '']
+    lines += fixed_report.report(result, VENDORS, CASES)
     for case in CASES:
         lines += [f'## Benchmark Scenario: {case.title()}', '', '### Performance Comparison', '', '| Vendor | Status | Best Workers | Avg Throughput | Peak Throughput | Total Logs | Avg CPU | Peak Memory | Rank |', '|---|---|---:|---:|---:|---:|---:|---:|---:|']
         rows = [(vendor, name, result['scenarios'][f'{vendor}/{case}']) for vendor, (_, name) in VENDORS.items()]
@@ -91,7 +94,7 @@ def report(result):
                 if data['status'] == 'ok':
                     rank += 1
                 ranking = rank if data['status'] == 'ok' else 'N/A'
-                lines.append(f"| {name} | {data['status']} | {data['best_workers']} | {fmt(data['avg'], ' logs/sec')} | {fmt(data['peak'], ' logs/sec')} | {fmt(data['total'], decimals=0)} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MB', 1)} | {ranking} |")
+                lines.append(f"| {name} | {data['status']} | {data['best_workers']} | {fmt(data['avg'], ' logs/sec')} | {fmt(data['peak'], ' logs/sec')} | {fmt(data['total'], decimals=0)} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MiB', 1)} | {ranking} |")
             else:
                 lines.append(f"| {name} | {data['status']} | N/A | N/A | N/A | N/A | N/A | N/A | N/A |")
         lines += ['', '### Reliability Comparison', '', '| Vendor | Unrecovered Errors (all tiers) | Backpressure (all tiers) | Status |', '|---|---:|---:|---|']
@@ -113,11 +116,12 @@ def report(result):
             values = ' | '.join(fmt(x) for x in result['vendors'][key][metric])
             lines.append(f'| {name} | {values} |')
         lines.append('')
-    lines += ['### Resource Efficiency (Across Supported Scenarios)', '', '| Vendor | Avg CPU | Avg Peak Memory | Throughput per CPU % |', '|---|---:|---:|---:|']
+    lines += ['### Resource Efficiency (Across Supported Scenarios)', '', 'Descriptive legacy values only; scenario coverage differs by agent, so this table is not a cross-agent efficiency ranking. Use the matching-scenario fixed-rate aggregates for comparisons. Legacy memory is MiB (2²⁰ bytes), historically labeled MB in raw logs.', '', '| Vendor | Avg CPU | Avg Peak Memory | Throughput per CPU % |', '|---|---:|---:|---:|']
     for key, name in VENDORS.values():
         data = result['vendors'][key]
-        lines.append(f"| {name} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MB', 1)} | {fmt(data['perCpu'])} |")
+        lines.append(f"| {name} | {fmt(data['cpu'], '%', 1)} | {fmt(data['mem'], ' MiB', 1)} | {fmt(data['perCpu'])} |")
     lines += ['', '## Coverage and limitations', '', 'OTel CSV lookup and Fluent Bit regex masking are unsupported by this suite. Fluent Bit lookup uses a Lua table loaded from the bundled CSV. The inherited masking implementations scan different fields; this report is not proof of semantic equivalence or a general product ranking.', '', 'The assets include raw logs, recorded versions, source/config provenance, structured data, and this report. No values have been filled from earlier releases.']
+    if result.get('synthetic'): lines.insert(0, '> **SYNTHETIC FIXTURE PREVIEW — all numbers and versions below are illustrative test data, not real benchmark measurements. DO NOT PUBLISH.**\n')
     return '\n'.join(lines) + '\n'
 
 
@@ -156,6 +160,10 @@ def summarize(directory):
                 metrics['mem'] = statistics.mean(c['mem'] for c in valid_cases)
             if metrics['cpu']:
                 metrics['perCpu'] = statistics.mean(c['avg'] for c in valid_cases) / metrics['cpu']
+    result['fixed_throughput'] = fixed.summarize_fixed(directory, result.get('provenance', {}), VENDORS, CASES, UNSUPPORTED)
+    result['hardware'] = fixed.hardware(directory, VENDORS)
+    fixed.apply_comparability(result)
+    if result.get('provenance', {}).get('synthetic'): result['synthetic'] = True
     (directory / 'data.json').write_text(json.dumps(result, indent=2) + '\n')
     (directory / 'report.md').write_text(report(result))
     return result

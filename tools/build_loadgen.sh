@@ -13,6 +13,17 @@ git -C "$source_dir" fetch -q --depth 1 https://github.com/edgedelta/loadgen.git
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 [[ $(git -C "$source_dir" rev-parse HEAD) == "$source_commit" ]]
 git -C "$source_dir" apply "$root/patches/loadgen-retry.patch"
+cp "$root"/loadgen_extensions/*.go "$source_dir/"
+python3 - "$source_dir/main.go" <<'PYTHON'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+s = p.read_text()
+needle = 'config := parseFlags()'
+assert s.count(needle) == 1
+s = s.replace(needle, needle + '\n\tif *fixedRate != 0 { if err := runFixed(config); err != nil { log.Fatal(err) }; return }')
+p.write_text(s)
+PYTHON
 if [[ "${1:-}" == "--test" ]]; then
   (cd "$source_dir" && go test -race ./... && go vet ./...)
 fi
@@ -21,8 +32,11 @@ python3 - "$root" "$source_commit" <<'PY'
 import hashlib, json, pathlib, subprocess, sys
 root = pathlib.Path(sys.argv[1])
 sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
-metadata = {'version': '1.1.0+connection-retries.1', 'source_commit': sys.argv[2],
+metadata = {'version': '1.1.0+connection-retries.1+fixed-rate.1', 'source_commit': sys.argv[2],
+            'build_script_sha256': sha(root / 'tools/build_loadgen.sh'),
             'patch_sha256': sha(root / 'patches/loadgen-retry.patch'),
+            'extensions_sha256': {p.name: sha(p) for p in sorted((root / 'loadgen_extensions').glob('*.go'))},
+            'fixed_payload_sha256': sha(root / 'payloads/fixed-nginx.ndjson'),
             'binary_sha256': sha(root / '.loadgen-build/loadgen'),
             'go_version': subprocess.check_output(['go', 'version'], text=True).strip(),
             'max_retries': 2, 'retry_ambiguous': True,
