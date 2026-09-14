@@ -11,7 +11,7 @@ import urllib.request
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-IMAGES = {'vector': 'timberio/vector:0.55.0-debian', 'fluentbit': 'fluent/fluent-bit:5.1.2'}
+IMAGES = {'vector': 'timberio/vector:latest-debian', 'fluentbit': 'fluent/fluent-bit:latest'}
 EVENTS = [
     {'id': 'keep', 'pii': {'color': 'Blue', 'ipv4': '54.53.50.1', 'email': 'alice@example.com', 'mastercard': '5555555555554444', 'amex': '378282246310005', 'visa': '4111111111111111', 'discover': '6011111111111117', 'iban': 'GB82WEST12345698765432', 'ipv6': '2001:db8:85a3:0000:0000:8a2e:0370:7334', 'mac': '00:11:22:33:44:55'}},
     {'id': 'drop', 'pii': {'color': 'Green', 'ipv4': '192.0.2.42'}},
@@ -95,6 +95,8 @@ def run_case(vendor, case, directory):
         docker('stop', '-t', '2', cid, check=False)
 
 if __name__ == '__main__':
+    for image in IMAGES.values():
+        docker('pull', image)
     with tempfile.TemporaryDirectory(prefix='pipeline-bench-smoke-') as tmp:
         directory = pathlib.Path(tmp)
         for vendor, cases in [('vector', ['pass-through', 'filter', 'mask', 'lookup']), ('fluentbit', ['pass-through', 'filter', 'lookup'])]:
