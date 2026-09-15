@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import time
 import socket
+import hashlib
+import fixed
 import collect_machine
 
 SERVICES = {'edgedelta': ('edgedelta.service', 8085), 'red': ('red.service', 7085), 'cribl': ('cribl-edge.service', 6085), 'otelcol': ('otelcol-contrib.service', 5085), 'fluentd': ('fluentd.service', 3085), 'vector': ('vector.service', 4085), 'fluentbit': ('fluent-bit.service', 2085)}
@@ -38,12 +40,23 @@ def run(vendor, scenario):
     # Corpus is immutable, identical on all instances, and retained with results.
     payload = Path('fixed-nginx.ndjson')
     base = ['loadgen', '--endpoint', endpoint, '--number', '1', '--workers', '256', '--timeout', '30s', '--max-retries', '2', '--retry-ambiguous', '--fixed-payload-file', str(payload)]
+    payload_sha = hashlib.sha256(payload.read_bytes()).hexdigest()
+    # Calibrate all rates once per instance, including rates later skipped for an agent.
     for rate in RATES:
-        path = root / f'{vendor}_{scenario}_{rate}.fixed.json'
         cal = root / f'{vendor}_{rate}.calibration.json'
         if not cal.exists():
             subprocess.run(['sudo', 'systemctl', 'stop', service], check=True)
             subprocess.run([*base, '--fixed-rate', str(rate), '--fixed-calibration', '--fixed-warmup', '2s', '--total-time', '10s', '--fixed-output', str(cal)], check=True)
+    shortfall = None
+    for rate in RATES:
+        path = root / f'{vendor}_{scenario}_{rate}.fixed.json'
+        if shortfall is not None:
+            path.write_text(json.dumps({'schema_version': 2, 'vendor': vendor, 'scenario': scenario,
+                'target_logs_per_second': rate, 'complete': True, 'status': 'skipped_after_shortfall',
+                'payload_sha256': payload_sha, 'trigger_target_logs_per_second': shortfall}, indent=2) + '\n')
+            print(f'{vendor}/{scenario}/{rate}: not tested after {shortfall} target shortfall', flush=True)
+            continue
+        print(f'{vendor}/{scenario}/{rate}: starting independent fixed-rate measurement', flush=True)
         record = {'schema_version': 2, 'vendor': vendor, 'scenario': scenario, 'target_logs_per_second': rate, 'complete': False}
         path.write_text(json.dumps(record) + '\n')
         try:
@@ -78,6 +91,12 @@ def run(vendor, scenario):
             path.write_text(json.dumps(record, indent=2) + '\n')
             if not stopped: raise RuntimeError('Service did not stop between tiers')
         if not record.get('service_unchanged'): raise RuntimeError('Service stopped or restarted during fixed-rate tier')
+        outcome = fixed.tier(root, vendor, scenario, rate, payload_sha)
+        print(f'{vendor}/{scenario}/{rate}: {outcome["status"]}: {outcome["reason"]}', flush=True)
+        if outcome['status'] not in fixed.MEASURED_STATUSES:
+            raise RuntimeError(f'Invalid measurement: {outcome["reason"]}')
+        if outcome['status'] in fixed.SHORTFALL_STATUSES:
+            shortfall = rate
 
 
 if __name__ == '__main__':

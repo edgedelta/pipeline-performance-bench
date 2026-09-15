@@ -27,7 +27,7 @@ result = {
     'instance_id': os.environ.get('BENCHMARK_INSTANCE_ID'),
     'execution_mode': os.environ.get('BENCHMARK_EXECUTION_MODE', 'sequential'),
     'schema_version': 2,
-    'fixed_rate': {'targets': [10000, 25000, 50000, 75000], 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
+    'fixed_rate': {'stop_after_shortfall': True, 'measurement_order': 'per scenario: throughput then ascending fixed rates', 'targets': [10000, 25000, 50000, 75000], 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
     'loadgen_version': '1.1.0+connection-retries.1+fixed-rate.1',
     'loadgen': json.loads((root / '.loadgen-build/provenance.json').read_text()),
     'workers': [80, 100, 120],

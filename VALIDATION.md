@@ -64,3 +64,16 @@ failure and immediate failure for repository errors; all 48 Python tests pass.
 Release titles retain `Benchmark Report - YYYYMMDD-HHMMSS`. A publication test
 checks the exact format. The existing 20260914-193249 release title was restored
 without altering its report body, assets, tag or publication timestamp.
+
+## Target shortfalls and scenario grouping (2026-09-14)
+
+- 55 Python tests pass, including measured shortfall publication, explicit skip
+  evidence, absent skipped metrics, invalid evidence rejection, and a mocked
+  runner proving no higher load is generated after the first shortfall.
+- Node report/history tests: 14 pass. Shell syntax validation passes.
+- Reprocessed run 34902054359 locally from unchanged raw shard artifacts:
+  53 sustained targets, 51 failed targets (45 with generator uncertainty).
+  All 104 tiers were measured in that historical run; none were retroactively skipped.
+- Hardware comparison tests retain exact MemTotal and allow at most 64 KiB
+  variation only when AWS published memory capacities match.
+- No AWS resources were created for this validation.
