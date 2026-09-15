@@ -34,6 +34,7 @@ Options:
                      (red defaults to the latest stable released binary;
                      set RED_VERSION to pin a stable version)
                      Example: --vendors edgedelta,cribl
+  --profile <name>  full (default) or short (pass-through validation; no release).
   --dry-run         Print the selected supported matrix without credentials or AWS.
   -h, --help         Show this help and exit.
 
@@ -138,6 +139,7 @@ while [[ $# -gt 0 ]]; do
       parse_selection vendors "$2"; SELECTED_VENDORS=("${PARSED_SELECTION[@]}"); shift 2 ;;
     --vendors=*)
       parse_selection vendors "${1#*=}"; SELECTED_VENDORS=("${PARSED_SELECTION[@]}"); shift ;;
+    --profile) BENCHMARK_PROFILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help)
       usage; exit 0 ;;
@@ -145,6 +147,13 @@ while [[ $# -gt 0 ]]; do
       echo "Unknown argument: $1" >&2; usage; exit 1 ;;
   esac
 done
+
+export BENCHMARK_PROFILE="${BENCHMARK_PROFILE:-full}"
+case "$BENCHMARK_PROFILE" in
+  full) ;;
+  short) SELECTED_CASES=("pass-through") ;;
+  *) echo "Invalid benchmark profile: $BENCHMARK_PROFILE" >&2; exit 1 ;;
+esac
 
 echo "Selected vendors: ${SELECTED_VENDORS[*]}"
 echo "Selected cases:   ${SELECTED_CASES[*]}"

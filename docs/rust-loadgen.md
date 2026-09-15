@@ -68,3 +68,17 @@ For direct runs, build on Ubuntu 24.04 x86_64 with Go 1.26.0 and `rustup toolcha
 Observed local release compilation took approximately 8–17 seconds; clean toolchain/dependency downloads add time. GitHub runner build timing has not yet been measured. Compilation happens once per workflow, outside the measured workload and before billable EC2 runtime.
 
 The daily target set is 10k, 25k, 50k, 75k and 125k logs/sec (run provenance schema 3). Raw per-tier JSON remains schema 2. Historical schema-2 suites retain four tiers. The new tier runs last and is skipped after an earlier measured shortfall; release tables list it first.
+
+## Short AWS validation before a full run
+
+The workflow `profile` input accepts `short` or `full` (default; scheduled jobs remain full). Short mode uses all selected agents but only pass-through, legacy Go throughput at 80/100/120 workers for 10 seconds each with 5-second pauses, and Rust fixed-rate targets 10k and 125k. Fixed rates retain the full 10-second warm-up, 60-second measurement and 60-second post-load observation, plus stable startup, so the check still exercises connection rotation. Higher rates retain the normal skip-after-shortfall policy. Calibration runs at both rates. Instance types, payload, retry policy and cleanup are unchanged. Typical duration is approximately 8–12 minutes, dependent on provisioning and startup.
+
+Short reports are explicitly labeled and retained only as workflow artifacts; both the workflow and publisher prohibit a short-run release. The short gate requires complete evidence, Rust passing 10k, and no final Rust request errors at measured fixed-rate tiers. Genuine capacity shortfalls for other agents remain visible and do not imply an infrastructure failure. This gate does not establish long-term reliability or test filter/mask/lookup pipelines.
+
+```
+gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref main -f profile=short
+# After reviewing the successful short-run measurements and cleanup:
+gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref main -f profile=full
+```
+
+Rust loadgen 0.1.1 waits for Hyper connection readiness and safely retries a canceled dispatch only before response headers and before any request bytes were written. Actual application cancellation, timeout, HTTP rejection and incomplete response body policies remain unchanged. Each phase retains up to eight attempt diagnostics and eight separately retained final-error diagnostics in raw JSON, without request payloads or headers.

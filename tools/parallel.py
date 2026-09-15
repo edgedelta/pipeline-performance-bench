@@ -41,7 +41,7 @@ def merge(source, output, matrix, require_fixed=False):
             raise ValueError('Duplicate shard or missing version')
         directory = version_file.parent
         provenance = json.loads((directory / 'provenance.json').read_text())
-        if require_fixed and (provenance.get('schema_version', 1) < 3 or provenance.get('fixed_rate', {}).get('targets') != fixed.RATES): raise ValueError('Daily suite requires measured fixed-rate results including 125k')
+        if require_fixed and (provenance.get('schema_version', 1) < 3 or provenance.get('fixed_rate', {}).get('targets') != fixed.rates_for(provenance)): raise ValueError('Daily suite requires measured fixed-rate results including 125k for the selected profile')
         instance = provenance.get('instance_id')
         if not instance or instance in instances:
             raise ValueError('Missing or shared instance identity')
@@ -69,7 +69,7 @@ def merge(source, output, matrix, require_fixed=False):
         raise ValueError('Missing agent shards')
     first = next(iter(shards.values()))
     for shard in shards.values():
-        for key in ['benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256', 'schema_version', 'fixed_rate']:
+        for key in ['benchmark_profile', 'benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256', 'schema_version', 'fixed_rate']:
             if shard.get(key) != first.get(key):
                 raise ValueError(f'Shard methodology differs: {key}')
     combined = dict(first, execution_mode='parallel agents on separate identical EC2 instances; sequential cases and tiers per agent', shards=shards)
@@ -88,7 +88,7 @@ def merge(source, output, matrix, require_fixed=False):
         writer = csv.DictWriter(stream, fieldnames=['agent', 'version']); writer.writeheader(); writer.writerows(versions)
     (output / 'provenance.json').write_text(json.dumps(combined, indent=2) + '\n')
     summarize(output)
-    if set(expected) == set(VENDORS) and all(set(cases) == {c for c in CASES if (v, c) not in UNSUPPORTED} for v, cases in expected.items()):
+    if first.get('benchmark_profile') != 'short' and set(expected) == set(VENDORS) and all(set(cases) == {c for c in CASES if (v, c) not in UNSUPPORTED} for v, cases in expected.items()):
         from check_results import validate
         validate(output)
     return output

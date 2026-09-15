@@ -13,6 +13,8 @@ def validate(directory):
     directory = Path(directory)
     (directory / 'SHA256SUMS').unlink(missing_ok=True)
     data = summarize(directory)
+    if data.get('provenance', {}).get('benchmark_profile') == 'short':
+        raise ValueError('Short validation runs cannot be published as benchmark releases')
     errors = fixed.validate_fixed(directory, data)
     for vendor, (key, _) in VENDORS.items():
         version = data['versions'].get(key, '')
