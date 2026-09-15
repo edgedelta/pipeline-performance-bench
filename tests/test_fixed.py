@@ -132,13 +132,39 @@ class FixedTest(unittest.TestCase):
         report=(self.directory/'report.md').read_text()
         body=publish_release.release_notes(report,'https://example.invalid',data)
         self.assertEqual(body.count('Illustrative fixture CPU (not inspected)'),1)
-        self.assertEqual(body.count('<details>'),5)
+        self.assertNotIn('<details>',body)
+        self.assertNotIn('<summary>',body)
+        self.assertIn('### Pass-Through — measured CPU, memory and efficiency',body)
         data['hardware']['vector']['runtime']['observed']['os']='Different OS'
         data['hardware']['red']['runtime']['observed']['os']=None
         body=publish_release.release_notes(report,'https://example.invalid',data)
         row=next(line for line in body.splitlines() if line.startswith('| OS / kernel'))
         self.assertIn('Vector: Different OS',row)
         self.assertIn('Edge Delta (Rust): N/A',row)
+
+    def test_release_sorts_throughput_by_raw_values_and_flags_after_valid_rows(self):
+        data=summarize.summarize(self.directory)
+        data['scenarios']['vector/pass-through']['avg']=100000.2
+        data['scenarios']['red/pass-through']['avg']=100000.1
+        data['scenarios']['edgedelta/pass-through'].update(status='errors',avg=200000)
+        body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
+        overview=body.split('## Best-tested throughput')[1].split('## Highest sustained')[0]
+        self.assertLess(overview.index('| Vector |'),overview.index('| Edge Delta (Rust) |'))
+        self.assertLess(overview.index('| Fluentd |'),overview.index('| Edge Delta (Go) |'))
+        self.assertIn('sorted by pass-through throughput',overview)
+
+    def test_fixed_rows_sort_within_target_and_never_promote_failed_efficiency(self):
+        data=summarize.summarize(self.directory)
+        tiers=data['fixed_throughput']['tiers']
+        tiers['vector/filter/10000']['logs_per_second_per_core']=2000000.2
+        tiers['red/filter/10000']['logs_per_second_per_core']=2000000.1
+        tiers['edgedelta/filter/10000'].update(status='capacity_limited',logs_per_second_per_core=99999999)
+        body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
+        section=body.split('### Filter — measured CPU')[1].split('### Mask — measured CPU')[0]
+        self.assertLess(section.index('| 10,000 | Vector |'),section.index('| 10,000 | Edge Delta (Rust) |'))
+        self.assertLess(section.index('| 10,000 | Fluentd |'),section.index('| 10,000 | Edge Delta (Go) |'))
+        self.assertLess(section.index('| 10,000 | Edge Delta (Go) |'),section.index('| 25,000 |'))
+        self.assertNotIn('<details>',body)
 
     def test_concise_release_links_original_assets_and_keeps_data_unchanged(self):
         data=summarize.summarize(self.directory);before=copy.deepcopy(data)
