@@ -198,9 +198,11 @@ assets. Without published memory metadata, observed memory must match exactly.
 ## Reader-facing release notes
 
 The release body shows best-tested throughput, highest sustained fixed targets,
-shared hardware once (with explicit differences/N/A), and expandable scenario
+shared hardware once (with explicit differences/N/A), and fully expanded scenario
 tables for measured CPU, average memory and throughput per core/MB. Versions
-and source are expandable. Failure, uncertainty and skipped-target labels remain
+and source are also expanded. Overview tables sort by pass-through descending;
+fixed-rate rows group by target, then passing rows by logs/sec/core descending
+and failed rows by achieved throughput descending. Ties use agent name. Failure, uncertainty and skipped-target labels remain
 visible. Connection recovery, queue/drain diagnostics, detailed reliability,
 peak memory and aggregate efficiency stay in `report.md`, `data.json` and raw
 assets, linked from the release. The daily publisher and local release preview
