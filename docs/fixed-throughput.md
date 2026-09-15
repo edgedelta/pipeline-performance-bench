@@ -210,3 +210,18 @@ use this concise renderer; evidence validation and full assets are unchanged.
 
 Descending target order is presentation only. Benchmark execution still tests
 ascending rates and stops higher tiers after a measured shortfall.
+
+Release highlights use 🏆 and bold scenario values for the highest valid
+best-tested throughput or sustained target, including exact ties. Fixed-rate
+🔹 bold rows identify the highest observed logs/sec/core among passing agents
+at each scenario/target (including a sole passing agent). Failed, invalid,
+missing, unsupported and skipped outcomes never receive leader highlights.
+Selection uses unrounded positive finite measurements; environment uncertainty
+remains explicit. These styles affect the release body and its local preview;
+raw data and detailed evidence assets retain their original measurements.
+
+Throughput rows sort by pass-through, valid outcomes first. Sustained targets
+sort descending by pass-through, then filter, mask and lookup, then agent name.
+Fixed-rate targets sort highest first; passing rows sort by CPU efficiency,
+then failed rows by achieved throughput, with alphabetical agent ties. Hardware
+settings and agent versions sort alphabetically.

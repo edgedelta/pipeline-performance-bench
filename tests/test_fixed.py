@@ -172,6 +172,7 @@ class FixedTest(unittest.TestCase):
         data['scenarios']['edgedelta/pass-through'].update(status='errors',avg=200000)
         body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
         overview=body.split('## Best-tested throughput')[1].split('## Highest sustained')[0]
+        overview=overview.replace('**','').replace('🏆 ','')
         self.assertLess(overview.index('| Vector |'),overview.index('| Edge Delta (Rust) |'))
         self.assertLess(overview.index('| Fluentd |'),overview.index('| Edge Delta (Go) |'))
         self.assertIn('sorted by pass-through throughput',overview)
@@ -184,6 +185,7 @@ class FixedTest(unittest.TestCase):
         tiers['edgedelta/filter/10000'].update(status='capacity_limited',logs_per_second_per_core=99999999)
         body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
         section=body.split('### Filter — measured CPU')[1].split('### Mask — measured CPU')[0]
+        section=section.replace('**','').replace('🔹 ','')
         self.assertLess(section.index('| 10,000 | Vector |'),section.index('| 10,000 | Edge Delta (Rust) |'))
         self.assertLess(section.index('| 10,000 | Fluentd |'),section.index('| 10,000 | Edge Delta (Go) |'))
         positions = [section.index(f'\n| {rate:,} |') for rate in [125000,75000,50000,25000,10000]]
@@ -198,7 +200,7 @@ class FixedTest(unittest.TestCase):
         self.assertIn('/releases/download/20260915-091700/data.json',body)
         self.assertEqual(data,before)
         self.assertEqual((self.directory/'report.md').read_text(),report)
-        self.assertIn('| Edge Delta (Rust) | 79,000 | 79,000 | 79,000 | 79,000 |',body)
+        self.assertIn('| 🏆 **Edge Delta (Rust)** | **79,000** | **79,000** | **79,000** | **79,000** |',body)
 
     def test_concise_historical_release_does_not_invent_fixed_metrics(self):
         self.edit(lambda r:r.pop('schema_version'),'provenance.json')
