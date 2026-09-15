@@ -12,8 +12,11 @@ from check_results import validate
 
 
 def release_notes(report, run_url, data=None):
-    """Use the same complete report in local preview and the real release."""
+    """Use the concise summary in both preview and release; retain the full report asset."""
     synthetic = (data or {}).get('synthetic') or 'SYNTHETIC FIXTURE' in report
+    if data and {'hardware', 'fixed_throughput', 'versions', 'scenarios', 'runId'} <= data.keys():
+        from release_report import render
+        return render(data, run_url, synthetic)
     if (data or {}).get('fixed_throughput', {}).get('measured'):
         tiers = [t for t in data['fixed_throughput']['tiers'].values() if t['status'] != 'unsupported']
         sustained = sum(t['status'] == 'ok' for t in tiers)

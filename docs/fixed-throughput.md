@@ -173,7 +173,7 @@ python3 tools/preview_release.py benchmark_results/fixed-preview
 ```
 
 The preview contains **synthetic fixture numbers** throughout. It exercises the
-same renderer used for report.md and the actual release body, but is not a real
+same concise renderer used for the actual release body, but is not a real
 performance comparison. Use a new output directory when regenerating it.
 
 After this change is reviewed and merged to main, this command launches the real
@@ -194,3 +194,14 @@ Machine comparability requires matching CPU, instance type, region, OS, kernel,
 storage and resource limits. OS-accessible MemTotal may differ by at most 64 KiB
 when AWS published memory capacities match. Exact observed bytes remain in raw
 assets. Without published memory metadata, observed memory must match exactly.
+
+## Reader-facing release notes
+
+The release body shows best-tested throughput, highest sustained fixed targets,
+shared hardware once (with explicit differences/N/A), and expandable scenario
+tables for measured CPU, average memory and throughput per core/MB. Versions
+and source are expandable. Failure, uncertainty and skipped-target labels remain
+visible. Connection recovery, queue/drain diagnostics, detailed reliability,
+peak memory and aggregate efficiency stay in `report.md`, `data.json` and raw
+assets, linked from the release. The daily publisher and local release preview
+use this concise renderer; evidence validation and full assets are unchanged.

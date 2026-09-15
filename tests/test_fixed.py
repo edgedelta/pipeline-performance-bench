@@ -118,12 +118,45 @@ class FixedTest(unittest.TestCase):
 
     def test_report_actual_release_body_and_synthetic_gate(self):
         data=summarize.summarize(self.directory);report=(self.directory/'report.md').read_text();body=publish_release.release_notes(report,'https://example.invalid',data)
-        for text in ['Hardware and environment specifications','Fixed-throughput resource comparisons','Logs/sec/avg memory MB','Sustains target','Reliability Comparison','Connection Recovery','Benchmark source','SYNTHETIC FIXTURE','Tested Agent Versions','HTTP drain sec','capacity_limited']:
+        for text in ['Hardware and test setup','CPU and memory at fixed rates','Logs/sec/MB','Highest sustained fixed-rate target','Benchmark source','SYNTHETIC FIXTURE','Tested agent versions']:
             self.assertIn(text,body)
-        self.assertIn(report,body)
+        for text in ['Connection Recovery','Comparable aggregate efficiency','Queue dropped','HTTP drain sec']:
+            self.assertNotIn(text,body)
+            self.assertIn(text,report)
         self.assertLess(len(body.encode()),125000)
         with self.assertRaisesRegex(ValueError,'Synthetic'):check_results.validate(self.directory)
         self.assertFalse((self.directory/'SHA256SUMS').exists())
+
+    def test_concise_release_deduplicates_hardware_without_hiding_differences(self):
+        data=summarize.summarize(self.directory)
+        report=(self.directory/'report.md').read_text()
+        body=publish_release.release_notes(report,'https://example.invalid',data)
+        self.assertEqual(body.count('Illustrative fixture CPU (not inspected)'),1)
+        self.assertEqual(body.count('<details>'),5)
+        data['hardware']['vector']['runtime']['observed']['os']='Different OS'
+        data['hardware']['red']['runtime']['observed']['os']=None
+        body=publish_release.release_notes(report,'https://example.invalid',data)
+        row=next(line for line in body.splitlines() if line.startswith('| OS / kernel'))
+        self.assertIn('Vector: Different OS',row)
+        self.assertIn('Edge Delta (Rust): N/A',row)
+
+    def test_concise_release_links_original_assets_and_keeps_data_unchanged(self):
+        data=summarize.summarize(self.directory);before=copy.deepcopy(data)
+        report=(self.directory/'report.md').read_text()
+        body=publish_release.release_notes(report,'https://github.com/edgedelta/pipeline-performance-bench/actions/runs/123',data)
+        self.assertIn('/releases/download/20260915-091700/report.md',body)
+        self.assertIn('/releases/download/20260915-091700/data.json',body)
+        self.assertEqual(data,before)
+        self.assertEqual((self.directory/'report.md').read_text(),report)
+        self.assertIn('| Edge Delta (Rust) | 79,000 | 79,000 | 79,000 | 79,000 |',body)
+
+    def test_concise_historical_release_does_not_invent_fixed_metrics(self):
+        self.edit(lambda r:r.pop('schema_version'),'provenance.json')
+        data=summarize.summarize(self.directory)
+        body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
+        self.assertIn('not measured in this historical result format',body)
+        self.assertNotIn('## Highest sustained fixed-rate target',body)
+        self.assertNotIn('## CPU and memory at fixed rates',body)
 
     def realish_fixture_for_gate_test_only(self):
         # Remove fixture markers ONLY inside an ephemeral test directory. No network calls.
@@ -151,7 +184,7 @@ class FixedTest(unittest.TestCase):
         row=next(line for line in report.splitlines() if line.startswith('| Fluentd | errors |'))
         self.assertTrue(row.endswith('| N/A |'))
         body=publish_release.release_notes(report,'https://example.invalid',data)
-        self.assertIn('1 scenario(s) recorded 3 unrecovered request errors',body)
+        self.assertIn('Completed with request errors; excluded from rankings',body)
         # A truncated run is still rejected, even with errors present.
         log.write_text(log.read_text().replace('Finished loadgen with 120 workers','unfinished'))
         with self.assertRaisesRegex(ValueError,'invalid'):check_results.validate(self.directory)
@@ -208,7 +241,8 @@ class ShortfallTest(unittest.TestCase):
         report=(self.directory/'report.md').read_text()
         body=publish_release.release_notes(report,'https://example.invalid',data)
         self.assertIn('failed to sustain target',body);self.assertIn('bottleneck uncertainty',body)
-        self.assertIn('FAIL — target not sustained / generator_limited',body)
+        self.assertIn('Fail*',body)
+        self.assertIn('FAIL — target not sustained / generator_limited',report)
         self.assertGreater(data['fixed_throughput']['outcomes']['failed_target'],0)
         self.edit(lambda r:r['loadgen']['measurement'].update(resource_samples=[]))
         with self.assertRaisesRegex(ValueError,'invalid'):check_results.validate(self.directory)
