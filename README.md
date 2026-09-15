@@ -147,3 +147,7 @@ benchmark dependencies, separate from the agents under test.
 ### Comparing load generators locally
 
 The daily [Rust fixed-rate generator](docs/rust-loadgen.md) implements the same HTTP workload and accounting as Go. Run `./tools/compare_loadgens_local.sh` to build both and measure them against a common local receiver at 25k, 75k, 100k and 200k logs/sec. This does not create AWS resources or change the daily benchmark generator.
+
+### Short validation run
+
+Use workflow input `profile=short` (or `./run.sh --profile short`) for pass-through-only validation across the selected agents at 10k and 125k. It keeps 60-second fixed-rate measurement windows, shortens legacy throughput windows to 10 seconds, and normally takes about 8–12 minutes including setup. Short results are labeled validation artifacts and cannot publish a benchmark release. The scheduled job keeps `profile=full`. See [the validation gate and commands](docs/rust-loadgen.md#short-aws-validation-before-a-full-run).

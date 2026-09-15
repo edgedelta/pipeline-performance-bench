@@ -2,6 +2,7 @@
 """Run measured fixed-rate tiers on the currently installed scenario configuration."""
 import argparse
 import json
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -11,7 +12,7 @@ import fixed
 import collect_machine
 
 SERVICES = {'edgedelta': ('edgedelta.service', 8085), 'red': ('red.service', 7085), 'cribl': ('cribl-edge.service', 6085), 'otelcol': ('otelcol-contrib.service', 5085), 'fluentd': ('fluentd.service', 3085), 'vector': ('vector.service', 4085), 'fluentbit': ('fluent-bit.service', 2085)}
-RATES = fixed.RATES
+RATES = fixed.rates_for({"schema_version": 3, "benchmark_profile": os.environ.get("BENCHMARK_PROFILE", "full")})
 
 
 def systemctl(*args):

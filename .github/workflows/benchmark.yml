@@ -5,6 +5,12 @@ on:
     - cron: '17 9 * * *'
   workflow_dispatch:
     inputs:
+      profile:
+        description: 'short: pass-through validation at 10k/125k, artifacts only; full: complete published suite'
+        type: choice
+        options: [full, short]
+        default: full
+        required: true
       vendors:
         description: 'Agents: edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit'
         default: 'edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit'
@@ -29,6 +35,7 @@ jobs:
       - id: plan
         env:
           VENDORS: ${{ inputs.vendors || 'edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit' }}
+          BENCHMARK_PROFILE: ${{ inputs.profile || 'full' }}
           CASES: ${{ inputs.cases || 'pass-through,filter,mask,lookup' }}
         run: |
           echo "matrix=$(python3 tools/parallel.py plan "$VENDORS" "$CASES")" >> "$GITHUB_OUTPUT"
@@ -96,6 +103,7 @@ jobs:
         env:
           VENDORS: ${{ matrix.vendor }}
           CASES: ${{ matrix.cases }}
+          BENCHMARK_PROFILE: ${{ inputs.profile || 'full' }}
           BENCHMARK_EXECUTION_MODE: parallel-agent-shard
           BENCHMARK_EXTERNAL_AWS_CLEANUP: "1"
           BENCHMARK_PREBUILT_LOADGEN: "1"
@@ -146,12 +154,20 @@ jobs:
           MATRIX: ${{ needs.plan.outputs.matrix }}
           TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
         run: python3 tools/parallel.py merge shards "benchmark_results/$TIMESTAMP" "$MATRIX" --require-fixed
+      - name: Check short-run recovery and label validation report
+        if: inputs.profile == 'short'
+        env:
+          TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
+        run: |
+          python3 tools/check_short.py "benchmark_results/$TIMESTAMP"
+          cat "benchmark_results/$TIMESTAMP/short-validation.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
           name: pipeline-bench-${{ github.run_id }}-combined
           path: benchmark_results/
           if-no-files-found: error
       - name: Publish dated release for the full suite
+        if: inputs.profile != 'short'
         env:
           GH_TOKEN: ${{ github.token }}
           TIMESTAMP: ${{ needs.plan.outputs.timestamp }}

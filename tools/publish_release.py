@@ -48,6 +48,9 @@ def gh(*args):
 
 def publish(directory, repo, commit, run_url):
     directory = Path(directory)
+    provenance = json.loads((directory / 'provenance.json').read_text()) if (directory / 'provenance.json').exists() else {}
+    if provenance.get('benchmark_profile') == 'short':
+        raise ValueError('Short validation runs cannot be published as benchmark releases')
     if not (directory / 'SHA256SUMS').exists():
         print('Partial suite: results uploaded as workflow artifacts; no release published.')
         return

@@ -10,6 +10,7 @@ RATES = [*LEGACY_RATES, 125000]
 
 def rates_for(provenance):
     """Schema 3 adds 125k; older suites retain their original coverage contract."""
+    if provenance.get("benchmark_profile") == "short": return [10000, 125000]
     return RATES if provenance.get("schema_version", 1) >= 3 else LEGACY_RATES
 
 TOLERANCE = .02

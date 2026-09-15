@@ -46,7 +46,7 @@ class Receiver(BaseHTTPRequestHandler):
         self.end_headers()
         if mode=='chunked': self.wfile.write(b'3\r\nabc\r\n0\r\n\r\n')
         if mode=='truncated': self.wfile.write(b'a')
-        if mode in ('close','recover','truncated'): self.close_connection=True
+        if mode in ('close','recover','truncated','unannounced_close'): self.close_connection=True
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
@@ -76,15 +76,19 @@ def check(binary, mode, directory, workers=1, tasks=False):
             assert p['dispatched_logs']==p['acknowledged_logs']+p['acknowledged_after_window']+p['errors']
             return
         phase(raw,2,require_agent=False)
+        if raw.get('generator_version') == '0.1.1':
+            assert len(p['error_samples']) <= 8 and len(p['final_error_samples']) <= 8
+            if p['errors']: assert p['final_error_samples'], 'Final failure lost its diagnostic'
+
         if tasks:
             assert raw['workers'] is None and raw['dispatch_mode']=='tasks'
             assert 0 < p['peak_admitted_tasks'] <= 2*workers
             assert p['admission_dropped_logs']==p['worker_queue_dropped_logs']
         assert p['scheduled_logs']==100
         assert p['offered_logs']<=100
-        if mode in ('ok','chunked','close'):
+        if mode in ('ok','chunked','close','unannounced_close'):
             assert 90<=p['acknowledged_logs']<=100,p
-            assert p['errors']==p['ambiguous_deliveries']==0,p
+            assert p['errors']==0 and (mode=='unannounced_close' or p['ambiguous_deliveries']==0),p
         elif mode=='recover':
             assert p['recovered_requests']>0 and p['ambiguous_deliveries']>0,p
             assert p['errors']==0,p
@@ -114,7 +118,7 @@ def check(binary, mode, directory, workers=1, tasks=False):
         server.shutdown(); server.server_close()
 
 def main():
-    p=argparse.ArgumentParser(); p.add_argument('binaries',nargs='+'); p.add_argument('--task-mode',action='store_true'); p.add_argument('--modes',default='ok,chunked,close,recover,disconnect,429,503,400,302,truncated,slow,signal,no_retry,timeout,refused'); a=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument('binaries',nargs='+'); p.add_argument('--task-mode',action='store_true'); p.add_argument('--modes',default='ok,chunked,close,unannounced_close,recover,disconnect,429,503,400,302,truncated,slow,signal,no_retry,timeout,refused'); a=p.parse_args()
     with tempfile.TemporaryDirectory() as tmp:
         for binary in a.binaries:
             for mode in a.modes.split(','):

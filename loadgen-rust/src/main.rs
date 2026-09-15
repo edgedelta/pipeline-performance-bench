@@ -308,6 +308,14 @@ fn connection_failure(mut error: &(dyn Error + 'static)) -> bool {
         }
     }
 }
+fn retryable_request_error(error: &(dyn Error + 'static), head: bool, wrote: bool) -> bool {
+    let unsent_closed = !wrote
+        && error
+            .downcast_ref::<hyper::Error>()
+            .is_some_and(|e| e.is_canceled());
+    !head && (connection_failure(error) || unsent_closed)
+}
+
 #[derive(Default, Serialize)]
 struct Counters {
     dispatched_logs: u64,
@@ -322,10 +330,23 @@ struct Counters {
     ambiguous_deliveries: u64,
     expired_before_dispatch_logs: u64,
     http_status_counts: BTreeMap<u16, u64>,
+    error_samples: Vec<String>,
+    final_error_samples: Vec<String>,
     #[serde(skip)]
     latency_ns: u128,
 }
 impl Counters {
+    fn final_diagnostic(&mut self, message: String) {
+        if self.final_error_samples.len() < 8 {
+            self.final_error_samples.push(message);
+        }
+    }
+    fn diagnostic(&mut self, message: String) {
+        // No URLs, payloads, headers or credentials; bound retained diagnostics.
+        if self.error_samples.len() < 8 {
+            self.error_samples.push(message);
+        }
+    }
     fn add(&mut self, o: Self) {
         macro_rules! add {($($f:ident),*)=>{$(self.$f+=o.$f;)*}}
         add!(
@@ -342,6 +363,12 @@ impl Counters {
             expired_before_dispatch_logs,
             latency_ns
         );
+        for message in o.final_error_samples {
+            self.final_diagnostic(message);
+        }
+        for message in o.error_samples {
+            self.diagnostic(message);
+        }
         for (k, n) in o.http_status_counts {
             *self.http_status_counts.entry(k).or_default() += n;
         }
@@ -372,6 +399,7 @@ async fn attempt(
     }
     let c = conn.as_mut().unwrap();
     *c.state.lock().unwrap() = WriteState::new(payload.len(), marker);
+    c.sender.ready().await?;
     let mut builder = Request::post(uri.path_and_query().map(|p| p.as_str()).unwrap_or("/"))
         .header("Host", uri.authority().unwrap().as_str())
         .header("Content-Type", "application/json")
@@ -448,7 +476,18 @@ async fn send_one(
                 return Some(retry);
             }
             let wrote = conn.as_ref().is_some_and(|c| c.state.lock().unwrap().wrote);
-            let is_connection = !head && connection_failure(result.as_ref().unwrap_err().as_ref());
+            let error = result.as_ref().unwrap_err().as_ref();
+            // Hyper can cancel dispatch when a reused connection closes before
+            // serialization. This is safe to replay only if no bytes were written.
+            // Application cancellation and request timeout bypass this branch.
+            let is_connection = retryable_request_error(error, head, wrote);
+            stats.diagnostic(format!(
+                "attempt={} head={} wrote={} retryable={} error={error:?}",
+                retry + 1,
+                head,
+                wrote,
+                is_connection
+            ));
             *conn = None;
             if is_connection {
                 stats.connection_errors += 1;
@@ -458,13 +497,27 @@ async fn send_one(
                 }
             }
             if !is_connection || retry == args.max_retries || (wrote && !args.retry_ambiguous) {
+                stats.final_diagnostic(format!(
+                    "attempt={} head={} wrote={} retryable={} error={error:?}",
+                    retry + 1,
+                    head,
+                    wrote,
+                    is_connection
+                ));
                 return None;
             }
             tokio::time::sleep(Duration::from_millis((retry as u64 + 1) * 10)).await;
         }
         None
     };
-    let recovered = tokio::select! {biased; _=cancel.changed()=>None, r=tokio::time::timeout(args.timeout,operation)=>r.ok().flatten()};
+    let outcome = tokio::select! {biased;
+        _=cancel.changed()=>Err("application canceled"),
+        r=tokio::time::timeout(args.timeout,operation)=>r.map_err(|_| "request timeout")
+    };
+    if let Err(reason) = outcome {
+        stats.final_diagnostic(reason.to_owned());
+    }
+    let recovered = outcome.ok().flatten();
     stats.offered_logs += u64::from(marker.offered.load(Relaxed));
     if let Some(code) = status {
         *stats.http_status_counts.entry(code).or_default() += 1;
@@ -483,6 +536,9 @@ async fn send_one(
         }
         _ => {
             stats.errors += 1;
+            if recovered.is_some() {
+                stats.final_diagnostic(format!("HTTP status {}", status.unwrap_or(0)));
+            }
             if recovered.is_some() && matches!(status, Some(429 | 503)) {
                 stats.backpressure += 1;
             }
@@ -853,6 +909,38 @@ fn main() -> Result<(), AnyError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn closed_dispatch_is_retryable_only_before_any_write_or_response() {
+        let (client, _server) = tokio::io::duplex(4096);
+        let (mut sender, connection) =
+            hyper::client::conn::http1::handshake::<_, Full<Bytes>>(TokioIo::new(client))
+                .await
+                .unwrap();
+        drop(connection);
+        let request = Request::post("/")
+            .body(Full::new(Bytes::from_static(b"{}")))
+            .unwrap();
+        let error = sender.send_request(request).await.unwrap_err();
+        assert!(error.is_canceled());
+        assert!(retryable_request_error(&error, false, false));
+        assert!(!retryable_request_error(&error, false, true));
+        assert!(!retryable_request_error(&error, true, false));
+    }
+
+    #[test]
+    fn diagnostics_are_bounded_when_workers_merge() {
+        let mut merged = Counters::default();
+        for _ in 0..256 {
+            let mut worker = Counters::default();
+            for _ in 0..20 {
+                worker.diagnostic("connection closed".to_owned());
+            }
+            assert_eq!(worker.error_samples.len(), 8);
+            merged.add(worker);
+        }
+        assert_eq!(merged.error_samples.len(), 8);
+    }
+
     #[tokio::test]
     async fn task_admission_is_bounded_and_pending_expires_without_http() {
         for pending in [0, 2] {

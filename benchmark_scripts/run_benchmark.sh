@@ -2,6 +2,9 @@
 
 set -e
 
+measurement=1m
+drain=60
+if [[ "${BENCHMARK_PROFILE:-full}" == short ]]; then measurement=10s; drain=5; fi
 app=$1
 if [[ -z "$app" ]]; then
   echo "Missing app"
@@ -140,7 +143,7 @@ for i in 80 100 120; do
       --number 1 \
       --workers "$i" \
       --period 1ms \
-      --total-time 1m \
+      --total-time "$measurement" \
       --monitor-self \
       --monitor-pid "${service_pid}"
     if [[ -n "$cribl_monitor_pid" ]]; then
@@ -157,7 +160,7 @@ for i in 80 100 120; do
       --number 1 \
       --workers "$i" \
       --period 1ms \
-      --total-time 1m \
+      --total-time "$measurement" \
       --monitor-self \
       --monitor-pid "${red_pid}"
   elif [[ "$app" == "otelcol" ]]; then
@@ -168,7 +171,7 @@ for i in 80 100 120; do
       --number 1 \
       --workers "$i" \
       --period 1ms \
-      --total-time 1m \
+      --total-time "$measurement" \
       --monitor-self \
       --monitor-process "otelcol-contrib"
   elif [[ "$app" == "fluentd" ]]; then
@@ -183,7 +186,7 @@ for i in 80 100 120; do
       --number 1 \
       --workers "$i" \
       --period 1ms \
-      --total-time 1m \
+      --total-time "$measurement" \
       --monitor-self \
       --monitor-pid "${fd_pid}"
   else
@@ -194,7 +197,7 @@ for i in 80 100 120; do
       --number 1 \
       --workers "$i" \
       --period 1ms \
-      --total-time 1m \
+      --total-time "$measurement" \
       --monitor-self \
       --monitor-process "${app}"
   fi
@@ -217,5 +220,5 @@ for i in 80 100 120; do
   echo "Finished loadgen with ${i} workers for $app"
 
   # Wait for 60 seconds before starting next iteration
-  sleep 60
+  sleep "$drain"
 done
