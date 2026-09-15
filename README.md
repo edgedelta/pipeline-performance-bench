@@ -20,7 +20,7 @@ Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped a
 
 ## Run
 
-Prerequisites: Bash, Python 3, Go 1.26.0, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
+Prerequisites: Ubuntu 24.04 x86_64 with Go 1.26.0 and Rust 1.98.0 (or a matching prebuilt CI generator bundle), Bash, Python 3, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
 
 ```bash
 ./run.sh --dry-run
@@ -53,7 +53,7 @@ Private rendered configs and generated installers live in ignored `.runtime.*` d
 
 ## Loadgen connection recovery
 
-Before creating AWS resources, `tools/build_loadgen.sh` builds Linux/amd64 loadgen from upstream commit `801c3c369a0e8ff6f40a0af21aa5203f3689d65d` (v1.1.0) plus [the retry patch](patches/loadgen-retry.patch). This is a local patched build, not a published loadgen release. Terraform uploads that executable; every agent receives the same policy. Results record the source commit, patch and executable SHA-256, Go version, and policy. No agent build is involved in this step.
+Before creating AWS resources, `tools/build_generators.sh` builds both generators once; the daily workflow shares the verified bundle across all agent jobs. Rust workers handle fixed-rate tiers and calibration; Go handles legacy throughput and monitoring. No compiler is installed on EC2. The Go build uses Linux/amd64 loadgen from upstream commit `801c3c369a0e8ff6f40a0af21aa5203f3689d65d` (v1.1.0) plus [the retry patch](patches/loadgen-retry.patch). This is a local patched build, not a published loadgen release. Terraform uploads that executable; every agent receives the same policy. Results record the source commit, patch and executable SHA-256, Go version, and policy. No agent build is involved in this step.
 
 The benchmark explicitly enables `--max-retries 2 --retry-ambiguous`. Connection failures may receive two additional attempts on fresh connections, with 10/20 ms backoff inside the original 30-second request timeout. HTTP error responses, timeouts, and cancellation are not retried. A response whose body cannot be read completely remains a failure.
 
@@ -69,7 +69,7 @@ Local verification only, without AWS resources:
 
 ## Fixed-throughput resource comparisons
 
-The daily workflow additionally measures every supported agent/scenario at **10,000, 25,000, 50,000 and 75,000 total input logs/sec**, with a global rate limiter. Reports include whole-service CPU, average and sampled peak memory, throughput per core and per MB, target attainment, delivery counters, client drain measurements and observed/published AWS hardware specifications. These are new measured experiments, not extrapolations from best throughput. See [the methodology, statuses, asset contract and local preview commands](docs/fixed-throughput.md).
+The daily workflow additionally measures every supported agent/scenario at **10,000, 25,000, 50,000, 75,000 and 125,000 total input logs/sec**, with a global rate limiter. Reports include whole-service CPU, average and sampled peak memory, throughput per core and per MB, target attainment, delivery counters, client drain measurements and observed/published AWS hardware specifications. These are new measured experiments, not extrapolations from best throughput. See [the methodology, statuses, asset contract and local preview commands](docs/fixed-throughput.md).
 
 ## Results and interpretation
 
@@ -143,3 +143,7 @@ Cribl's available version follows the Cloud workspace rollout. Exact installed
 versions are recorded in every release; installation failures do not fall back
 to a pinned version. The load generator and runner tooling remain controlled
 benchmark dependencies, separate from the agents under test.
+
+### Comparing load generators locally
+
+The daily [Rust fixed-rate generator](docs/rust-loadgen.md) implements the same HTTP workload and accounting as Go. Run `./tools/compare_loadgens_local.sh` to build both and measure them against a common local receiver at 25k, 75k, 100k and 200k logs/sec. This does not create AWS resources or change the daily benchmark generator.

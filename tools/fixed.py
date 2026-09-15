@@ -4,7 +4,14 @@ import json
 import math
 from pathlib import Path
 
-RATES = [10000, 25000, 50000, 75000]
+LEGACY_RATES = [10000, 25000, 50000, 75000]
+RATES = [*LEGACY_RATES, 125000]
+
+
+def rates_for(provenance):
+    """Schema 3 adds 125k; older suites retain their original coverage contract."""
+    return RATES if provenance.get("schema_version", 1) >= 3 else LEGACY_RATES
+
 TOLERANCE = .02
 MEASURED_STATUSES = ("ok", "capacity_limited", "generator_limited")
 SHORTFALL_STATUSES = ("capacity_limited", "generator_limited")
@@ -63,7 +70,11 @@ def phase(raw, seconds, require_agent=True):
     return metrics
 
 
-def policy(raw, rate, payload, calibration=False):
+def policy(raw, rate, payload, calibration=False, generator=None):
+    if generator is not None:
+        expected_generator = {"generator": "rust", "dispatch_mode": "workers", "generator_version": generator["version"].split()[-1]}
+        if any(raw.get(k) != v for k, v in expected_generator.items()):
+            raise ValueError("fixed-rate generator differs from recorded Rust worker build")
     expected = {'schema_version': 2, 'target_logs_per_second': rate, 'workers': 256, 'payload_sha256': payload, 'warmup_seconds': 2 if calibration else 10, 'configured_measurement_seconds': 10 if calibration else 60, 'request_timeout_seconds': 30, 'max_retries': 2, 'retry_ambiguous': True, 'calibration': calibration}
     if any(raw.get(k) != v for k,v in expected.items()): raise ValueError('inconsistent workload or delivery policy')
     if raw['measurement'].get('scheduled_logs') != rate*expected['configured_measurement_seconds']: raise ValueError('incorrect scheduled target')
@@ -102,14 +113,18 @@ def tier(directory, vendor, case, rate, payload):
             raise ValueError('incomplete tier, wrong identity or service restart')
         if not number(raw.get('agent_drain_observation_seconds')) or raw['agent_drain_observation_seconds'] < 60:
             raise ValueError('missing post-load observation')
-        policy(raw['loadgen'], rate, payload)
+        provenance_path = directory / 'provenance.json'
+        generator = json.loads(provenance_path.read_text()).get('fixed_rate', {}).get('generator') if provenance_path.exists() else None
+        policy(raw['loadgen'], rate, payload, generator=generator)
         m = phase(raw['loadgen'], 60); result.update(m)
         result['limits'] = raw.get('limits'); result['generator_limits'] = raw.get('generator_limits'); result['agent_drain_observation_seconds'] = raw['agent_drain_observation_seconds']
         if any(300 <= int(code) < 500 and int(code) != 429 and count for code, count in m['http_status_counts'].items()):
             raise ValueError('HTTP redirect/client rejection: invalid endpoint, payload, authentication or configuration')
         cal_path = directory / f'{vendor}_{rate}.calibration.json'
         cal = json.loads(cal_path.read_text())
-        policy(cal, rate, payload, True)
+        if any(cal.get(k) != raw['loadgen'].get(k) for k in ('generator', 'generator_version', 'dispatch_mode')):
+            raise ValueError('calibration and measurement use different generators')
+        policy(cal, rate, payload, True, generator=generator)
         calibration = phase(cal, 10, False)
         result['calibration'] = calibration
         if not attainment(calibration, rate) or calibration['scheduler_missed_logs'] > rate*10*TOLERANCE:
@@ -129,14 +144,15 @@ def tier(directory, vendor, case, rate, payload):
 
 def summarize_fixed(directory, provenance, vendors, cases, unsupported):
     enabled = provenance.get('schema_version', 1) >= 2
+    rates = rates_for(provenance)
     payload = provenance.get('fixed_rate', {}).get('payload_sha256')
-    result = {'schema_version': 2, 'measured': enabled, 'tolerance': TOLERANCE, 'memory_unit': 'MB = 1,000,000 bytes', 'cpu_unit': '100% = one logical CPU core', 'tiers': {}, 'common_scenarios': [c for c in cases if all((v,c) not in unsupported for v in vendors)], 'common_scenario_aggregates': {}}
+    result = {'schema_version': 2, 'targets': rates, 'measured': enabled, 'tolerance': TOLERANCE, 'memory_unit': 'MB = 1,000,000 bytes', 'cpu_unit': '100% = one logical CPU core', 'tiers': {}, 'common_scenarios': [c for c in cases if all((v,c) not in unsupported for v in vendors)], 'common_scenario_aggregates': {}}
     for v in vendors:
         for c in cases:
-            for r in RATES:
+            for r in rates:
                 entry = {'target_logs_per_second': r, 'status': 'unsupported', 'sustains_target': None} if (v,c) in unsupported else tier(directory,v,c,r,payload) if enabled else {'target_logs_per_second': r, 'status': 'not_measured', 'sustains_target': None, 'reason': 'Historical result format; no fixed-rate measurements'}
                 result['tiers'][f'{v}/{c}/{r}'] = entry
-        for rate in RATES:
+        for rate in rates:
             rows = [result['tiers'][f'{v}/{c}/{rate}'] for c in result['common_scenarios']]
             valid = all(row['status'] == 'ok' for row in rows)
             # Ratio of sums across the SAME scenarios, not an unweighted average of ratios.
@@ -156,7 +172,7 @@ def summarize_fixed(directory, provenance, vendors, cases, unsupported):
         result['scenario_attainment'] = {}
         for vendor in vendors:
             for case in cases:
-                rows = [result['tiers'][f'{vendor}/{case}/{rate}'] for rate in RATES]
+                rows = [result['tiers'][f'{vendor}/{case}/{rate}'] for rate in rates]
                 passed = [t['target_logs_per_second'] for t in rows if t['status'] == 'ok']
                 failed = [t['target_logs_per_second'] for t in rows if t['status'] in SHORTFALL_STATUSES]
                 result['scenario_attainment'][f'{vendor}/{case}'] = {
@@ -179,11 +195,12 @@ def hardware(directory, vendors):
 
 
 def required_assets(directory, vendors, cases, unsupported):
+    rates = rates_for(json.loads((directory/'provenance.json').read_text()))
     files = [directory/'fixed-nginx.ndjson']
     for v in vendors:
         files += [directory/f'hardware_{v}.json']
-        files += [directory/f'{v}_{r}.calibration.json' for r in RATES]
-        files += [directory/f'{v}_{c}_{r}.fixed.json' for c in cases if (v,c) not in unsupported for r in RATES]
+        files += [directory/f'{v}_{r}.calibration.json' for r in rates]
+        files += [directory/f'{v}_{c}_{r}.fixed.json' for c in cases if (v,c) not in unsupported for r in rates]
     return files
 
 
@@ -202,7 +219,8 @@ def validate_fixed(directory, data):
     p = data.get('provenance', {})
     if p.get('synthetic') or any(t.get('synthetic') for t in data['fixed_throughput']['tiers'].values()): errors.append('Synthetic fixtures must never be published')
     if p.get('schema_version', 1) < 2: return errors
-    expected = {'targets': RATES, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': TOLERANCE}
+    rates = rates_for(p)
+    expected = {'targets': rates, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': TOLERANCE}
     if any(p.get('fixed_rate', {}).get(k) != v for k,v in expected.items()): errors.append('Incomplete fixed-rate methodology')
     corpus = directory/'fixed-nginx.ndjson'
     if not corpus.exists() or hashlib.sha256(corpus.read_bytes()).hexdigest() != p.get('fixed_rate', {}).get('payload_sha256'): errors.append('Missing or mismatched fixed-rate corpus')
@@ -212,10 +230,10 @@ def validate_fixed(directory, data):
             for scope in ['limits', 'generator_limits']:
                 if not isinstance(t.get(scope), dict) or not {'cpu_max', 'memory_max_bytes', 'cpuset_cpus_effective', 'main_process_cpu_affinity', 'cpu_ancestors_observed', 'memory_ancestors_observed'} <= set(t[scope]): errors.append(f'{key}: missing {scope} inspection')
     for vendor in data['hardware']:
-        for rate in RATES:
+        for rate in rates:
             try:
                 cal = json.loads((directory/f'{vendor}_{rate}.calibration.json').read_text())
-                policy(cal, rate, p.get('fixed_rate', {}).get('payload_sha256'), True)
+                policy(cal, rate, p.get('fixed_rate', {}).get('payload_sha256'), True, generator=p.get('fixed_rate', {}).get('generator'))
                 phase(cal, 10, False)
             except (ValueError, KeyError, TypeError, AttributeError, IndexError, OSError, ArithmeticError) as error:
                 errors.append(f'{vendor}/{rate}: invalid calibration: {error}')

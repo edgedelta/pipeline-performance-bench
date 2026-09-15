@@ -166,7 +166,7 @@ if [[ "$has_work" == 0 ]]; then
 fi
 
 function check_prerequisites() {
-  for cmd in terraform jq curl ssh scp python3 tar git go; do
+  for cmd in terraform jq curl ssh scp python3 tar git; do
     command -v "$cmd" >/dev/null || { echo "Missing prerequisite: $cmd" >&2; exit 1; }
   done
   if is_vendor_selected red; then
@@ -197,7 +197,11 @@ function check_prerequisites() {
 }
 
 function create_benchmark_environment() {
-  "$git_root/tools/build_loadgen.sh"
+  if [[ "${BENCHMARK_PREBUILT_LOADGEN:-0}" == 1 ]]; then
+    python3 "$git_root/tools/generator_bundle.py" verify "$git_root/.loadgen-build"
+  else
+    "$git_root/tools/build_generators.sh"
+  fi
   echo "Creating benchmark resources..."
   create_benchmark_resources
   echo "Benchmark resources created successfully"

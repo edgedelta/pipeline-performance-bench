@@ -246,6 +246,11 @@ resource "aws_instance" "benchmark" {
     destination = "/tmp/benchmark-loadgen"
   }
 
+  provisioner "file" {
+    source      = "../.loadgen-build/loadgen-rust"
+    destination = "/tmp/benchmark-loadgen-rust"
+  }
+
   provisioner "remote-exec" {
     script = "../scripts/install_loadgen.sh"
   }

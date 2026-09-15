@@ -15,8 +15,9 @@ class BootstrapTest(unittest.TestCase):
                 'sudo': 'printf "sudo %s\\n" "$*" >> "$CALLS"\ncase "$1" in timeout) exit "$CLOUD_STATUS";; tee) cat >/dev/null;; install) exit 0;; *) exec "$@";; esac\n',
                 'apt-get': 'printf "apt %s\\n" "$*" >> "$CALLS"\nif [[ "$1" == update ]]; then\n n=0; [[ ! -f "$STATE" ]] || n=$(cat "$STATE"); n=$((n+1)); echo "$n" > "$STATE"\n case "$MODE" in lock) if [[ "$n" -lt 3 ]]; then echo "E: Could not get lock /var/lib/apt/lists/lock" >&2; exit 100; fi;; permanent-lock) echo "E: Could not get lock /var/lib/apt/lists/lock" >&2; exit 100;; repository-error) echo "E: repository has no Release file" >&2; exit 100;; esac\nfi\n',
                 'sleep': 'echo "sleep $*" >> "$CALLS"\n',
+                'loadgen-rust': 'echo "loadgen-rust $*" >> "$CALLS"\n',
                 'loadgen': 'echo "loadgen $*" >> "$CALLS"\n',
-                'rm': 'if [[ "$1" != /tmp/benchmark-loadgen ]]; then /bin/rm "$@"; fi\n',
+                'rm': 'if [[ "$1" != /tmp/benchmark-loadgen* ]]; then /bin/rm "$@"; fi\n',
             }
             for name, body in mocks.items():
                 p=binary/name;p.write_text('#!/usr/bin/env bash\n'+body);p.chmod(0o755)
@@ -32,6 +33,8 @@ class BootstrapTest(unittest.TestCase):
         self.assertIn('tee /etc/apt/apt.conf.d/99benchmark-lock-wait',calls)
         self.assertIn('apt -o DPkg::Lock::Timeout=600 install',calls)
         self.assertEqual(count,1)
+        self.assertIn("install -m 0755 /tmp/benchmark-loadgen-rust /usr/local/bin/loadgen-rust", calls)
+        self.assertIn("loadgen-rust --version", calls)
 
     def test_transient_lists_lock_recovers(self):
         result,calls,count=self.run_script('lock')

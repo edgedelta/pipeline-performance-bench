@@ -41,7 +41,7 @@ def merge(source, output, matrix, require_fixed=False):
             raise ValueError('Duplicate shard or missing version')
         directory = version_file.parent
         provenance = json.loads((directory / 'provenance.json').read_text())
-        if require_fixed and provenance.get('schema_version', 1) < 2: raise ValueError('Daily suite requires measured fixed-rate results')
+        if require_fixed and (provenance.get('schema_version', 1) < 3 or provenance.get('fixed_rate', {}).get('targets') != fixed.RATES): raise ValueError('Daily suite requires measured fixed-rate results including 125k')
         instance = provenance.get('instance_id')
         if not instance or instance in instances:
             raise ValueError('Missing or shared instance identity')
@@ -57,7 +57,7 @@ def merge(source, output, matrix, require_fixed=False):
             corpus = (directory/'fixed-nginx.ndjson').read_bytes()
             if corpus_bytes is not None and corpus != corpus_bytes: raise ValueError('Shard payloads differ')
             corpus_bytes = corpus
-            for rate in fixed.RATES:
+            for rate in fixed.rates_for(provenance):
                 files.append(directory/f'{vendor}_{rate}.calibration.json')
                 for case in expected[vendor]:
                     entry = fixed.tier(directory, vendor, case, rate, provenance['fixed_rate']['payload_sha256'])

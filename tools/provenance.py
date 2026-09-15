@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from fixed import RATES
 
 root = Path(__file__).resolve().parents[1]
 def revision(path):
@@ -26,8 +27,8 @@ result = {
     'rust_commit': revision(Path(os.environ.get('RED_SRC_DIR', root.parent / 'red'))) if os.environ.get('RED_BUILD_FROM_SOURCE') == '1' else None,
     'instance_id': os.environ.get('BENCHMARK_INSTANCE_ID'),
     'execution_mode': os.environ.get('BENCHMARK_EXECUTION_MODE', 'sequential'),
-    'schema_version': 2,
-    'fixed_rate': {'stop_after_shortfall': True, 'measurement_order': 'per scenario: throughput then ascending fixed rates', 'targets': [10000, 25000, 50000, 75000], 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
+    'schema_version': 3,
+    'fixed_rate': {'generator': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()), 'stop_after_shortfall': True, 'measurement_order': 'per scenario: throughput then ascending fixed rates', 'targets': RATES, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
     'loadgen_version': '1.1.0+connection-retries.1+fixed-rate.1',
     'loadgen': json.loads((root / '.loadgen-build/provenance.json').read_text()),
     'workers': [80, 100, 120],
