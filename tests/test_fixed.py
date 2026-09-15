@@ -163,7 +163,7 @@ class FixedTest(unittest.TestCase):
         section=body.split('### Filter — measured CPU')[1].split('### Mask — measured CPU')[0]
         self.assertLess(section.index('| 10,000 | Vector |'),section.index('| 10,000 | Edge Delta (Rust) |'))
         self.assertLess(section.index('| 10,000 | Fluentd |'),section.index('| 10,000 | Edge Delta (Go) |'))
-        positions = [section.index(f'| {rate:,} |') for rate in [75000,50000,25000,10000]]
+        positions = [section.index(f'\n| {rate:,} |') for rate in [75000,50000,25000,10000]]
         self.assertEqual(positions,sorted(positions))
         self.assertNotIn('<details>',body)
 
