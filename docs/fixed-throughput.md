@@ -201,9 +201,12 @@ The release body shows best-tested throughput, highest sustained fixed targets,
 shared hardware once (with explicit differences/N/A), and fully expanded scenario
 tables for measured CPU, average memory and throughput per core/MB. Versions
 and source are also expanded. Overview tables sort by pass-through descending;
-fixed-rate rows group by target, then passing rows by logs/sec/core descending
+fixed-rate rows group by target descending (75k, 50k, 25k, 10k), then passing rows by logs/sec/core descending
 and failed rows by achieved throughput descending. Ties use agent name. Failure, uncertainty and skipped-target labels remain
 visible. Connection recovery, queue/drain diagnostics, detailed reliability,
 peak memory and aggregate efficiency stay in `report.md`, `data.json` and raw
 assets, linked from the release. The daily publisher and local release preview
 use this concise renderer; evidence validation and full assets are unchanged.
+
+Descending target order is presentation only. Benchmark execution still tests
+ascending rates and stops higher tiers after a measured shortfall.
