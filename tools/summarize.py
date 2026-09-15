@@ -78,6 +78,9 @@ def report(result):
     provenance = result.get('provenance', {})
     if provenance.get('loadgen', {}).get('retry_ambiguous'):
         lines += ['**Delivery policy:** At least once with possible duplicates; up to two connection-failure retries on fresh connections within the original request timeout. HTTP error responses and timeouts are not retried. Throughput counts acknowledged logical batches once and includes retry time; this suite sends one log per batch. Ambiguous deliveries count logical requests that might have been accepted before a connection failure, including recovered requests. These are not confirmed losses or duplicate counts. Connection and retry counters exclude safe retries internal to Go’s HTTP transport.', '']
+    generator = provenance.get("fixed_rate", {}).get("generator")
+    if generator:
+        lines += [f"**Fixed-rate load generator:** {generator.get('version')} · Rust workers, 256 workers; build identity retained in data.json.", ""]
     if provenance:
         lines += [f"**Execution:** {provenance.get('execution_mode', 'sequential (one instance)')}", '']
         if provenance.get('rust_release'):

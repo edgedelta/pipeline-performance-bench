@@ -1,8 +1,8 @@
 # Fixed-throughput methodology and result contract
 
 The daily suite preserves the 26 supported best-throughput scenarios and their
-80/100/120-worker measurements. It schedules up to 104 additional fixed-rate tiers:
-each supported agent/scenario at 10,000, 25,000, 50,000 and 75,000 **total input
+80/100/120-worker measurements. It schedules up to 130 additional fixed-rate tiers:
+each supported agent/scenario at 10,000, 25,000, 50,000, 75,000 and 125,000 **total input
 logs/second**. Fixed-rate results are independent measurements, never estimates
 from maximum-throughput results. These two workloads are separate experiments.
 
@@ -35,7 +35,7 @@ within their original 30-second timeouts and observes the service for another
 60 seconds before stopping it. Service invocation changes invalidate the tier.
 This does **not** prove that agent buffers or S3 writes drained.
 
-Before the first fixed-rate scenario, all four rates are calibrated once on the
+Before the first fixed-rate scenario, all five rates are calibrated once on the
 instance with the service stopped. The generator is calibrated against a local fast-acknowledgement server using the
 same corpus, workers and delivery policy (2-second warm-up, 10-second measure).
 The calibration includes server CPU in the generator process. It establishes
@@ -147,11 +147,11 @@ IDs, hostnames, private addresses, tags, credentials or serial numbers.
 
 The merge/publication gate checks matching corpus, methodology, actual machine
 configuration, provisioned storage configuration and service limits. Daily merge
-requires schema 2; old result files can still be summarized without new metrics.
+requires schema 3 (including 125k); older result files retain their original target set and can still be summarized without new metrics.
 
-A full release retains 170 evidence assets plus SHA256SUMS: 26 legacy logs,
-104 fixed tier JSON files (either validated skip records or complete loadgen warm-up and measurement
-records), 28 calibration JSON files, seven hardware JSON files, the corpus,
+A full release retains 203 evidence assets plus SHA256SUMS: 26 legacy logs,
+130 fixed tier JSON files (either validated skip records or complete loadgen warm-up and measurement
+records), 35 calibration JSON files, seven hardware JSON files, the corpus,
 versions.csv, provenance.json, data.json and report.md. Upload verification uses
 paginated GitHub asset listings and SHA-256 digests. Synthetic fixtures cannot
 pass publication validation. Invalid or incomplete evidence retains workflow shard artifacts and blocks

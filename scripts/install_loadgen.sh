@@ -39,7 +39,11 @@ sudo apt-get -o DPkg::Lock::Timeout=600 install -y -qq curl jq netcat-openbsd ca
 sudo install -m 0755 /tmp/benchmark-loadgen /usr/local/bin/loadgen
 rm /tmp/benchmark-loadgen
 
+sudo install -m 0755 /tmp/benchmark-loadgen-rust /usr/local/bin/loadgen-rust
+rm /tmp/benchmark-loadgen-rust
+
 loadgen --help
+loadgen-rust --version
 
 # create benchmark scripts directory
 mkdir -p ~/benchmark_scripts

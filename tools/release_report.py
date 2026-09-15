@@ -1,7 +1,7 @@
 """Reader-facing release summary; full diagnostics remain in report/data assets."""
 import re
 
-from fixed import RATES
+from fixed import rates_for
 from fixed_report import table, val
 from summarize import VENDORS, CASES
 
@@ -48,7 +48,7 @@ def hardware(data):
 
 
 def highest_target(tiers, vendor, case='pass-through'):
-    passed = [rate for rate in RATES if tiers[f'{vendor}/{case}/{rate}']['status'] == 'ok']
+    passed = [t['target_logs_per_second'] for key, t in tiers.items() if key.startswith(f'{vendor}/{case}/') and t['status'] == 'ok']
     return max(passed) if passed else -1
 
 
@@ -74,6 +74,7 @@ def fixed_order(tiers, case, rate):
 
 def render(data, run_url, synthetic=False):
     f = data['fixed_throughput']
+    rates = rates_for(data.get('provenance', {}))
     tiers = f['tiers']
     lines = []
     if synthetic:
@@ -86,6 +87,9 @@ def render(data, run_url, synthetic=False):
             lines += [f"{counts['generator_limited']} failed tests have source/bottleneck uncertainty; they do not establish an agent-only capacity limit.", '']
         if counts['invalid'] or counts['missing']:
             lines += [f"**Incomplete evidence: {counts['invalid']} invalid and {counts['missing']} missing tiers.**", '']
+    generator = data.get('provenance', {}).get('fixed_rate', {}).get('generator')
+    if generator:
+        lines += [f"**Load generators:** Rust workers ({val(generator.get('version'))}, 256 workers) for fixed rates and calibration; Go for best-tested throughput.", '']
     lines += ['## Best-tested throughput', '', 'Acknowledged HTTP ingestion, in logs/sec. Each value is the best of the three measured worker settings; durable downstream delivery is not verified. Rows are sorted by pass-through throughput, highest first; flagged or unavailable pass-through results follow valid results.', '']
     rows = []
     for vendor, (_, name) in throughput_order(data):
@@ -104,7 +108,7 @@ def render(data, run_url, synthetic=False):
         for vendor, (_, name) in sorted(VENDORS.items(), key=lambda item: (-highest_target(tiers, item[0]), item[1][1].casefold())):
             cells = []
             for case in CASES:
-                selected = [tiers[f'{vendor}/{case}/{rate}'] for rate in RATES]
+                selected = [tiers[f'{vendor}/{case}/{rate}'] for rate in rates]
                 passed = [t['target_logs_per_second'] for t in selected if t['status']=='ok']
                 cells.append('Unsupported' if all(t['status']=='unsupported' for t in selected) else val(max(passed),0) if passed else 'None' if any(t['status'] in ('capacity_limited','generator_limited') for t in selected) else 'N/A')
             rows.append([name,*cells])
@@ -112,13 +116,13 @@ def render(data, run_url, synthetic=False):
     lines += ['## Hardware and test setup', ''] + hardware(data)
     lines += [f"**Execution:** {data.get('provenance', {}).get('execution_mode', 'N/A')}. Hardware settings are shown once; exact per-instance readings remain in the assets. AWS bandwidth values are published limits, not measured bandwidth.", '']
     if f['measured']:
-        lines += ['## CPU and memory at fixed rates', '', 'Each measured tier uses the same fixed input corpus, 10-second warm-up and 60-second measurement window. Pass requires offered rate within ±2% of target, acknowledged rate ≥98% of target and offered rate, and successful source, delivery and measurement checks.', '', 'CPU **100% = one logical core**. Memory is average whole-service cgroup usage in **MB = 1,000,000 bytes**. Logs/sec/core = acknowledged rate ÷ (CPU%/100); logs/sec/MB = acknowledged rate ÷ average memory. Higher efficiency values are better; failed tiers are not equal-throughput wins. Targets are shown highest first: 75,000, 50,000, 25,000, then 10,000 logs/sec. Within each target, passing rows come first, sorted by logs/sec/core descending. Failed rows follow, sorted by achieved throughput; ties use agent name.', '']
+        lines += ['## CPU and memory at fixed rates', '', 'Each measured tier uses the same fixed input corpus, 10-second warm-up and 60-second measurement window. Pass requires offered rate within ±2% of target, acknowledged rate ≥98% of target and offered rate, and successful source, delivery and measurement checks.', '', 'CPU **100% = one logical core**. Memory is average whole-service cgroup usage in **MB = 1,000,000 bytes**. Logs/sec/core = acknowledged rate ÷ (CPU%/100); logs/sec/MB = acknowledged rate ÷ average memory. Higher efficiency values are better; failed tiers are not equal-throughput wins. Targets are shown highest first: ' + ', '.join(f'{r:,}' for r in reversed(rates)) + ' logs/sec. Within each target, passing rows come first, sorted by logs/sec/core descending. Failed rows follow, sorted by achieved throughput; ties use agent name.', '']
         if not f.get('matching_environment'):
             lines += ['Resource rankings are not assigned because equal machine/process limits could not be fully verified. Measured values are shown below.', '']
         for case in CASES:
             lines += [f'### {case.title()} — measured CPU, memory and efficiency', '']
             rows = []
-            for rate in reversed(RATES):
+            for rate in reversed(rates):
                 for vendor, (_,name) in fixed_order(tiers, case, rate):
                     t = tiers[f'{vendor}/{case}/{rate}']; status = t['status']
                     if status == 'unsupported': continue
@@ -129,8 +133,8 @@ def render(data, run_url, synthetic=False):
             lines += table(['Target logs/sec','Agent','Achieved logs/sec','Avg CPU %','Avg memory MB','Logs/sec/core ↑','Logs/sec/MB ↑','Result'],rows)
             skipped = []
             for vendor, (_,name) in sorted(VENDORS.items(), key=lambda item: item[1][1].casefold()):
-                rates = [f'{rate:,}' for rate in reversed(RATES) if tiers[f'{vendor}/{case}/{rate}']['status']=='skipped_after_shortfall']
-                if rates: skipped.append(f'{name}: {", ".join(rates)}')
+                skipped_rates = [f'{rate:,}' for rate in reversed(rates) if tiers[f'{vendor}/{case}/{rate}']['status']=='skipped_after_shortfall']
+                if skipped_rates: skipped.append(f'{name}: {", ".join(skipped_rates)}')
             if skipped: lines += ['**Not tested after a lower target failed:** ' + '; '.join(skipped) + ' logs/sec.', '']
         lines += ['`Fail*`: source/bottleneck uncertainty. Unsupported: OTel lookup and Fluent Bit masking. Pipeline implementations differ; these measurements are not proof of identical processing semantics.', '']
     else:

@@ -11,7 +11,7 @@ import fixed
 import collect_machine
 
 SERVICES = {'edgedelta': ('edgedelta.service', 8085), 'red': ('red.service', 7085), 'cribl': ('cribl-edge.service', 6085), 'otelcol': ('otelcol-contrib.service', 5085), 'fluentd': ('fluentd.service', 3085), 'vector': ('vector.service', 4085), 'fluentbit': ('fluent-bit.service', 2085)}
-RATES = [10000, 25000, 50000, 75000]
+RATES = fixed.RATES
 
 
 def systemctl(*args):
@@ -39,7 +39,7 @@ def run(vendor, scenario):
     root = Path('benchmark_results'); root.mkdir(exist_ok=True)
     # Corpus is immutable, identical on all instances, and retained with results.
     payload = Path('fixed-nginx.ndjson')
-    base = ['loadgen', '--endpoint', endpoint, '--number', '1', '--workers', '256', '--timeout', '30s', '--max-retries', '2', '--retry-ambiguous', '--fixed-payload-file', str(payload)]
+    base = ['loadgen-rust', '--dispatch-mode', 'workers', '--endpoint', endpoint, '--number', '1', '--workers', '256', '--timeout', '30s', '--max-retries', '2', '--retry-ambiguous', '--fixed-payload-file', str(payload)]
     payload_sha = hashlib.sha256(payload.read_bytes()).hexdigest()
     # Calibrate all rates once per instance, including rates later skipped for an agent.
     for rate in RATES:

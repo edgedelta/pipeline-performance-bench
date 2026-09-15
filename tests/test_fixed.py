@@ -32,6 +32,29 @@ class FixedTest(unittest.TestCase):
     def edit(self, callback, name='red_filter_10000.fixed.json'):
         p=self.directory/name; data=json.loads(p.read_text()); callback(data); fixture.write(p,data)
 
+    def test_125k_requires_measurement_and_is_reported_first(self):
+        self.assertEqual(self.get(125000)['status'], 'ok')
+        data = summarize.summarize(self.directory)
+        body = publish_release.release_notes((self.directory/'report.md').read_text(), 'https://example.invalid', data)
+        self.assertLess(body.index('| 125,000 |'), body.index('| 75,000 |'))
+        self.realish_fixture_for_gate_test_only()
+        (self.directory/'red_filter_125000.fixed.json').unlink()
+        with self.assertRaisesRegex(ValueError, '125000: missing'):
+            check_results.validate(self.directory)
+
+    def test_four_tier_history_does_not_require_or_invent_125k(self):
+        self.edit(lambda r:r.update(schema_version=2), 'provenance.json')
+        self.edit(lambda r:r['fixed_rate'].update(targets=fixed.LEGACY_RATES), 'provenance.json')
+        for p in self.directory.glob('*125000*'): p.unlink()
+        self.realish_fixture_for_gate_test_only()
+        data = check_results.validate(self.directory)
+        self.assertEqual(data['fixed_throughput']['targets'], fixed.LEGACY_RATES)
+        self.assertEqual(len(data['fixed_throughput']['tiers']), 112)
+        self.assertNotIn('red/filter/125000', data['fixed_throughput']['tiers'])
+        body = publish_release.release_notes((self.directory/'report.md').read_text(), 'https://example.invalid', data)
+        self.assertNotIn('| 125,000 |', body)
+        self.assertEqual(len((self.directory/'SHA256SUMS').read_text().splitlines()), 170)
+
     def test_metric_formulas_units_and_scope(self):
         t=self.get()
         self.assertEqual(t['status'], 'ok')
@@ -163,7 +186,7 @@ class FixedTest(unittest.TestCase):
         section=body.split('### Filter — measured CPU')[1].split('### Mask — measured CPU')[0]
         self.assertLess(section.index('| 10,000 | Vector |'),section.index('| 10,000 | Edge Delta (Rust) |'))
         self.assertLess(section.index('| 10,000 | Fluentd |'),section.index('| 10,000 | Edge Delta (Go) |'))
-        positions = [section.index(f'\n| {rate:,} |') for rate in [75000,50000,25000,10000]]
+        positions = [section.index(f'\n| {rate:,} |') for rate in [125000,75000,50000,25000,10000]]
         self.assertEqual(positions,sorted(positions))
         self.assertNotIn('<details>',body)
 
@@ -194,9 +217,9 @@ class FixedTest(unittest.TestCase):
         self.realish_fixture_for_gate_test_only()
         data=check_results.validate(self.directory)
         files=(self.directory/'SHA256SUMS').read_text().splitlines()
-        self.assertEqual(len(files),170) # 26 logs + 4 legacy assets + 104 tiers + 28 calibrations + 7 hardware + corpus
+        self.assertEqual(len(files),203) # 26 logs + 4 legacy assets + 130 tiers + 35 calibrations + 7 hardware + corpus
         self.assertTrue(any('red_filter_10000.fixed.json' in f for f in files))
-        self.assertEqual(len(data['fixed_throughput']['tiers']),112)
+        self.assertEqual(len(data['fixed_throughput']['tiers']),140)
         (self.directory/'red_filter_10000.fixed.json').unlink()
         with self.assertRaisesRegex(ValueError,'missing'):check_results.validate(self.directory)
         self.assertFalse((self.directory/'SHA256SUMS').exists())
@@ -289,17 +312,17 @@ class ShortfallTest(unittest.TestCase):
 
     def test_highest_sustained_never_inferred_from_skipped(self):
         self.shortfall()
-        for rate in [25000,50000,75000]:self.skip(rate)
+        for rate in [25000,50000,75000,125000]:self.skip(rate)
         data=summarize.summarize(self.directory)
         summary=data['fixed_throughput']['scenario_attainment']['red/filter']
         self.assertIsNone(summary['highest_measured_sustained_target'])
         self.assertEqual(summary['lowest_measured_failed_target'],10000)
-        self.assertEqual(data['fixed_throughput']['outcomes']['not_tested_after_shortfall'],3)
+        self.assertEqual(data['fixed_throughput']['outcomes']['not_tested_after_shortfall'],4)
         self.assertIn('NOT TESTED / skipped_after_shortfall',(self.directory/'report.md').read_text())
 
     def test_uncertain_tier_still_requires_limits_and_calibration(self):
         self.realish_fixture_for_gate_test_only();self.shortfall()
-        for rate in [25000,50000,75000]:self.skip(rate)
+        for rate in [25000,50000,75000,125000]:self.skip(rate)
         check_results.validate(self.directory)
         self.edit(lambda r:r.pop('limits'))
         with self.assertRaisesRegex(ValueError,'missing limits'):check_results.validate(self.directory)
@@ -314,7 +337,7 @@ class ShortfallTest(unittest.TestCase):
         calls=[]
         def run(args,**kwargs):
             calls.append(args)
-            if args[0]=='loadgen':Path(args[args.index('--fixed-output')+1]).write_text(json.dumps(raw))
+            if args[0]=='loadgen-rust':Path(args[args.index('--fixed-output')+1]).write_text(json.dumps(raw))
             return subprocess.CompletedProcess(args,0)
         def systemctl(*args):
             if 'ControlGroup' in args:return '/system.slice/red.service'
@@ -325,8 +348,8 @@ class ShortfallTest(unittest.TestCase):
             return '0::/user.slice/test\n' if str(path)=='/proc/self/cgroup' else original(path,*args,**kwargs)
         with patch.object(Path,'read_text',read),patch.object(run_fixed,'ready',return_value='invocation'),patch.object(run_fixed,'systemctl',side_effect=systemctl),patch.object(run_fixed.collect_machine,'limits',return_value={}),patch.object(run_fixed.subprocess,'run',side_effect=run),patch.object(run_fixed.time,'sleep'),patch.object(run_fixed.time,'monotonic',side_effect=[0,60]):
             run_fixed.run('red','filter')
-        self.assertEqual(len([c for c in calls if c[0]=='loadgen']),1)
-        for rate in [25000,50000,75000]:self.assertEqual(self.get(rate)['status'],'skipped_after_shortfall')
+        self.assertEqual(len([c for c in calls if c[0]=='loadgen-rust']),1)
+        for rate in [25000,50000,75000,125000]:self.assertEqual(self.get(rate)['status'],'skipped_after_shortfall')
 
 
 class HardwareTest(unittest.TestCase):
@@ -374,7 +397,7 @@ class RunnerLifecycleTest(unittest.TestCase):
             calls=[]
             def run(args,**kwargs):
                 calls.append(args)
-                if args[0]=='loadgen':raise subprocess.CalledProcessError(1,args)
+                if args[0]=='loadgen-rust':raise subprocess.CalledProcessError(1,args)
                 return subprocess.CompletedProcess(args,0)
             def systemctl(*args):
                 return '/system.slice/red.service' if 'ControlGroup' in args else '1'
