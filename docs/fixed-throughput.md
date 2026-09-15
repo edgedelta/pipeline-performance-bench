@@ -1,7 +1,7 @@
 # Fixed-throughput methodology and result contract
 
 The daily suite preserves the 26 supported best-throughput scenarios and their
-80/100/120-worker measurements. It then measures 104 additional fixed-rate tiers:
+80/100/120-worker measurements. It schedules up to 104 additional fixed-rate tiers:
 each supported agent/scenario at 10,000, 25,000, 50,000 and 75,000 **total input
 logs/second**. Fixed-rate results are independent measurements, never estimates
 from maximum-throughput results. These two workloads are separate experiments.
@@ -9,8 +9,10 @@ from maximum-throughput results. These two workloads are separate experiments.
 ## Workload and topology
 
 Seven daily jobs run concurrently, each with its own AWS instance and resources.
-Within each job, installation happens once, all legacy scenarios run first, then
-fixed scenarios and their four rates run sequentially. Direct `run.sh` remains
+Within each job, installation happens once. Each scenario is configured once,
+then its legacy throughput tiers and ascending fixed rates run sequentially.
+The next scenario starts afterward. Every measured tier keeps its own resource
+window; throughput-mode samples never substitute for fixed-rate measurements. Direct `run.sh` remains
 sequential on one instance; runtime topology records that distinction.
 
 Fixed mode uses 256 workers with one global scheduler. A 1 ms scheduling tick
@@ -33,8 +35,8 @@ within their original 30-second timeouts and observes the service for another
 60 seconds before stopping it. Service invocation changes invalidate the tier.
 This does **not** prove that agent buffers or S3 writes drained.
 
-Before each target is first used on an instance, the service is stopped and the
-generator is calibrated against a local fast-acknowledgement server using the
+Before the first fixed-rate scenario, all four rates are calibrated once on the
+instance with the service stopped. The generator is calibrated against a local fast-acknowledgement server using the
 same corpus, workers and delivery policy (2-second warm-up, 10-second measure).
 The calibration includes server CPU in the generator process. It establishes
 source capability in isolation; it does not establish capacity when an agent
@@ -68,11 +70,12 @@ valid duration, resources, service continuity and completed HTTP drain. Calibrat
 must meet the same rate criterion, with scheduler misses at most 2%; the measured
 phase must also have no more than 2% scheduler misses.
 
-| Status | Meaning | Complete-release eligibility |
+| Status | Meaning | Release eligibility |
 |---|---|---|
 | `ok` | Meets the sustained-target criterion | Yes |
 | `capacity_limited` | Calibrated source; rejection/failure or acknowledgement shortfall in the colocated setup | Yes, visibly failed attainment; excluded from efficiency comparisons |
-| `generator_limited` | Calibration/scheduler failure or inconclusive under-offering without explicit agent rejection | No |
+| `generator_limited` | Calibration/scheduler failure or inconclusive under-offering without explicit agent rejection | Yes, explicitly failed/uncertain attainment; never an agent-only capacity claim |
+| `skipped_after_shortfall` | Higher rate intentionally not tested after the first measured shortfall | Yes, requires a valid earlier shortfall record; no metrics or attainment inferred |
 | `invalid` | Missing/broken counters, resource window, service continuity, policy or malformed endpoint/payload evidence | No |
 | `missing` | Expected measurement file absent | No |
 | `unsupported` | Suite does not implement that agent/scenario | Expected exclusion |
@@ -83,6 +86,16 @@ claim. Request failures and 5xx responses are reported as limits of this tested
 setup, not proof of an agent-only CPU bottleneck. Standalone calibration cannot
 rule out colocated host contention; unexplained under-offering is conservatively
 source-limited. Host busy and generator CPU/RSS counters are retained for diagnosis.
+
+The runner stops higher fixed rates for a scenario after the first measured
+`capacity_limited` or `generator_limited` outcome. Higher-rate JSON assets explicitly
+reference that measured target and contain no fabricated resource or throughput
+measurements. Missing or invalid evidence aborts the run; it cannot justify skips.
+Reports show PASS, FAIL (target not sustained), or NOT TESTED alongside the original
+diagnostic status, and summarize the highest measured sustained tier. This is not
+an exact capacity estimate or proof of backlog stability. If even 10k fails,
+highest sustained target is N/A, not zero. Historical files retain all measured tiers.
+Release introductions count failures, skips and generator uncertainty explicitly.
 
 Agent backlog before/after and stability are **N/A, not measured**. Client queue
 and in-flight counts at the window boundary, late acknowledgements and elapsed
@@ -136,14 +149,15 @@ The merge/publication gate checks matching corpus, methodology, actual machine
 configuration, provisioned storage configuration and service limits. Daily merge
 requires schema 2; old result files can still be summarized without new metrics.
 
-A full release retains 170 measured assets plus SHA256SUMS: 26 legacy logs,
-104 fixed tier JSON files (embedding complete loadgen warm-up and measurement
+A full release retains 170 evidence assets plus SHA256SUMS: 26 legacy logs,
+104 fixed tier JSON files (either validated skip records or complete loadgen warm-up and measurement
 records), 28 calibration JSON files, seven hardware JSON files, the corpus,
 versions.csv, provenance.json, data.json and report.md. Upload verification uses
 paginated GitHub asset listings and SHA-256 digests. Synthetic fixtures cannot
-pass publication validation. Invalid/incomplete/source-limited suites retain
-workflow shard artifacts but cannot publish as complete releases. Capacity limits
-remain visible and are not advertised as successful target attainment.
+pass publication validation. Invalid or incomplete evidence retains workflow shard artifacts and blocks
+publication. Valid measured shortfalls and evidence-backed skips may publish,
+with failed attainment and any source uncertainty explicitly counted in the
+release introduction. They are never advertised as successful target tests.
 
 ## Local preview, validation and real collection
 
@@ -175,3 +189,8 @@ installation and both workloads; timeout/failure still triggers cleanup, with
 refreshed AWS credentials. The extended suite duration has not been measured in
 AWS yet. Real results must be collected; no fixture or old maximum is substituted.
 Historical releases and the website are not changed by local rendering.
+
+Machine comparability requires matching CPU, instance type, region, OS, kernel,
+storage and resource limits. OS-accessible MemTotal may differ by at most 64 KiB
+when AWS published memory capacities match. Exact observed bytes remain in raw
+assets. Without published memory metadata, observed memory must match exactly.

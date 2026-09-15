@@ -167,7 +167,101 @@ class FixedTest(unittest.TestCase):
         self.assertTrue((output/'red_75000.calibration.json').exists())
 
 
+class ShortfallTest(unittest.TestCase):
+    setUp = FixedTest.setUp
+    get = FixedTest.get
+    edit = FixedTest.edit
+    realish_fixture_for_gate_test_only = FixedTest.realish_fixture_for_gate_test_only
+    def shortfall(self):
+        def fail(raw):
+            p=raw['loadgen']['measurement']
+            for k in ['acknowledged_logs','offered_logs','dispatched_logs']: p[k]-=100000
+            p['worker_queue_dropped_logs']+=100000;p['http_status_counts']['200']-=100000
+        self.edit(fail)
+
+    def skip(self, rate=25000, trigger=10000):
+        fixture.write(self.directory/f'red_filter_{rate}.fixed.json', {
+            'schema_version':2,'vendor':'red','scenario':'filter','target_logs_per_second':rate,
+            'complete':True,'status':'skipped_after_shortfall','payload_sha256':self.sha,
+            'trigger_target_logs_per_second':trigger})
+
+    def test_shortfall_publishable_without_claiming_success_or_capacity(self):
+        self.realish_fixture_for_gate_test_only();self.shortfall()
+        data=check_results.validate(self.directory)
+        t=data['fixed_throughput']['tiers']['red/filter/10000']
+        self.assertEqual(t['status'],'generator_limited');self.assertFalse(t['comparison_eligible'])
+        report=(self.directory/'report.md').read_text()
+        body=publish_release.release_notes(report,'https://example.invalid',data)
+        self.assertIn('failed to sustain target',body);self.assertIn('bottleneck uncertainty',body)
+        self.assertIn('FAIL — target not sustained / generator_limited',body)
+        self.assertGreater(data['fixed_throughput']['outcomes']['failed_target'],0)
+        self.edit(lambda r:r['loadgen']['measurement'].update(resource_samples=[]))
+        with self.assertRaisesRegex(ValueError,'invalid'):check_results.validate(self.directory)
+
+    def test_skip_keeps_metrics_absent_and_validates_actual_failure(self):
+        self.shortfall();self.skip()
+        t=self.get(25000);self.assertEqual(t['status'],'skipped_after_shortfall')
+        self.assertIsNone(t['sustains_target']);self.assertNotIn('acknowledged_logs_per_second',t)
+        (self.directory/'red_filter_10000.fixed.json').unlink()
+        self.assertEqual(self.get(25000)['status'],'invalid')
+
+    def test_skip_rejects_success_future_trigger_or_wrong_payload(self):
+        self.skip();self.assertEqual(self.get(25000)['status'],'invalid')
+        self.shortfall();self.skip(trigger=50000);self.assertEqual(self.get(25000)['status'],'invalid')
+        self.skip();self.edit(lambda r:r.update(payload_sha256='wrong'),'red_filter_25000.fixed.json')
+        self.assertEqual(self.get(25000)['status'],'invalid')
+
+    def test_highest_sustained_never_inferred_from_skipped(self):
+        self.shortfall()
+        for rate in [25000,50000,75000]:self.skip(rate)
+        data=summarize.summarize(self.directory)
+        summary=data['fixed_throughput']['scenario_attainment']['red/filter']
+        self.assertIsNone(summary['highest_measured_sustained_target'])
+        self.assertEqual(summary['lowest_measured_failed_target'],10000)
+        self.assertEqual(data['fixed_throughput']['outcomes']['not_tested_after_shortfall'],3)
+        self.assertIn('NOT TESTED / skipped_after_shortfall',(self.directory/'report.md').read_text())
+
+    def test_uncertain_tier_still_requires_limits_and_calibration(self):
+        self.realish_fixture_for_gate_test_only();self.shortfall()
+        for rate in [25000,50000,75000]:self.skip(rate)
+        check_results.validate(self.directory)
+        self.edit(lambda r:r.pop('limits'))
+        with self.assertRaisesRegex(ValueError,'missing limits'):check_results.validate(self.directory)
+
+    def test_runner_stops_after_shortfall_without_starting_higher_tiers(self):
+        import os,subprocess,run_fixed
+        previous=os.getcwd();os.chdir(self.directory.parent);self.addCleanup(os.chdir,previous)
+        self.directory.rename('benchmark_results');self.directory=Path('benchmark_results')
+        Path('fixed-nginx.ndjson').write_bytes((self.directory/'fixed-nginx.ndjson').read_bytes())
+        self.shortfall()
+        raw=json.loads((self.directory/'red_filter_10000.fixed.json').read_text())['loadgen']
+        calls=[]
+        def run(args,**kwargs):
+            calls.append(args)
+            if args[0]=='loadgen':Path(args[args.index('--fixed-output')+1]).write_text(json.dumps(raw))
+            return subprocess.CompletedProcess(args,0)
+        def systemctl(*args):
+            if 'ControlGroup' in args:return '/system.slice/red.service'
+            if 'ActiveState' in args:return 'active'
+            return 'invocation'
+        original=Path.read_text
+        def read(path,*args,**kwargs):
+            return '0::/user.slice/test\n' if str(path)=='/proc/self/cgroup' else original(path,*args,**kwargs)
+        with patch.object(Path,'read_text',read),patch.object(run_fixed,'ready',return_value='invocation'),patch.object(run_fixed,'systemctl',side_effect=systemctl),patch.object(run_fixed.collect_machine,'limits',return_value={}),patch.object(run_fixed.subprocess,'run',side_effect=run),patch.object(run_fixed.time,'sleep'),patch.object(run_fixed.time,'monotonic',side_effect=[0,60]):
+            run_fixed.run('red','filter')
+        self.assertEqual(len([c for c in calls if c[0]=='loadgen']),1)
+        for rate in [25000,50000,75000]:self.assertEqual(self.get(rate)['status'],'skipped_after_shortfall')
+
+
 class HardwareTest(unittest.TestCase):
+    def test_memtotal_variation_requires_equal_published_ram_and_small_delta(self):
+        def machine(observed, published=16384):
+            return {'runtime':{'observed':{'installed_memory_bytes':observed}},'published':{'memory_mib':published}}
+        self.assertTrue(fixed.memory_matches({'a':machine(16000000000),'b':machine(16000008192)}))
+        self.assertFalse(fixed.memory_matches({'a':machine(16000000000),'b':machine(16001000000)}))
+        self.assertFalse(fixed.memory_matches({'a':machine(16000000000),'b':machine(16000008192,32768)}))
+        self.assertFalse(fixed.memory_matches({'a':machine(16000000000,None),'b':machine(16000008192,None)}))
+
     def test_aws_allowlist_no_ids(self):
         values=[{'Reservations':[{'Instances':[{'InstanceType':'c8i.2xlarge','InstanceId':'SECRET-ID','PrivateIpAddress':'SECRET-IP','BlockDeviceMappings':[{'Ebs':{'VolumeId':'SECRET-VOLUME'}}]}]}]}, {'InstanceTypes':[{'VCpuInfo':{'DefaultVCpus':8},'MemoryInfo':{'SizeInMiB':16384},'NetworkInfo':{'NetworkCards':[{'BaselineBandwidthInGbps':2.5,'PeakBandwidthInGbps':10,'NetworkCardIndex':0}]},'EbsInfo':{'EbsOptimizedInfo':{'BaselineBandwidthInMbps':1000,'MaximumBandwidthInMbps':5000}}}]}, {'Volumes':[{'VolumeId':'SECRET-VOLUME','VolumeType':'gp3','Size':100,'Iops':3000,'Throughput':125,'Tags':[{'Value':'SECRET-TAG'}]}]}]
         with patch.object(aws_machine,'aws',side_effect=values):h=aws_machine.specifications('unused','us-west-2')
@@ -198,6 +292,7 @@ class RunnerLifecycleTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             previous=os.getcwd();os.chdir(tmp)
             self.addCleanup(os.chdir,previous)
+            Path('fixed-nginx.ndjson').write_text('{}\n')
             root=Path('benchmark_results');root.mkdir()
             (root/'red_10000.calibration.json').write_text('{}')
             calls=[]

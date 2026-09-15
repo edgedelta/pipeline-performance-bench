@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish a complete, successful benchmark as an immutable dated release."""
+"""Publish validated benchmark evidence, including labeled target shortfalls, as an immutable dated release."""
 import argparse
 import hashlib
 import json
@@ -17,8 +17,14 @@ def release_notes(report, run_url, data=None):
     if (data or {}).get('fixed_throughput', {}).get('measured'):
         tiers = [t for t in data['fixed_throughput']['tiers'].values() if t['status'] != 'unsupported']
         sustained = sum(t['status'] == 'ok' for t in tiers)
-        intro = (f"26 supported best-throughput scenarios / 78 worker tiers; {len(tiers)} supported fixed-rate tiers recorded, "
-                 f"of which **{sustained} sustain their target**. Capacity limits and invalid outcomes are labeled in the tables. "
+        failed = sum(t['status'] in ('capacity_limited', 'generator_limited') for t in tiers)
+        skipped = sum(t['status'] == 'skipped_after_shortfall' for t in tiers)
+        uncertain = sum(t['status'] == 'generator_limited' for t in tiers)
+        intro = (f"26 supported best-throughput scenarios / 78 worker tiers; **{sustained} fixed-rate targets passed, "
+                 f"{failed} failed to sustain target, {skipped} higher tiers not tested**. "
+                 "Failed attainment is a benchmark outcome, not a successful target test. "
+                 f"**{uncertain} measured tiers have generator/bottleneck uncertainty** and do not establish agent-only capacity. "
+                 "Only sustained, comparable tiers qualify for resource comparisons. "
                  "Seven agents use separate instances, with sequential scenarios and tiers.\n\n")
     else:
         intro = 'Best-tested-throughput results; fixed-rate resource comparisons were not measured in this result format.\n\n'

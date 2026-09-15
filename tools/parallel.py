@@ -61,7 +61,7 @@ def merge(source, output, matrix, require_fixed=False):
                 files.append(directory/f'{vendor}_{rate}.calibration.json')
                 for case in expected[vendor]:
                     entry = fixed.tier(directory, vendor, case, rate, provenance['fixed_rate']['payload_sha256'])
-                    if entry['status'] not in ('ok', 'capacity_limited'): raise ValueError(f'{vendor}/{case}/{rate}: {entry["status"]}: {entry["reason"]}')
+                    if entry['status'] not in fixed.REPORTABLE_STATUSES: raise ValueError(f'{vendor}/{case}/{rate}: {entry["status"]}: {entry["reason"]}')
                     files.append(directory/f'{vendor}_{case}_{rate}.fixed.json')
         shards[vendor] = provenance
         versions += rows

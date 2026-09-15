@@ -6,6 +6,9 @@ from pathlib import Path
 
 RATES = [10000, 25000, 50000, 75000]
 TOLERANCE = .02
+MEASURED_STATUSES = ("ok", "capacity_limited", "generator_limited")
+SHORTFALL_STATUSES = ("capacity_limited", "generator_limited")
+REPORTABLE_STATUSES = (*MEASURED_STATUSES, "skipped_after_shortfall")
 COUNTERS = ['scheduled_logs', 'dispatched_logs', 'offered_logs', 'acknowledged_logs', 'acknowledged_after_window', 'errors', 'backpressure', 'connection_errors', 'retry_attempts', 'recovered_requests', 'ambiguous_deliveries', 'scheduler_missed_logs', 'worker_queue_dropped_logs', 'expired_before_dispatch_logs', 'client_inflight_at_end', 'client_inflight_after_drain', 'client_queue_at_end']
 
 
@@ -79,6 +82,22 @@ def tier(directory, vendor, case, rate, payload):
     try:
         raw = json.loads(path.read_text())
         if raw.get('synthetic'): result['synthetic'] = True
+        if raw.get('status') == 'skipped_after_shortfall':
+            trigger = raw.get('trigger_target_logs_per_second')
+            if (raw.get('schema_version') != 2 or raw.get('vendor') != vendor or raw.get('scenario') != case
+                    or raw.get('target_logs_per_second') != rate or raw.get('complete') is not True
+                    or raw.get('payload_sha256') != payload or trigger not in RATES or trigger >= rate
+                    or 'loadgen' in raw):
+                raise ValueError('invalid shortfall skip record')
+            evidence = tier(directory, vendor, case, trigger, payload)
+            if evidence['status'] not in SHORTFALL_STATUSES:
+                raise ValueError('skip requires an earlier measured target shortfall')
+            if any(tier(directory, vendor, case, lower, payload)['status'] != 'ok' for lower in RATES if lower < trigger):
+                raise ValueError('skip must reference the first measured shortfall')
+            result.update(status='skipped_after_shortfall', sustains_target=None,
+                          trigger_target_logs_per_second=trigger,
+                          reason=f'Not tested after {trigger:,} logs/sec target shortfall ({evidence["status"]}); no higher-rate capacity claim')
+            return result
         if raw.get('schema_version') != 2 or raw.get('vendor') != vendor or raw.get('scenario') != case or raw.get('target_logs_per_second') != rate or raw.get('complete') is not True or raw.get('service_unchanged') is not True:
             raise ValueError('incomplete tier, wrong identity or service restart')
         if not number(raw.get('agent_drain_observation_seconds')) or raw['agent_drain_observation_seconds'] < 60:
@@ -125,6 +144,26 @@ def summarize_fixed(directory, provenance, vendors, cases, unsupported):
             cpu = sum(r['agent_cpu_percent']/100 for r in rows) if valid else None
             mem = sum(r['agent_avg_memory_mb'] for r in rows) if valid else None
             result['common_scenario_aggregates'][f'{v}/{rate}'] = {'status': 'ok' if valid else 'excluded', 'logs_per_second_per_core': ack/cpu if cpu else None, 'logs_per_second_per_mb': ack/mem if mem else None, 'cpu_microseconds_per_acknowledged_log': cpu*1e6/ack if ack else None}
+    if enabled:
+        supported = [t for t in result['tiers'].values() if t['status'] != 'unsupported']
+        result['outcomes'] = {
+            'passed': sum(t['status'] == 'ok' for t in supported),
+            'failed_target': sum(t['status'] in SHORTFALL_STATUSES for t in supported),
+            'not_tested_after_shortfall': sum(t['status'] == 'skipped_after_shortfall' for t in supported),
+            'invalid_or_missing': sum(t['status'] not in REPORTABLE_STATUSES for t in supported),
+            'generator_uncertain': sum(t['status'] == 'generator_limited' for t in supported),
+        }
+        result['scenario_attainment'] = {}
+        for vendor in vendors:
+            for case in cases:
+                rows = [result['tiers'][f'{vendor}/{case}/{rate}'] for rate in RATES]
+                passed = [t['target_logs_per_second'] for t in rows if t['status'] == 'ok']
+                failed = [t['target_logs_per_second'] for t in rows if t['status'] in SHORTFALL_STATUSES]
+                result['scenario_attainment'][f'{vendor}/{case}'] = {
+                    'highest_measured_sustained_target': max(passed) if passed else None,
+                    'lowest_measured_failed_target': min(failed) if failed else None,
+                    'unsupported': (vendor, case) in unsupported,
+                }
     return result
 
 
@@ -148,6 +187,16 @@ def required_assets(directory, vendors, cases, unsupported):
     return files
 
 
+def memory_matches(hardware):
+    """Keep observed MemTotal exact, but allow <=64 KiB variation for equal AWS RAM SKUs."""
+    observed = [h.get('runtime', {}).get('observed', {}).get('installed_memory_bytes') for h in hardware.values()]
+    if not observed or not all(number(m) and m > 0 for m in observed): return False
+    published = [h.get('published', {}).get('memory_mib') for h in hardware.values()]
+    if len(set(published)) > 1: return False
+    if len(set(observed)) == 1: return True
+    return all(number(m) and m > 0 for m in published) and max(observed)-min(observed) <= 65536
+
+
 def validate_fixed(directory, data):
     errors = []
     p = data.get('provenance', {})
@@ -158,22 +207,30 @@ def validate_fixed(directory, data):
     corpus = directory/'fixed-nginx.ndjson'
     if not corpus.exists() or hashlib.sha256(corpus.read_bytes()).hexdigest() != p.get('fixed_rate', {}).get('payload_sha256'): errors.append('Missing or mismatched fixed-rate corpus')
     for key, t in data['fixed_throughput']['tiers'].items():
-        if t['status'] not in ('ok', 'unsupported', 'capacity_limited'): errors.append(f'{key}: {t["status"]}: {t.get("reason")}')
-        if t['status'] in ('ok', 'capacity_limited'):
+        if t['status'] not in (*REPORTABLE_STATUSES, 'unsupported'): errors.append(f'{key}: {t["status"]}: {t.get("reason")}')
+        if t['status'] in MEASURED_STATUSES:
             for scope in ['limits', 'generator_limits']:
                 if not isinstance(t.get(scope), dict) or not {'cpu_max', 'memory_max_bytes', 'cpuset_cpus_effective', 'main_process_cpu_affinity', 'cpu_ancestors_observed', 'memory_ancestors_observed'} <= set(t[scope]): errors.append(f'{key}: missing {scope} inspection')
+    for vendor in data['hardware']:
+        for rate in RATES:
+            try:
+                cal = json.loads((directory/f'{vendor}_{rate}.calibration.json').read_text())
+                policy(cal, rate, p.get('fixed_rate', {}).get('payload_sha256'), True)
+                phase(cal, 10, False)
+            except (ValueError, KeyError, TypeError, AttributeError, IndexError, OSError, ArithmeticError) as error:
+                errors.append(f'{vendor}/{rate}: invalid calibration: {error}')
     observed = []
     for vendor, h in data['hardware'].items():
         o = h.get('runtime', {}).get('observed', {})
         if not o.get('logical_cpus') or not o.get('installed_memory_bytes') or not o.get('os') or not o.get('kernel'): errors.append(f'{vendor}: incomplete runtime hardware inspection')
-        observed.append(tuple(o.get(k) for k in ['instance_type', 'region', 'logical_cpus', 'architecture', 'cpu_model', 'installed_memory_bytes', 'os', 'kernel']))
+        observed.append(tuple(o.get(k) for k in ['instance_type', 'region', 'logical_cpus', 'architecture', 'cpu_model', 'os', 'kernel']))
     storage = [json.dumps(h.get('published', {}).get('volumes'), sort_keys=True) for h in data['hardware'].values()]
     if len(set(storage)) > 1: errors.append('Agent AWS volume configurations differ')
-    limits = [json.dumps(t.get('limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in ('ok', 'capacity_limited')]
-    generator_limits = {json.dumps(t.get('generator_limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in ('ok', 'capacity_limited')}
+    limits = [json.dumps(t.get('limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in MEASURED_STATUSES]
+    generator_limits = {json.dumps(t.get('generator_limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in MEASURED_STATUSES}
     if len(generator_limits) > 1: errors.append('Generator CPU/memory limits differ across tiers or agents')
     if len(set(limits)) > 1: errors.append('Agent CPU/memory limits differ across agents or tiers')
-    if len(set(observed)) > 1: errors.append('Agent runtime machine configurations differ')
+    if len(set(observed)) > 1 or not memory_matches(data['hardware']): errors.append('Agent runtime machine configurations differ')
     return errors
 
 
@@ -183,13 +240,13 @@ def apply_comparability(data):
     known = True
     for h in data['hardware'].values():
         o = h.get('runtime', {}).get('observed', {})
-        keys = ['instance_type', 'region', 'logical_cpus', 'architecture', 'cpu_model', 'installed_memory_bytes', 'os', 'kernel']
+        keys = ['instance_type', 'region', 'logical_cpus', 'architecture', 'cpu_model', 'os', 'kernel']
         known = known and all(o.get(k) is not None for k in keys)
         fingerprints.append(json.dumps([*[o.get(k) for k in keys], h.get('published', {}).get('volumes')], sort_keys=True))
-    limits = {json.dumps(t.get('limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in ('ok', 'capacity_limited')}
-    generator_limits = {json.dumps(t.get('generator_limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in ('ok', 'capacity_limited')}
-    known = known and all((t.get(scope) or {}).get('cpu_ancestors_observed') and (t.get(scope) or {}).get('memory_ancestors_observed') for t in data['fixed_throughput']['tiers'].values() if t['status'] in ('ok', 'capacity_limited') for scope in ['limits', 'generator_limits'])
-    comparable = len(generator_limits) == 1 and known and len(set(fingerprints)) == 1 and len(limits) == 1
+    limits = {json.dumps(t.get('limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in MEASURED_STATUSES}
+    generator_limits = {json.dumps(t.get('generator_limits'), sort_keys=True) for t in data['fixed_throughput']['tiers'].values() if t['status'] in MEASURED_STATUSES}
+    known = known and all((t.get(scope) or {}).get('cpu_ancestors_observed') and (t.get(scope) or {}).get('memory_ancestors_observed') for t in data['fixed_throughput']['tiers'].values() if t['status'] in MEASURED_STATUSES for scope in ['limits', 'generator_limits'])
+    comparable = memory_matches(data['hardware']) and len(generator_limits) == 1 and known and len(set(fingerprints)) == 1 and len(limits) == 1
     data['fixed_throughput']['matching_environment'] = comparable
     for t in data['fixed_throughput']['tiers'].values():
         t['comparison_eligible'] = comparable and t['status'] == 'ok'
