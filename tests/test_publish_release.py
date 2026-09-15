@@ -14,11 +14,11 @@ class PublicationTest(unittest.TestCase):
             publisher.publish(temp, 'owner/repo', 'a' * 40, 'https://example.com/run')
             gh.assert_not_called()
 
-    def test_failed_suite_never_contacts_github(self):
+    def test_invalid_suite_never_contacts_github(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(publisher, 'gh') as gh:
             path = Path(temp); (path / 'SHA256SUMS').touch()
-            with patch.object(publisher, 'validate', return_value={'scenarios': {'red/filter': {'status': 'errors'}}}):
-                with self.assertRaisesRegex(ValueError, 'successful'):
+            with patch.object(publisher, 'validate', side_effect=ValueError('invalid measurement evidence')):
+                with self.assertRaisesRegex(ValueError, 'invalid measurement'):
                     publisher.publish(path, 'owner/repo', 'a' * 40, 'https://example.com/run')
             gh.assert_not_called()
 
@@ -64,7 +64,7 @@ class PublicationTest(unittest.TestCase):
                     return json.dumps([[]] if listing==1 else [[release]])
                 if args[0]=='api' and '/assets?' in args[-1]:return json.dumps([remote[:100],remote[100:]])
                 return ''
-            data={'scenarios':{'red/filter':{'status':'ok'}},'provenance':{'benchmark_commit':'a'*40}}
+            data={'scenarios':{'red/filter':{'status':'ok'},'fluentd/filter':{'status':'errors','workers':[{'errors':27850}]}},'provenance':{'benchmark_commit':'a'*40}}
             with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',side_effect=gh):publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
             uploads=[c for c in calls if c[:2]==('release','upload')]
             self.assertEqual(len(uploads),9)
@@ -72,6 +72,13 @@ class PublicationTest(unittest.TestCase):
             self.assertEqual(created[created.index('--title')+1], 'Benchmark Report - 20260915-091700')
             self.assertTrue(any('/assets?per_page=100' in c[-1] for c in calls))
             self.assertIn('PATCH',calls[-1])
+
+    def test_error_outcomes_are_explicit_in_release_intro(self):
+        data={'scenarios':{'fluentd/filter':{'status':'errors','workers':[{'errors':0},{'errors':0},{'errors':27850}]}}}
+        notes=publisher.release_notes('Retained report','https://example.invalid/run',data)
+        self.assertIn('1 scenario(s) recorded 27,850 unrecovered request errors',notes)
+        self.assertIn('excluded from throughput rankings',notes)
+        self.assertIn('Retained report',notes)
 
     def test_existing_published_release_is_immutable(self):
         with tempfile.TemporaryDirectory() as temp:

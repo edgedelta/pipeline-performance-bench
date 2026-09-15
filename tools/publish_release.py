@@ -28,6 +28,13 @@ def release_notes(report, run_url, data=None):
                  "Seven agents use separate instances, with sequential scenarios and tiers.\n\n")
     else:
         intro = 'Best-tested-throughput results; fixed-rate resource comparisons were not measured in this result format.\n\n'
+    scenarios = (data or {}).get('scenarios', {})
+    measured_errors = [entry for entry in scenarios.values() if entry['status'] == 'errors']
+    if measured_errors:
+        errors = sum(tier.get('errors') or 0 for entry in measured_errors for tier in entry.get('workers', []))
+        intro += (f'**Best-throughput reliability: {len(measured_errors)} scenario(s) recorded '
+                  f'{errors:,} unrecovered request errors across their worker tiers.** '
+                  'These scenarios remain labeled `errors` and are excluded from throughput rankings and cross-scenario comparisons.\n\n')
     if synthetic: intro = '> **SYNTHETIC FIXTURE PREVIEW — NOT REAL RESULTS. DO NOT PUBLISH.**\n\n' + intro
     return intro + f'[Workflow run]({run_url})\n\n' + report
 
@@ -42,8 +49,8 @@ def publish(directory, repo, commit, run_url):
         print('Partial suite: results uploaded as workflow artifacts; no release published.')
         return
     data = validate(directory)
-    if any(entry['status'] not in ('ok', 'unsupported') for entry in data['scenarios'].values()):
-        raise ValueError('Only a complete successful suite may be published')
+    # validate() rejects incomplete/invalid evidence. Measured request errors and
+    # target shortfalls are reportable outcomes, not publication failures.
     if data['provenance']['benchmark_commit'] != commit:
         raise ValueError('Release commit must match measured source')
     if not re.fullmatch(r'\d{8}_\d{6}', directory.name):

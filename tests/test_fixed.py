@@ -141,6 +141,21 @@ class FixedTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'missing'):check_results.validate(self.directory)
         self.assertFalse((self.directory/'SHA256SUMS').exists())
 
+    def test_measured_legacy_errors_validate_but_do_not_rank(self):
+        self.realish_fixture_for_gate_test_only()
+        log=self.directory/'fluentd_filter.log'
+        log.write_text(log.read_text().replace('errors: 0 | backpressure:', 'errors: 1 | backpressure:'))
+        data=check_results.validate(self.directory)
+        self.assertEqual(data['scenarios']['fluentd/filter']['status'],'errors')
+        report=(self.directory/'report.md').read_text()
+        row=next(line for line in report.splitlines() if line.startswith('| Fluentd | errors |'))
+        self.assertTrue(row.endswith('| N/A |'))
+        body=publish_release.release_notes(report,'https://example.invalid',data)
+        self.assertIn('1 scenario(s) recorded 3 unrecovered request errors',body)
+        # A truncated run is still rejected, even with errors present.
+        log.write_text(log.read_text().replace('Finished loadgen with 120 workers','unfinished'))
+        with self.assertRaisesRegex(ValueError,'invalid'):check_results.validate(self.directory)
+
     def test_mismatched_hardware_or_limits_blocks_publication(self):
         self.realish_fixture_for_gate_test_only()
         self.edit(lambda r:r['runtime']['observed'].update(logical_cpus=4),'hardware_red.json')
