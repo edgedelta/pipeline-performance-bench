@@ -35,6 +35,8 @@ class BootstrapTest(unittest.TestCase):
         self.assertEqual(count,1)
         self.assertIn("install -m 0755 /tmp/benchmark-loadgen-rust /usr/local/bin/loadgen-rust", calls)
         self.assertIn("loadgen-rust --version", calls)
+        self.assertNotIn('loadgen --help', calls)
+        self.assertNotIn('/usr/local/bin/loadgen\n', calls)
 
     def test_transient_lists_lock_recovers(self):
         result,calls,count=self.run_script('lock')

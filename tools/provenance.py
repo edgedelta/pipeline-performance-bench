@@ -38,7 +38,6 @@ result = {
     'fixed_rate': {'generator': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()), 'stop_after_shortfall': True, 'measurement_order': 'per scenario: ascending fixed rates, then conditional Rust capacity probes; fixed tiers reused', 'targets': rates, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
     'loadgen_version': json.loads((root / '.loadgen-build/rust-provenance.json').read_text())['version'],
     'loadgen': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()),
-    'legacy_loadgen_build': json.loads((root / '.loadgen-build/provenance.json').read_text()),
     'workers': [256],
     'duration_per_tier_seconds': 60,
     'period': None,

@@ -10,7 +10,7 @@ from fixed import phase
 
 root=Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='fixed-loadgen-validation-') as tmp:
-    subprocess.run(['docker','run','--rm','--platform','linux/amd64','--network','none','-v',f'{root}/.loadgen-build:/build:ro','-v',f'{root}/payloads:/payloads:ro','-v',f'{tmp}:/output','--entrypoint','/build/loadgen','python:3.12-slim','--endpoint','http://127.0.0.1:1','--number','1','--workers','256','--timeout','30s','--max-retries','2','--retry-ambiguous','--fixed-rate','200','--fixed-calibration','--fixed-warmup','1s','--total-time','3s','--fixed-payload-file','/payloads/fixed-nginx.ndjson','--fixed-output','/output/local-validation.json'],check=True,timeout=60)
+    subprocess.run(['docker','run','--rm','--platform','linux/amd64','--network','none','-v',f'{root}/.loadgen-build:/build:ro','-v',f'{root}/payloads:/payloads:ro','-v',f'{tmp}:/output','--entrypoint','/build/loadgen-rust','ubuntu:24.04','--endpoint','http://127.0.0.1:1','--number','1','--workers','256','--timeout','30s','--max-retries','2','--retry-ambiguous','--fixed-rate','200','--fixed-calibration','--fixed-warmup','1s','--total-time','3s','--fixed-payload-file','/payloads/fixed-nginx.ndjson','--fixed-output','/output/local-validation.json'],check=True,timeout=60)
     raw=json.loads((Path(tmp)/'local-validation.json').read_text())
     metrics=phase(raw,3,require_agent=False)
     assert 180<=metrics['offered_logs_per_second']<=204,metrics

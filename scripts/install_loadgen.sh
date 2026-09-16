@@ -35,14 +35,10 @@ apt_update() {
 apt_update
 sudo apt-get -o DPkg::Lock::Timeout=600 install -y -qq curl jq netcat-openbsd ca-certificates python3
 
-# Built and uploaded by this benchmark from pinned source plus the retry patch.
-sudo install -m 0755 /tmp/benchmark-loadgen /usr/local/bin/loadgen
-rm /tmp/benchmark-loadgen
-
+# Rust binary built once by the workflow and verified before provisioning.
 sudo install -m 0755 /tmp/benchmark-loadgen-rust /usr/local/bin/loadgen-rust
 rm /tmp/benchmark-loadgen-rust
 
-loadgen --help
 loadgen-rust --version
 
 # create benchmark scripts directory

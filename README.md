@@ -4,7 +4,7 @@ A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Co
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
+The harness retains the EC2/S3 setup and now uses the Rust load generator for both fixed-rate resource measurements and best sustained throughput. Every measurement uses 256 workers, the same immutable JSON corpus, a global rate limiter and a 60-second measurement window. The workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -20,7 +20,7 @@ Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped a
 
 ## Run
 
-Prerequisites: Ubuntu 24.04 x86_64 with Go 1.26.0 and Rust 1.98.0 (or a matching prebuilt CI generator bundle), Bash, Python 3, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
+Prerequisites: Ubuntu 24.04 x86_64 with Rust 1.98.0 (or a matching prebuilt CI generator bundle), Bash, Python 3, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
 
 ```bash
 ./run.sh --dry-run
@@ -53,7 +53,7 @@ Private rendered configs and generated installers live in ignored `.runtime.*` d
 
 ## Loadgen connection recovery
 
-Before creating AWS resources, `tools/build_generators.sh` builds both generators once; the daily workflow shares the verified bundle across all agent jobs. Rust workers handle all new throughput searches, fixed-rate tiers and calibration. The Go binary is retained for explicit legacy/local comparison commands; the daily suite no longer executes the Go sweep. No compiler is installed on EC2. The Go build uses Linux/amd64 loadgen from upstream commit `801c3c369a0e8ff6f40a0af21aa5203f3689d65d` (v1.1.0) plus [the retry patch](patches/loadgen-retry.patch). This is a local patched build, not a published loadgen release. Terraform uploads that executable; every agent receives the same policy. Results record the source commit, patch and executable SHA-256, Go version, and policy. No agent build is involved in this step.
+Before creating AWS resources, `tools/build_generators.sh` builds the Rust generator once; the daily workflow shares the verified Rust-only bundle across all agent jobs. It neither installs Go nor builds, uploads or installs the Go load generator. No compiler is installed on EC2. Results record Rust compiler/version, executable and source SHA-256 and delivery policy. The old Go build/comparison scripts remain available for explicit local historical comparisons; they are outside the daily and CI paths. No agent build is involved in this step.
 
 The benchmark explicitly enables `--max-retries 2 --retry-ambiguous`. Connection failures may receive two additional attempts on fresh connections, with 10/20 ms backoff inside the original 30-second request timeout. HTTP error responses, timeouts, and cancellation are not retried. A response whose body cannot be read completely remains a failure.
 
@@ -64,7 +64,7 @@ Delivery uses at-least-once semantics with possible duplicates and remaining fai
 Local verification only, without AWS resources:
 
 ```bash
-./tools/build_loadgen.sh --test
+cargo +1.98.0 test --locked --manifest-path loadgen-rust/Cargo.toml
 ```
 
 ## Fixed-throughput resource comparisons

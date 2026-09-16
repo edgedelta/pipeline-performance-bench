@@ -271,7 +271,7 @@ identity, forbids missing or unexplained probes, and requires unchanged resource
 limits across fixed tiers and probes. Extra `.fixed.json` and shared
 `.calibration.json` files are included in release checksums alongside the
 manifest, standard fixed measurements, hardware, versions, provenance, structured
-data and detailed report. New suites do not require Go `.log` files. Scheduled
+data and detailed report. New suites do not require Go `.log` files, a Go compiler, or a Go generator binary. Scheduled
 and manual full runs use this method; release titles and highlighting stay the same.
 
 Create an explicitly synthetic preview without AWS:

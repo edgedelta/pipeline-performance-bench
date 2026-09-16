@@ -59,11 +59,11 @@ For equal limits, Go and Rust workers each have 256 active senders and 256 pendi
 
 ## Daily build and deployment
 
-The daily workflow builds both generators once in a shared Ubuntu 24.04 x86_64 job before any EC2 provisioning. Cargo uses the committed lockfile and Rust 1.98.0; dependency and release-build caches are reused. Each agent downloads the same bundle, verifies source and executable checksums, and uploads the binaries to EC2. No Rust compiler is installed on benchmark instances. Build failures stop the suite before AWS resources are created.
+The daily workflow builds the Rust generator once in a shared Ubuntu 24.04 x86_64 job before any EC2 provisioning. Cargo uses the committed lockfile and Rust 1.98.0; dependency and release-build caches are reused. Each agent downloads the same bundle, verifies source and executable checksums, and uploads the Rust binary to EC2. No Rust compiler is installed on benchmark instances. Build failures stop the suite before AWS resources are created.
 
 Fixed tiers and calibration explicitly select `loadgen-rust --dispatch-mode workers --workers 256`. Tokio uses the available CPU count; no new CPU affinity or thread restriction is applied. Rates, corpus, warm-up, timing, retries, agent measurements and shortfall handling remain the same. Fixed-generator build identity is retained under `provenance.fixed_rate.generator`; combining different builds or dispatch modes is rejected. Historical Go measurements remain readable without inventing Rust metadata.
 
-For direct runs, build on Ubuntu 24.04 x86_64 with Go 1.26.0 and `rustup toolchain install 1.98.0 --profile minimal`, then use `./run.sh`. Alternatively, extract a matching CI generator artifact into `.loadgen-build` and set `BENCHMARK_PREBUILT_LOADGEN=1`; checksum/source validation still runs before provisioning. This environment variable never downloads or trusts an unrelated release binary.
+For direct runs, build on Ubuntu 24.04 x86_64 with `rustup toolchain install 1.98.0 --profile minimal`, then use `./run.sh`. Alternatively, extract a matching CI generator artifact into `.loadgen-build` and set `BENCHMARK_PREBUILT_LOADGEN=1`; checksum/source validation still runs before provisioning. This environment variable never downloads or trusts an unrelated release binary.
 
 Observed local release compilation took approximately 8–17 seconds; clean toolchain/dependency downloads add time. GitHub runner build timing has not yet been measured. Compilation happens once per workflow, outside the measured workload and before billable EC2 runtime.
 
@@ -84,3 +84,5 @@ gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref 
 Rust loadgen 0.1.1 waits for Hyper connection readiness and safely retries a canceled dispatch only before response headers and before any request bytes were written. Actual application cancellation, timeout, HTTP rejection and incomplete response body policies remain unchanged. Each phase retains up to eight attempt diagnostics and eight separately retained final-error diagnostics in raw JSON, without request payloads or headers.
 
 Schema-4 full suites also use Rust workers for the [sustained-throughput search](fixed-throughput.md#rust-sustained-throughput-search-schema-4). The old Go sweep remains an explicit legacy command only.
+
+The daily build, artifact bundle, EC2 installer and CI now require only Rust. Go is not installed or built by those workflows. Historical Go build and local comparison scripts remain explicit opt-in tools.
