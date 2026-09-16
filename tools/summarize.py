@@ -9,6 +9,7 @@ import re
 import statistics
 import fixed
 import fixed_report
+import capacity
 
 VENDORS = {'edgedelta': ('ed', 'Edge Delta (Go)'), 'red': ('red', 'Edge Delta (Rust)'), 'cribl': ('cribl', 'Cribl'), 'otelcol': ('otel', 'OpenTelemetry Collector'), 'fluentd': ('fluentd', 'Fluentd'), 'vector': ('vector', 'Vector'), 'fluentbit': ('fluentbit', 'Fluent Bit')}
 RETRY_FIELDS = ['connection_errors', 'retry_attempts', 'recovered_requests', 'ambiguous_deliveries']
@@ -71,6 +72,14 @@ def fmt(value, suffix='', decimals=2):
 
 
 def report(result):
+    if capacity.enabled(result.get('provenance', {})):
+        from release_report import render
+        run_url = result.get('provenance', {}).get('workflow_run_url')
+        body = render(result, run_url or 'https://example.invalid/local-report', bool(result.get('synthetic')))
+        if not run_url: body = body.replace(' · [Workflow run](https://example.invalid/local-report)', '')
+        if result.get('provenance', {}).get('benchmark_profile') == 'short':
+            body = '> **SHORT VALIDATION RUN — NOT A FULL PERFORMANCE BENCHMARK. DO NOT PUBLISH.**\n\n' + body
+        return body + '\n' + '\n'.join(capacity.detail_report(result, VENDORS, CASES)) + '\n' + '\n'.join(fixed_report.report(result, VENDORS, CASES))
     lines = ['# Benchmark Report', '', f"**Date:** {result['date']}", f"**Run ID:** {result['runId']}", '', '## Tested Agent Versions', '', '| Vendor | Version |', '|---|---|']
     for key, name in VENDORS.values():
         lines.append(f"| {name} | {result['versions'].get(key, 'Not recorded')} |")
@@ -144,6 +153,8 @@ def summarize(directory):
                     result['versions'][VENDORS[row['agent']][0]] = row['version']
     if (directory / 'provenance.json').exists():
         result['provenance'] = json.loads((directory / 'provenance.json').read_text())
+    rust_search = capacity.enabled(result.get('provenance', {}))
+    if rust_search: result['aggregation'] = 'highest-passing-acknowledged-rate'
     for vendor, (key, name) in VENDORS.items():
         metrics = {'name': name, 'avg': [None] * 4, 'peak': [None] * 4, 'cpu': None, 'mem': None, 'perCpu': None}
         result['vendors'][key] = metrics
@@ -152,7 +163,9 @@ def summarize(directory):
             path = directory / f'{vendor}_{case}.log'
             unsupported = (vendor, case) in UNSUPPORTED
             parsed = {'status': 'unsupported' if unsupported else 'not-run'}
-            if path.exists() and not unsupported:
+            if rust_search and not unsupported:
+                parsed = capacity.summarize(directory, vendor, case, result['provenance'])
+            elif path.exists() and not unsupported:
                 parsed = parse_log(path.read_text(), require_retries=bool(result.get('provenance', {}).get('loadgen', {}).get('retry_ambiguous')))
             result['scenarios'][f'{vendor}/{case}'] = parsed
             if parsed['status'] == 'ok':

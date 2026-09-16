@@ -1,6 +1,7 @@
 """Reader-facing release summary; full diagnostics remain in report/data assets."""
 import math
 import re
+import capacity
 
 from fixed import rates_for
 from fixed_report import table, val
@@ -87,6 +88,7 @@ def fixed_order(tiers, case, rate):
 
 
 def render(data, run_url, synthetic=False):
+    rust_search = capacity.enabled(data.get('provenance', {}))
     f = data['fixed_throughput']
     rates = rates_for(data.get('provenance', {}))
     tiers = f['tiers']
@@ -103,11 +105,19 @@ def render(data, run_url, synthetic=False):
             lines += [f"**Incomplete evidence: {counts['invalid']} invalid and {counts['missing']} missing tiers.**", '']
     generator = data.get('provenance', {}).get('fixed_rate', {}).get('generator')
     if generator:
-        lines += [f"**Load generators:** Rust workers ({val(generator.get('version'))}, 256 workers) for fixed rates and calibration; Go for best-tested throughput.", '']
+        usage = 'for throughput, fixed rates and calibration.' if rust_search else 'for fixed rates and calibration; Go for best-tested throughput.'
+        lines += [f"**Load generators:** Rust workers ({val(generator.get('version'))}, 256 workers) {usage}", '']
     legend = '🏆 **Bold values** mark the highest valid result in each scenario, including ties.'
     if f['measured']:
         legend += ' In fixed-rate tables, 🔹 **bold rows** mark the highest observed logs/sec/core among passing agents at that scenario and target; a sole passing agent is highlighted too.'
-    lines += ['## Best-tested throughput', '', legend, '', 'Acknowledged HTTP ingestion, in logs/sec. Each value is the best of the three measured worker settings; durable downstream delivery is not verified. Rows are sorted by pass-through throughput, highest first; flagged or unavailable pass-through results follow valid results.', '']
+    methodology = ('Acknowledged HTTP ingestion, in logs/sec. Each value is the highest acknowledged rate from a passing Rust rate-search tier. '
+                   'The search reuses the fixed-rate measurements with identical corpus, workers, measurement windows and delivery policy. '
+                   'Full runs also probe 1k/2.5k/5k if 10k fails, or 200k/250k if 125k passes, stopping each extra ladder on its first shortfall. '
+                   'These are measured sustainable rates, not proven maximum agent capacities; durable downstream delivery and backlog stability are not verified. '
+                   'Rows are sorted by pass-through throughput, highest first; unavailable results follow valid results.') if rust_search else 'Acknowledged HTTP ingestion, in logs/sec. Each value is the best of the three measured worker settings; durable downstream delivery is not verified. Rows are sorted by pass-through throughput, highest first; flagged or unavailable pass-through results follow valid results.'
+    lines += ['## Best-tested throughput', '', legend, '', methodology, '']
+    if rust_search:
+        lines += ['† Passed the highest tested ceiling; higher capacity was not tested. ‡ A higher-rate test had source/bottleneck uncertainty, so an agent-only limit cannot be determined. No passing tier does not mean zero capacity.', '']
     throughput_leaders = {case: leaders({v: data['scenarios'].get(f'{v}/{case}', {}) for v in VENDORS}, 'avg') for case in CASES}
     rows = []
     for vendor, (_, name) in throughput_order(data):
@@ -117,6 +127,12 @@ def render(data, run_url, synthetic=False):
             status = t.get('status', 'missing')
             cells.append(val(t.get('avg'),0) + (' †' if status == 'errors' else '') if status in ('ok','errors') else 'Unsupported' if status == 'unsupported' else status.title())
             if vendor in throughput_leaders[case]: cells[-1] = bold(cells[-1])
+            if rust_search:
+                if status == 'ok':
+                    if t.get('ceiling_reached'): cells[-1] += ' †'
+                    if t.get('generator_uncertainty'): cells[-1] += ' ‡'
+                else:
+                    cells[-1] = {'no_sustained_rate': 'No passing tier', 'generator_limited': 'No passing tier ‡'}.get(status, cells[-1])
         rows.append(['🏆 ' + bold(name) if any(vendor in winners for winners in throughput_leaders.values()) else name,*cells])
     lines += table(['Agent','Pass-through','Filter','Mask','Lookup'],rows)
     if any(t.get('status') == 'errors' for t in data['scenarios'].values()):
@@ -134,6 +150,8 @@ def render(data, run_url, synthetic=False):
                 if vendor in target_leaders[case]: cells[-1] = bold(cells[-1])
             rows.append(['🏆 ' + bold(name) if any(vendor in winners for winners in target_leaders.values()) else name,*cells])
         lines += table(['Agent','Pass-through','Filter','Mask','Lookup'],rows)
+        if rust_search:
+            lines += ['This target overview covers the standard fixed-rate resource tiers only. Additional throughput-search probes contribute to best-tested throughput above and are retained in the detailed report and raw assets.', '']
     lines += ['## Hardware and test setup', ''] + hardware(data)
     lines += [f"**Execution:** {data.get('provenance', {}).get('execution_mode', 'N/A')}. Hardware settings are shown once; exact per-instance readings remain in the assets. AWS bandwidth values are published limits, not measured bandwidth.", '']
     if f['measured']:

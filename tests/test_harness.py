@@ -21,7 +21,7 @@ class HarnessTest(unittest.TestCase):
                 script = path / 'run_benchmark.sh'
                 script.write_text('#!/bin/bash\necho "[STATS] avg: 100 logs/sec | errors: ' + str(errors) + ' | connection_errors: 2 | retry_attempts: 2 | recovered_requests: 2"\n')
                 script.chmod(0o755)
-                result = subprocess.run(['bash', str(ROOT / 'benchmark_scripts/trigger_benchmark.sh'), 'red', 'pass-through'], cwd=tmp, text=True, capture_output=True, check=True)
+                result = subprocess.run(['bash', str(ROOT / 'benchmark_scripts/trigger_benchmark.sh'), 'red', 'pass-through', 'throughput'], cwd=tmp, text=True, capture_output=True, check=True)
                 self.assertEqual('WARNING:' in result.stdout, errors > 0)
 
     def test_shell_syntax(self):

@@ -31,7 +31,7 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2)+'\n')
 
 
-def create_fixture(directory):
+def create_fixture(directory, rust_throughput=False):
     directory = Path(directory); directory.mkdir(parents=True, exist_ok=False)
     corpus = (ROOT/'payloads/fixed-nginx.ndjson').read_bytes(); sha = hashlib.sha256(corpus).hexdigest()
     (directory/'fixed-nginx.ndjson').write_bytes(corpus)
@@ -50,12 +50,55 @@ def create_fixture(directory):
             for rate in RATES:
                 raw = raw_loadgen(rate, sha, cpu=50+rate/500+i*10, mem=100_000_000+i*20_000_000, capacity=rate==75000 and i%2==0)
                 write(directory/f'{v}_{c}_{rate}.fixed.json', {'synthetic': True, 'schema_version': 2, 'vendor': v, 'scenario': c, 'target_logs_per_second': rate, 'complete': True, 'service_unchanged': True, 'agent_drain_observation_seconds': 60, 'agent_backlog_before': None, 'agent_backlog_after': None, 'limits': limits, 'generator_limits': limits, 'loadgen': raw})
+    if rust_throughput: add_rust_search(directory)
+    return directory
+
+
+def add_rust_search(directory, profile='full'):
+    """Synthetic search outcomes spanning lower probes, shortfalls and the ceiling."""
+    import capacity as search
+    import fixed
+    directory = Path(directory)
+    provenance = json.loads((directory/'provenance.json').read_text())
+    provenance.update(schema_version=4, benchmark_profile=profile, throughput=search.policy({'benchmark_profile': profile}), workers=[256], period=None, duration_per_tier_seconds=60)
+    rates = fixed.rates_for(provenance)
+    identity = dict(generator='rust', dispatch_mode='workers', generator_version='0.1.1')
+    provenance['fixed_rate'].update(targets=rates, generator={'generator':'rust','dispatch_mode':'workers','version':'pipeline-loadgen-rust 0.1.1'})
+    write(directory/'provenance.json', provenance)
+    sha = provenance['fixed_rate']['payload_sha256']
+    for vendor, limit in zip(VENDORS, [125000,250000,1000,5000,10000,200000,25000]):
+        for case in CASES:
+            if (vendor,case) in UNSUPPORTED: continue
+            template = json.loads((directory/f'{vendor}_{case}_10000.fixed.json').read_text())
+            (directory/f'{vendor}_{case}.log').unlink(missing_ok=True)
+            for existing in directory.glob(f'{vendor}_{case}_*.fixed.json'): existing.unlink()
+            def measurement(rate):
+                raw = raw_loadgen(rate, sha, cpu=100, capacity=rate>limit); raw.update(identity)
+                write(directory/f'{vendor}_{case}_{rate}.fixed.json', dict(template, target_logs_per_second=rate, loadgen=raw))
+                cal = raw_loadgen(rate, sha, calibration=True); cal.update(identity, synthetic=True)
+                write(directory/f'{vendor}_{rate}.calibration.json', cal)
+                return 'capacity_limited' if rate>limit else 'ok'
+            outcomes={}; shortfall=None
+            for rate in rates:
+                # Even skipped standard targets retain their independent calibration.
+                cal=raw_loadgen(rate,sha,calibration=True);cal.update(identity,synthetic=True)
+                write(directory/f'{vendor}_{rate}.calibration.json',cal)
+                if shortfall is None:
+                    outcomes[rate]=measurement(rate)
+                    if outcomes[rate]!='ok':shortfall=rate
+                else:
+                    outcomes[rate]='skipped_after_shortfall'
+                    write(directory/f'{vendor}_{case}_{rate}.fixed.json', {'synthetic':True,'schema_version':2,'vendor':vendor,'scenario':case,'target_logs_per_second':rate,'complete':True,'status':'skipped_after_shortfall','payload_sha256':sha,'trigger_target_logs_per_second':shortfall})
+            extra=[]
+            while (rate:=search.next_probe(provenance,outcomes)) is not None:
+                outcomes[rate]=measurement(rate);extra.append(rate)
+            write(directory/f'{vendor}_{case}.capacity.json', {'synthetic':True,'schema_version':1,'vendor':vendor,'scenario':case,'complete':True,'policy':search.policy(provenance),'fixed_rates':rates,'probe_rates':extra})
     return directory
 
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser(description=__doc__); p.add_argument('directory', type=Path); a = p.parse_args()
-    create_fixture(a.directory)
+    p = argparse.ArgumentParser(description=__doc__); p.add_argument('directory', type=Path); p.add_argument('--rust-throughput', action='store_true'); a = p.parse_args()
+    create_fixture(a.directory, rust_throughput=a.rust_throughput)
     data = summarize(a.directory)
     preview = a.directory/'release-notes.md'
     preview.write_text(release_notes((a.directory/'report.md').read_text(), 'https://example.invalid/SYNTHETIC-NOT-A-REAL-RUN', data))

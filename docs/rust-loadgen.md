@@ -2,7 +2,7 @@
 
 The existing Go tool has two workload modes. Legacy throughput tests generate NGINX-like records and send as fast as the configured workers allow. Fixed-rate tests replay `payloads/fixed-nginx.ndjson`: one JSON log per HTTP POST, with a single global rate budget shared by all workers. Workers reuse HTTP connections and wait for each response before taking another log. Both modes measure acknowledged HTTP ingestion, not verified durable delivery.
 
-`loadgen-rust` implements the fixed-rate HTTP/1 path using Tokio and Hyper. The daily workflow uses Rust workers for fixed-rate tiers and their calibration. Go continues to handle legacy randomized throughput and process monitoring; the Rust tool does not implement those modes or HTTPS/proxy support. The Rust binary accepts the existing fixed-rate flags plus `--runtime-threads` to control runtime worker threads.
+`loadgen-rust` implements the fixed-rate HTTP/1 path using Tokio and Hyper. The daily workflow uses Rust workers for fixed-rate tiers, sustained-throughput searches and their calibration. Go is retained for explicit legacy/local comparisons and process monitoring; the Rust tool does not implement those modes or HTTPS/proxy support. The Rust binary accepts the existing fixed-rate flags plus `--runtime-threads` to control runtime worker threads.
 
 ## Matching behavior
 
@@ -71,7 +71,7 @@ The daily target set is 10k, 25k, 50k, 75k and 125k logs/sec (run provenance sch
 
 ## Short AWS validation before a full run
 
-The workflow `profile` input accepts `short` or `full` (default; scheduled jobs remain full). Short mode uses all selected agents but only pass-through, legacy Go throughput at 80/100/120 workers for 10 seconds each with 5-second pauses, and Rust fixed-rate targets 10k and 125k. Fixed rates retain the full 10-second warm-up, 60-second measurement and 60-second post-load observation, plus stable startup, so the check still exercises connection rotation. Higher rates retain the normal skip-after-shortfall policy. Calibration runs at both rates. Instance types, payload, retry policy and cleanup are unchanged. Typical duration is approximately 8–12 minutes, dependent on provisioning and startup.
+The workflow `profile` input accepts `short` or `full` (default; scheduled jobs remain full). Short mode uses all selected agents but only pass-through and Rust fixed-rate targets 10k and 125k. In schema 4, those measurements also supply the throughput summary; no Go sweep or extra capacity probes run. Fixed rates retain the full 10-second warm-up, 60-second measurement and 60-second post-load observation, plus stable startup, so the check still exercises connection rotation. Higher rates retain the normal skip-after-shortfall policy. Calibration runs at both rates. Instance types, payload, retry policy and cleanup are unchanged. Typical duration is approximately 8–12 minutes, dependent on provisioning and startup.
 
 Short reports are explicitly labeled and retained only as workflow artifacts; both the workflow and publisher prohibit a short-run release. The short gate requires complete evidence, Rust passing 10k, and no final Rust request errors at measured fixed-rate tiers. Genuine capacity shortfalls for other agents remain visible and do not imply an infrastructure failure. This gate does not establish long-term reliability or test filter/mask/lookup pipelines.
 
@@ -82,3 +82,5 @@ gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref 
 ```
 
 Rust loadgen 0.1.1 waits for Hyper connection readiness and safely retries a canceled dispatch only before response headers and before any request bytes were written. Actual application cancellation, timeout, HTTP rejection and incomplete response body policies remain unchanged. Each phase retains up to eight attempt diagnostics and eight separately retained final-error diagnostics in raw JSON, without request payloads or headers.
+
+Schema-4 full suites also use Rust workers for the [sustained-throughput search](fixed-throughput.md#rust-sustained-throughput-search-schema-4). The old Go sweep remains an explicit legacy command only.
