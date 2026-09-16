@@ -8,9 +8,10 @@ from pathlib import Path
 import subprocess
 import sys
 from fixed import rates_for
+import capacity
 profile = os.environ.get("BENCHMARK_PROFILE", "full")
 if profile not in ("full", "short"): raise ValueError("Invalid benchmark profile")
-rates = rates_for({"schema_version": 3, "benchmark_profile": profile})
+rates = rates_for({"schema_version": 4, "benchmark_profile": profile})
 
 root = Path(__file__).resolve().parents[1]
 def revision(path):
@@ -30,14 +31,16 @@ result = {
     'rust_commit': revision(Path(os.environ.get('RED_SRC_DIR', root.parent / 'red'))) if os.environ.get('RED_BUILD_FROM_SOURCE') == '1' else None,
     'instance_id': os.environ.get('BENCHMARK_INSTANCE_ID'),
     'execution_mode': os.environ.get('BENCHMARK_EXECUTION_MODE', 'sequential'),
-    'schema_version': 3,
+    'schema_version': 4,
     'benchmark_profile': profile,
-    'fixed_rate': {'generator': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()), 'stop_after_shortfall': True, 'measurement_order': 'per scenario: throughput then ascending fixed rates', 'targets': rates, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
-    'loadgen_version': '1.1.0+connection-retries.1+fixed-rate.1',
-    'loadgen': json.loads((root / '.loadgen-build/provenance.json').read_text()),
-    'workers': [80, 100, 120],
-    'duration_per_tier_seconds': 10 if profile == 'short' else 60,
-    'period': '1ms',
+    'workflow_run_url': f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}" if os.environ.get('GITHUB_REPOSITORY') and os.environ.get('GITHUB_RUN_ID') else None,
+    'throughput': capacity.policy({'benchmark_profile': profile}),
+    'fixed_rate': {'generator': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()), 'stop_after_shortfall': True, 'measurement_order': 'per scenario: ascending fixed rates, then conditional Rust capacity probes; fixed tiers reused', 'targets': rates, 'workers': 256, 'warmup_seconds': 10, 'measurement_seconds': 60, 'agent_drain_seconds': 60, 'tolerance': 0.02, 'calibration_warmup_seconds': 2, 'calibration_measurement_seconds': 10, 'sampling_interval_seconds': 1, 'maximum_catchup_seconds': 0.005, 'memory_scope': 'whole systemd cgroup v2; decimal MB', 'payload_sha256': sha256(root / 'payloads/fixed-nginx.ndjson')},
+    'loadgen_version': json.loads((root / '.loadgen-build/rust-provenance.json').read_text())['version'],
+    'loadgen': json.loads((root / '.loadgen-build/rust-provenance.json').read_text()),
+    'workers': [256],
+    'duration_per_tier_seconds': 60,
+    'period': None,
     'instance_type': 'c8i.2xlarge',
     'region': 'us-west-2',
     'pipeline_sha256': {str(p.relative_to(root)): sha256(p) for p in sorted((root / 'pipelines').rglob('*')) if p.is_file()},

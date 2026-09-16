@@ -242,11 +242,6 @@ resource "aws_instance" "benchmark" {
   }
 
   provisioner "file" {
-    source      = "../.loadgen-build/loadgen"
-    destination = "/tmp/benchmark-loadgen"
-  }
-
-  provisioner "file" {
     source      = "../.loadgen-build/loadgen-rust"
     destination = "/tmp/benchmark-loadgen-rust"
   }

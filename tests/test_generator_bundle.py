@@ -23,13 +23,13 @@ class GeneratorBundleTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.directory = Path(self.tmp.name)
         # Synthetic ELF headers only: never executed or used as measurements.
-        for name in ('loadgen', 'loadgen-rust'):
+        for name in ('loadgen-rust',):
             (self.directory / name).write_bytes(b'\x7fELF\x02\x01' + bytes(12) + b'\x3e\x00' + name.encode())
-        for name, binary in [('provenance.json', 'loadgen'), ('rust-provenance.json', 'loadgen-rust')]:
+        for name, binary in [('rust-provenance.json', 'loadgen-rust')]:
             (self.directory / name).write_text(json.dumps({'binary_sha256': bundle.sha(self.directory / binary)}))
         self.manifest = {'sources': bundle.sources(ROOT),
-                         'binaries': {n: bundle.sha(self.directory / n) for n in ('loadgen', 'loadgen-rust')},
-                         'metadata': {n: bundle.sha(self.directory / n) for n in ('provenance.json', 'rust-provenance.json')}}
+                         'binaries': {n: bundle.sha(self.directory / n) for n in ('loadgen-rust',)},
+                         'metadata': {n: bundle.sha(self.directory / n) for n in ('rust-provenance.json',)}}
         self.write_manifest()
 
     def write_manifest(self):
@@ -40,7 +40,7 @@ class GeneratorBundleTest(unittest.TestCase):
         self.assertEqual((self.directory / 'loadgen-rust').stat().st_mode & 0o777, 0o755)
 
     def test_tampered_binary_and_metadata_rejected(self):
-        for name in ('loadgen', 'loadgen-rust', 'provenance.json', 'rust-provenance.json'):
+        for name in ('loadgen-rust', 'rust-provenance.json'):
             p = self.directory / name
             original = p.read_bytes()
             p.write_bytes(original + b' ')
@@ -55,6 +55,12 @@ class GeneratorBundleTest(unittest.TestCase):
             bundle.verify(self.directory)
         p.unlink()
         with self.assertRaises(FileNotFoundError):
+            bundle.verify(self.directory)
+
+    def test_old_dual_generator_bundle_rejected(self):
+        self.manifest['binaries']['loadgen'] = 'old-go-binary'
+        self.write_manifest()
+        with self.assertRaisesRegex(ValueError, 'only the Rust'):
             bundle.verify(self.directory)
 
     def test_stale_source_bundle_rejected(self):
@@ -73,7 +79,12 @@ class GeneratorBundleTest(unittest.TestCase):
         self.assertLess(verify, auth)
         run = next(s for s in steps if s.get('name') == 'Run isolated agent benchmark')
         self.assertEqual(run['env']['BENCHMARK_PREBUILT_LOADGEN'], '1')
-        self.assertFalse(any('setup-go' in s.get('uses','') for s in steps))
+        self.assertFalse(any('setup-go' in s.get('uses','') for job in jobs.values() for s in job['steps']))
+        build = jobs['build-generators']
+        artifact = next(s for s in build['steps'] if 'upload-artifact' in s.get('uses',''))['with']['path'].splitlines()
+        self.assertEqual(set(artifact), {'.loadgen-build/loadgen-rust','.loadgen-build/rust-provenance.json','.loadgen-build/generators.json'})
+        self.assertNotIn('build_loadgen.sh', (ROOT/'tools/build_generators.sh').read_text())
+        self.assertNotIn('source      = "../.loadgen-build/loadgen"', (ROOT/'aws_resources/main.tf').read_text())
 
 
 class RustDailyPolicyTest(unittest.TestCase):

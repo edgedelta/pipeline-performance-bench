@@ -4,7 +4,7 @@ A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Co
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the upstream EC2/S3 setup, loadgen 1.1.0 nginx JSON workload with the connection-retry patch described below, 80/100/120 concurrent workers, one minute per worker setting, and 60-second drain intervals. The manual workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
+The harness retains the EC2/S3 setup and now uses the Rust load generator for both fixed-rate resource measurements and best sustained throughput. Every measurement uses 256 workers, the same immutable JSON corpus, a global rate limiter and a 60-second measurement window. The workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -20,7 +20,7 @@ Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped a
 
 ## Run
 
-Prerequisites: Ubuntu 24.04 x86_64 with Go 1.26.0 and Rust 1.98.0 (or a matching prebuilt CI generator bundle), Bash, Python 3, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
+Prerequisites: Ubuntu 24.04 x86_64 with Rust 1.98.0 (or a matching prebuilt CI generator bundle), Bash, Python 3, Git, Terraform, jq, curl, SSH/SCP, and AWS credentials with EC2/S3/IAM provisioning access. All cloud runs create billable AWS resources. AWS region remains `us-west-2`; export `AWS_REGION=us-west-2` and `AWS_DEFAULT_REGION=us-west-2` for local runs. No vendor credentials are needed for a dry run or local tests.
 
 ```bash
 ./run.sh --dry-run
@@ -53,7 +53,7 @@ Private rendered configs and generated installers live in ignored `.runtime.*` d
 
 ## Loadgen connection recovery
 
-Before creating AWS resources, `tools/build_generators.sh` builds both generators once; the daily workflow shares the verified bundle across all agent jobs. Rust workers handle fixed-rate tiers and calibration; Go handles legacy throughput and monitoring. No compiler is installed on EC2. The Go build uses Linux/amd64 loadgen from upstream commit `801c3c369a0e8ff6f40a0af21aa5203f3689d65d` (v1.1.0) plus [the retry patch](patches/loadgen-retry.patch). This is a local patched build, not a published loadgen release. Terraform uploads that executable; every agent receives the same policy. Results record the source commit, patch and executable SHA-256, Go version, and policy. No agent build is involved in this step.
+Before creating AWS resources, `tools/build_generators.sh` builds the Rust generator once; the daily workflow shares the verified Rust-only bundle across all agent jobs. It neither installs Go nor builds, uploads or installs the Go load generator. No compiler is installed on EC2. Results record Rust compiler/version, executable and source SHA-256 and delivery policy. The old Go build/comparison scripts remain available for explicit local historical comparisons; they are outside the daily and CI paths. No agent build is involved in this step.
 
 The benchmark explicitly enables `--max-retries 2 --retry-ambiguous`. Connection failures may receive two additional attempts on fresh connections, with 10/20 ms backoff inside the original 30-second request timeout. HTTP error responses, timeouts, and cancellation are not retried. A response whose body cannot be read completely remains a failure.
 
@@ -64,16 +64,16 @@ Delivery uses at-least-once semantics with possible duplicates and remaining fai
 Local verification only, without AWS resources:
 
 ```bash
-./tools/build_loadgen.sh --test
+cargo +1.98.0 test --locked --manifest-path loadgen-rust/Cargo.toml
 ```
 
 ## Fixed-throughput resource comparisons
 
-The daily workflow additionally measures every supported agent/scenario at **10,000, 25,000, 50,000, 75,000 and 125,000 total input logs/sec**, with a global rate limiter. Reports include whole-service CPU, average and sampled peak memory, throughput per core and per MB, target attainment, delivery counters, client drain measurements and observed/published AWS hardware specifications. These are new measured experiments, not extrapolations from best throughput. See [the methodology, statuses, asset contract and local preview commands](docs/fixed-throughput.md).
+The daily workflow measures every supported agent/scenario at **10,000, 25,000, 50,000, 75,000 and 125,000 total input logs/sec**, with a global rate limiter. Reports include whole-service CPU, average and sampled peak memory, throughput per core and per MB, target attainment, delivery counters, client drain measurements and observed/published AWS hardware specifications. These are new measured experiments, not extrapolations from best throughput. See [the methodology, statuses, asset contract and local preview commands](docs/fixed-throughput.md).
 
 ## Results and interpretation
 
-Each run writes `benchmark_results/<timestamp>/` containing raw `<agent>_<case>.log` files, `versions.csv`, `report.md`, and `data.json`. The summary is deterministic Python; it requires no AI service credentials. Rebuild it with:
+Each new run writes `benchmark_results/<timestamp>/` containing raw `.fixed.json` measurements, `.calibration.json` source checks, `.capacity.json` search manifests, `versions.csv`, `report.md`, and `data.json`. Historical runs retain their original `.log` evidence. The summary is deterministic Python; it requires no AI service credentials. Rebuild it with:
 
 ```bash
 python3 tools/summarize.py benchmark_results/<timestamp>
@@ -81,9 +81,11 @@ python3 tools/summarize.py benchmark_results/<timestamp>
 python3 tools/check_results.py benchmark_results/<timestamp>
 ```
 
-Release tables use the tier with the highest final cumulative average, matching the reference release. Peak, log totals, CPU mean, and peak memory come from that same tier. Multi-process CPU sums per-process means; memory sums per-process peak RSS. Cross-scenario CPU and peak-memory figures average the supported scenarios; throughput per CPU % divides their mean throughput by mean CPU percentage. All tier data and the mean across tiers are retained in data.json. CPU uses 100% per core. Multi-process competitors retain the upstream process-monitoring method, which may omit auxiliary processes. These figures are not complete host/cgroup resource measurements.
+New releases (provenance schema 4) report **best sustained measured throughput** from the Rust worker generator. The five standard fixed-rate tiers are reused without rerunning them. If 125k passes, the search probes 200k then 250k; if 10k fails, it probes 1k, 2.5k then 5k. Each extra ladder stops on its first shortfall. The highest acknowledged rate among passing measurements supplies throughput, CPU and memory; no peak-throughput metric is invented. Passing the ceiling establishes only a tested lower bound on capacity. Short runs reuse their two fixed-rate measurements without additional probes.
 
-Incomplete runs, missing statistics, and detected service restarts invalidate a scenario. Completed measurements with unrecovered HTTP send errors are retained with an `errors` status and reliability counts; they are excluded from ranks and cross-scenario charts. Missing runs and unsupported cases remain distinct. HTTP acceptance does not prove durable S3 delivery: these configs use different buffering, compression, output schemas, and acknowledgment semantics. Vector writes gzip JSON; Fluent Bit uses gzip JSON with disk-backed S3 staging. The inherited agent configs retain their original output settings. Inspect delivery, queue drain, and transform parity before interpreting results as end-to-end performance or publishing comparisons. Local smoke tests validate sources/transforms with stdout output, plus production config loading; they do not test S3 delivery.
+All measurements use the same immutable corpus, 256 Rust workers, global rate limiter, retries, 10-second warm-up, 60-second measurement and 60-second post-load observation. CPU 100% means one logical core; agent memory is whole-service cgroup usage in decimal MB. The same raw fixed-tier record supplies both the resource and throughput summaries. Historical Go results keep their original three-worker-sweep interpretation and are not directly comparable with the new method.
+
+Incomplete evidence, missing probes and service restarts block publication. Measured capacity shortfalls, source limitations and no passing tested tier remain explicit outcomes; they are never substituted with zero capacity. HTTP acceptance does not prove durable S3 delivery or stable agent backlog. Pipeline implementations and buffering differ by product. See [the rate-search method and raw evidence contract](docs/fixed-throughput.md#rust-sustained-throughput-search-schema-4).
 
 Filter drops events whose `pii.color` is `Green`. Lookup matches `pii.ipv4` against the shared CSV's `ipv4` column and emits `region`/`env`, with miss defaults. Vector uses an indexed enrichment table; Fluent Bit loads the bundled simple unquoted CSV once in Lua. Mask uses the inherited nine regexes in Vector. Inherited vendor implementations vary in which fields they scan. New results are not directly interchangeable with old published results: lookup wiring was corrected in this successor.
 
@@ -150,4 +152,4 @@ The daily [Rust fixed-rate generator](docs/rust-loadgen.md) implements the same 
 
 ### Short validation run
 
-Use workflow input `profile=short` (or `./run.sh --profile short`) for pass-through-only validation across the selected agents at 10k and 125k. It keeps 60-second fixed-rate measurement windows, shortens legacy throughput windows to 10 seconds, and normally takes about 8–12 minutes including setup. Short results are labeled validation artifacts and cannot publish a benchmark release. The scheduled job keeps `profile=full`. See [the validation gate and commands](docs/rust-loadgen.md#short-aws-validation-before-a-full-run).
+Use workflow input `profile=short` (or `./run.sh --profile short`) for pass-through-only validation across the selected agents at 10k and 125k. It keeps 60-second fixed-rate measurement windows, reuses them for the throughput summary, omits extra capacity probes, and normally takes about 8–12 minutes including setup. Short results are labeled validation artifacts and cannot publish a benchmark release. The scheduled job keeps `profile=full`. See [the validation gate and commands](docs/rust-loadgen.md#short-aws-validation-before-a-full-run).

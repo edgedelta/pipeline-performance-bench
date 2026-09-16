@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind both Linux executables to the checked-out sources before provisioning."""
+"""Bind the Rust Linux executable to the checked-out sources before provisioning."""
 import argparse
 import hashlib
 import json
@@ -14,19 +14,20 @@ def sha(path):
 
 
 def sources(root):
-    paths = [root / p for p in ('tools/build_generators.sh', 'tools/build_loadgen.sh',
-             'tools/generator_bundle.py', 'patches/loadgen-retry.patch',
+    paths = [root / p for p in ('tools/build_generators.sh',
+             'tools/generator_bundle.py',
              'payloads/fixed-nginx.ndjson', 'loadgen-rust/Cargo.toml', 'loadgen-rust/Cargo.lock')]
     paths += sorted((root / 'loadgen-rust/src').rglob('*.rs'))
-    paths += sorted((root / 'loadgen_extensions').glob('*.go'))
     return {str(p.relative_to(root)): sha(p) for p in paths}
 
 
 def verify(directory, root=ROOT):
     manifest = json.loads((directory / 'generators.json').read_text())
+    if set(manifest['binaries']) != {'loadgen-rust'} or set(manifest['metadata']) != {'rust-provenance.json'}:
+        raise ValueError('Daily bundle must contain only the Rust load generator')
     if manifest['sources'] != sources(root):
         raise ValueError('Generator bundle does not match the checked-out sources')
-    for name in ('loadgen', 'loadgen-rust'):
+    for name in ('loadgen-rust',):
         binary = directory / name
         # ELF64, little-endian, Linux x86_64 machine code (not a macOS/ARM build).
         header = binary.read_bytes()[:20]
@@ -35,7 +36,7 @@ def verify(directory, root=ROOT):
         if sha(binary) != manifest['binaries'][name]:
             raise ValueError(f'{name}: checksum mismatch')
         binary.chmod(0o755)  # GitHub artifact transport removes executable bits.
-    for name, binary in [('provenance.json', 'loadgen'), ('rust-provenance.json', 'loadgen-rust')]:
+    for name, binary in [('rust-provenance.json', 'loadgen-rust')]:
         if sha(directory / name) != manifest['metadata'][name]:
             raise ValueError(f'{name}: checksum mismatch')
         if json.loads((directory / name).read_text())['binary_sha256'] != manifest['binaries'][binary]:
@@ -52,8 +53,8 @@ def create(directory):
             'source_sha256': sources(ROOT)}
     (directory / 'rust-provenance.json').write_text(json.dumps(rust, indent=2) + '\n')
     manifest = {'sources': sources(ROOT),
-                'binaries': {name: sha(directory / name) for name in ('loadgen', 'loadgen-rust')},
-                'metadata': {name: sha(directory / name) for name in ('provenance.json', 'rust-provenance.json')}}
+                'binaries': {name: sha(directory / name) for name in ('loadgen-rust',)},
+                'metadata': {name: sha(directory / name) for name in ('rust-provenance.json',)}}
     (directory / 'generators.json').write_text(json.dumps(manifest, indent=2) + '\n')
     verify(directory)
 

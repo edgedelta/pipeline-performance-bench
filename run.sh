@@ -229,6 +229,7 @@ function prepare_for_benchmark() {
     topology="separate instance per agent; parallel agents; sequential scenarios and tiers; colocated loadgen"
   fi
   upload_folder_to_ec2_instance "$git_root/benchmark_scripts"
+  upload_file_to_ec2_instance "$git_root/tools/capacity.py" "/home/ubuntu/benchmark_scripts/capacity.py"
   upload_file_to_ec2_instance "$git_root/tools/fixed.py" "/home/ubuntu/benchmark_scripts/fixed.py"
   upload_file_to_ec2_instance "$git_root/payloads/fixed-nginx.ndjson" "/home/ubuntu/benchmark_scripts/fixed-nginx.ndjson"
   python3 "$git_root/tools/aws_machine.py" "$BENCHMARK_INSTANCE_ID" "$runtime_dir/hardware-aws.json"
@@ -277,7 +278,7 @@ function run_ed_benchmark() {
   fi
   for type in $(cases_for edgedelta); do
     ./edgedelta-api.sh full $type.yaml
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark "edgedelta" $type
     done
   done
@@ -306,7 +307,7 @@ function run_red_benchmark() {
   red_bucket=$(get_s3_bucket_name)
   for type in $(cases_for red); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/red/$type.yaml /etc/red/config.yaml"
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark "red" $type
       # Evidence that archives reached S3: red's own flush/upload log lines and,
       # when the aws CLI is available on the runner, the object count in the bucket.
@@ -342,7 +343,7 @@ function run_cribl_benchmark() {
 
   for type in $(cases_for cribl); do
     ./cribl-api.sh update-pipeline $type.json
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark "cribl" $type
     done
   done
@@ -362,7 +363,7 @@ function run_otelcol_benchmark() {
   # (lookup is excluded automatically by cases_for).
   for type in $(cases_for otelcol); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/otelcol/$type.yaml /etc/otelcol-contrib/config.yaml"
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark "otelcol" $type
     done
   done
@@ -375,7 +376,7 @@ function run_fluentd_benchmark() {
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/fluentd"
   for type in $(cases_for fluentd); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentd/$type.conf /etc/fluent/fluentd.conf"
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark "fluentd" $type
     done
   done
@@ -387,7 +388,7 @@ function run_vector_benchmark() {
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/vector"
   for type in $(cases_for vector); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/vector/$type.yaml /etc/vector/vector.yaml; sudo /usr/local/bin/vector validate --skip-healthchecks /etc/vector/vector.yaml"
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark vector "$type"
     done
   done
@@ -399,7 +400,7 @@ function run_fluentbit_benchmark() {
   run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentbit/lookup.lua /etc/fluent-bit/lookup.lua"
   for type in $(cases_for fluentbit); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentbit/$type.conf /etc/fluent-bit/fluent-bit.conf; sudo /opt/fluent-bit/bin/fluent-bit --dry-run -c /etc/fluent-bit/fluent-bit.conf"
-    for BENCHMARK_MODE in throughput fixed; do
+    for BENCHMARK_MODE in capacity; do
       trigger_benchmark fluentbit "$type"
     done
   done

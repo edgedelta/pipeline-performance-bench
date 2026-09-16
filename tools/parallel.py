@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import fixed
+import capacity
 from summarize import VENDORS, CASES, UNSUPPORTED, parse_log, summarize
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +48,12 @@ def merge(source, output, matrix, require_fixed=False):
             raise ValueError('Missing or shared instance identity')
         instances.add(instance)
         for case in expected[vendor]:
+            if capacity.enabled(provenance):
+                entry = capacity.summarize(directory, vendor, case, provenance)
+                if entry['status'] not in capacity.OUTCOMES:
+                    raise ValueError(f'Incomplete Rust search: {vendor}/{case}: {entry.get("reason")}')
+                files += capacity.assets(directory, vendor, case, entry)
+                continue
             log = directory / f'{vendor}_{case}.log'
             data = parse_log(log.read_text(), require_retries=bool(provenance.get('loadgen', {}).get('retry_ambiguous')))
             if data['status'] not in ('ok', 'errors') or any(data.get(k) is None for k in ['avg', 'peak', 'total', 'cpu', 'mem']):
@@ -69,7 +76,7 @@ def merge(source, output, matrix, require_fixed=False):
         raise ValueError('Missing agent shards')
     first = next(iter(shards.values()))
     for shard in shards.values():
-        for key in ['benchmark_profile', 'benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256', 'schema_version', 'fixed_rate']:
+        for key in ['benchmark_profile', 'benchmark_commit', 'loadgen_version', 'loadgen', 'workers', 'duration_per_tier_seconds', 'period', 'instance_type', 'region', 'pipeline_sha256', 'schema_version', 'fixed_rate', 'throughput']:
             if shard.get(key) != first.get(key):
                 raise ValueError(f'Shard methodology differs: {key}')
     combined = dict(first, execution_mode='parallel agents on separate identical EC2 instances; sequential cases and tiers per agent', shards=shards)

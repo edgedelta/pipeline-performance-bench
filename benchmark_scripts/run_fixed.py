@@ -34,7 +34,8 @@ def ready(service, port):
     raise RuntimeError('Service did not remain active for 30 seconds')
 
 
-def run(vendor, scenario):
+def run(vendor, scenario, rates=None):
+    rates = RATES if rates is None else rates
     service, port = SERVICES[vendor]
     endpoint = f'http://localhost:{port}' + ('/benchmark.fluentd' if vendor == 'fluentd' else '')
     root = Path('benchmark_results'); root.mkdir(exist_ok=True)
@@ -43,13 +44,13 @@ def run(vendor, scenario):
     base = ['loadgen-rust', '--dispatch-mode', 'workers', '--endpoint', endpoint, '--number', '1', '--workers', '256', '--timeout', '30s', '--max-retries', '2', '--retry-ambiguous', '--fixed-payload-file', str(payload)]
     payload_sha = hashlib.sha256(payload.read_bytes()).hexdigest()
     # Calibrate all rates once per instance, including rates later skipped for an agent.
-    for rate in RATES:
+    for rate in rates:
         cal = root / f'{vendor}_{rate}.calibration.json'
         if not cal.exists():
             subprocess.run(['sudo', 'systemctl', 'stop', service], check=True)
             subprocess.run([*base, '--fixed-rate', str(rate), '--fixed-calibration', '--fixed-warmup', '2s', '--total-time', '10s', '--fixed-output', str(cal)], check=True)
     shortfall = None
-    for rate in RATES:
+    for rate in rates:
         path = root / f'{vendor}_{scenario}_{rate}.fixed.json'
         if shortfall is not None:
             path.write_text(json.dumps({'schema_version': 2, 'vendor': vendor, 'scenario': scenario,

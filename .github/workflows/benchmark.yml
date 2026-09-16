@@ -44,10 +44,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.26.0"
-          cache: false
       - name: Install Rust compiler
         run: rustup toolchain install 1.98.0 --profile minimal
       - uses: actions/cache@v5
@@ -58,15 +54,13 @@ jobs:
             .loadgen-build/rust-target
           key: loadgen-rust-linux-amd64-1.98.0-${{ hashFiles('loadgen-rust/Cargo.lock', 'loadgen-rust/src/**/*.rs', 'loadgen-rust/Cargo.toml') }}
           restore-keys: loadgen-rust-linux-amd64-1.98.0-
-      - name: Build both generators before AWS provisioning
+      - name: Build Rust generator before AWS provisioning
         run: ./tools/build_generators.sh
       - uses: actions/upload-artifact@v7
         with:
           name: load-generators-${{ github.run_id }}
           path: |
-            .loadgen-build/loadgen
             .loadgen-build/loadgen-rust
-            .loadgen-build/provenance.json
             .loadgen-build/rust-provenance.json
             .loadgen-build/generators.json
           include-hidden-files: true

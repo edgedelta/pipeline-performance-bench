@@ -149,7 +149,7 @@ The merge/publication gate checks matching corpus, methodology, actual machine
 configuration, provisioned storage configuration and service limits. Daily merge
 requires schema 3 (including 125k); older result files retain their original target set and can still be summarized without new metrics.
 
-A full release retains 203 evidence assets plus SHA256SUMS: 26 legacy logs,
+Historical schema-3 full releases retain 203 evidence assets plus SHA256SUMS: 26 legacy logs,
 130 fixed tier JSON files (either validated skip records or complete loadgen warm-up and measurement
 records), 35 calibration JSON files, seven hardware JSON files, the corpus,
 versions.csv, provenance.json, data.json and report.md. Upload verification uses
@@ -201,7 +201,7 @@ The release body shows best-tested throughput, highest sustained fixed targets,
 shared hardware once (with explicit differences/N/A), and fully expanded scenario
 tables for measured CPU, average memory and throughput per core/MB. Versions
 and source are also expanded. Overview tables sort by pass-through descending;
-fixed-rate rows group by target descending (75k, 50k, 25k, 10k), then passing rows by logs/sec/core descending
+fixed-rate rows group by target descending (125k, 75k, 50k, 25k, 10k), then passing rows by logs/sec/core descending
 and failed rows by achieved throughput descending. Ties use agent name. Failure, uncertainty and skipped-target labels remain
 visible. Connection recovery, queue/drain diagnostics, detailed reliability,
 peak memory and aggregate efficiency stay in `report.md`, `data.json` and raw
@@ -225,3 +225,57 @@ sort descending by pass-through, then filter, mask and lookup, then agent name.
 Fixed-rate targets sort highest first; passing rows sort by CPU efficiency,
 then failed rows by achieved throughput, with alphabetical agent ties. Hardware
 settings and agent versions sort alphabetically.
+
+## Rust sustained-throughput search (schema 4)
+
+New full runs replace the Go 80/100/120-worker periodic sweep with a bounded
+Rust rate search. The existing standard fixed tiers (10k, 25k, 50k, 75k, 125k)
+run once per scenario, in ascending order, stopping after the first shortfall.
+Their raw measurements are reused directly for the throughput summary:
+
+- If 125k passes, probe 200k, then 250k, stopping on the first shortfall.
+- If 10k fails, probe 1k, 2.5k, then 5k, stopping on the first shortfall.
+- Otherwise, no extra probes are needed. This is a discrete search, not an exact
+  saturation estimate or binary search between the last pass and first failure.
+- Short validation runs reuse just 10k/125k; no extra probes or Go sweep run.
+
+All probes use the fixed-tier Rust generator and policy: immutable corpus,
+256 workers, one log/request, global rate limit, identical retry semantics,
+10-second warm-up, 60-second measurement, 60-second post-load observation,
+independent service start/stop and stable startup checks. Each newly needed
+probe rate is calibrated once per instance. The same 2% attainment tolerance
+and zero final request errors apply. Every retained retry/ambiguity counter and
+resource sample remains available. Extra probes can be source-limited; a passing
+calibration alone does not isolate colocated source versus agent contention.
+
+The headline is the highest **acknowledged** rate among passing measurements,
+not the nominal target or an extrapolated result. Selected CPU, memory and total
+acknowledgments come from that exact window. `peak` remains null: there is no
+sampled instantaneous peak metric. `scenarios[*].trials` retains every standard
+tier and extra probe, including failed and skipped outcomes. The legacy `mem`
+field is peak memory converted to MiB for existing consumers; explicit
+`average_memory_mb` and `peak_memory_mb` use decimal MB and whole-service cgroups.
+
+Passing the 250k ceiling is marked † (higher capacity not tested). Source
+uncertainty is marked ‡. No passing tested tier remains `no_sustained_rate` or
+`generator_limited`, with null headline throughput; it does not mean zero
+capacity. Missing/incomplete evidence is `missing`/`invalid` and blocks
+publication. These measurements remain acknowledged HTTP ingestion, not proven
+durable delivery or stable backlog. Historical schema 1–3 results keep their
+original methodology and assets; no historical numbers are reinterpreted.
+
+Each supported scenario requires an `<agent>_<scenario>.capacity.json` manifest
+with the completed deterministic search policy and probe list. Publication
+recomputes the search from raw evidence, checks Rust build/payload/timing/retry
+identity, forbids missing or unexplained probes, and requires unchanged resource
+limits across fixed tiers and probes. Extra `.fixed.json` and shared
+`.calibration.json` files are included in release checksums alongside the
+manifest, standard fixed measurements, hardware, versions, provenance, structured
+data and detailed report. New suites do not require Go `.log` files, a Go compiler, or a Go generator binary. Scheduled
+and manual full runs use this method; release titles and highlighting stay the same.
+
+Create an explicitly synthetic preview without AWS:
+
+```bash
+python3 tools/preview_release.py benchmark_results/rust-throughput-preview --rust-throughput
+```
