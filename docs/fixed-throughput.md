@@ -279,3 +279,11 @@ Create an explicitly synthetic preview without AWS:
 ```bash
 python3 tools/preview_release.py benchmark_results/rust-throughput-preview --rust-throughput
 ```
+
+Best-tested throughput uses one expanded table per scenario, sorted by actual
+acknowledged logs/sec. Each row includes average CPU, average and sampled peak
+memory, logs/sec/core and logs/sec/MB from the **same selected passing window**.
+Rates are acknowledged log counts divided by measured elapsed seconds, rounded
+only for display; they are never replaced by the configured round-number target.
+Because these rows operate at different rates, their resource values are not
+an equal-throughput efficiency comparison. Use fixed-rate tables for that.

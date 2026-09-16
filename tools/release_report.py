@@ -87,6 +87,37 @@ def fixed_order(tiers, case, rate):
     return sorted(VENDORS.items(), key=key)
 
 
+def throughput_resources(data):
+    """Resources from the selected passing window, never from another target."""
+    lines = []
+    for case in CASES:
+        lines += [f'### {case.title()} — best sustained throughput', '']
+        entries = {v: data['scenarios'].get(f'{v}/{case}', {}) for v in VENDORS}
+        winners = leaders(entries, 'avg')
+        order = sorted(VENDORS, key=lambda v: (entries[v].get('status') != 'ok',
+                       -(entries[v].get('avg') or 0) if entries[v].get('status') == 'ok' else 0,
+                       VENDORS[v][1].casefold()))
+        rows = []
+        for vendor in order:
+            t = entries[vendor]; name = VENDORS[vendor][1]
+            if t.get('status') == 'ok':
+                rate = val(t.get('avg'), 0)
+                if vendor in winners: name = '🏆 ' + bold(name); rate = bold(rate)
+                if t.get('ceiling_reached'): rate += ' †'
+                if t.get('generator_uncertainty'): rate += ' ‡'
+                measured = t.get('measurement', {})
+                rows.append([name, rate, val(t.get('cpu'), 1), val(t.get('average_memory_mb'), 1),
+                             val(t.get('peak_memory_mb'), 1), val(measured.get('logs_per_second_per_core'), 0),
+                             val(measured.get('logs_per_second_per_mb'), 0)])
+            else:
+                status = {'no_sustained_rate': 'No passing tier', 'generator_limited': 'No passing tier ‡',
+                          'unsupported': 'Unsupported', 'missing': 'Missing', 'invalid': 'Invalid'}.get(t.get('status'), 'N/A')
+                rows.append([name, status, *(['N/A'] * 5)])
+        lines += table(['Agent', 'Acknowledged logs/sec ↑', 'Avg CPU %', 'Avg memory MB',
+                        'Peak memory MB', 'Logs/sec/core ↑', 'Logs/sec/MB ↑'], rows)
+    return lines
+
+
 def render(data, run_url, synthetic=False):
     rust_search = capacity.enabled(data.get('provenance', {}))
     f = data['fixed_throughput']
@@ -114,10 +145,11 @@ def render(data, run_url, synthetic=False):
                    'The search reuses the fixed-rate measurements with identical corpus, workers, measurement windows and delivery policy. '
                    'Full runs also probe 1k/2.5k/5k if 10k fails, or 200k/250k if 125k passes, stopping each extra ladder on its first shortfall. '
                    'These are measured sustainable rates, not proven maximum agent capacities; durable downstream delivery and backlog stability are not verified. '
-                   'Rows are sorted by pass-through throughput, highest first; unavailable results follow valid results.') if rust_search else 'Acknowledged HTTP ingestion, in logs/sec. Each value is the best of the three measured worker settings; durable downstream delivery is not verified. Rows are sorted by pass-through throughput, highest first; flagged or unavailable pass-through results follow valid results.'
+                   'Each scenario is sorted by acknowledged throughput, highest first; unavailable results follow valid results.') if rust_search else 'Acknowledged HTTP ingestion, in logs/sec. Each value is the best of the three measured worker settings; durable downstream delivery is not verified. Rows are sorted by pass-through throughput, highest first; flagged or unavailable pass-through results follow valid results.'
     lines += ['## Best-tested throughput', '', legend, '', methodology, '']
     if rust_search:
         lines += ['† Passed the highest tested ceiling; higher capacity was not tested. ‡ A higher-rate test had source/bottleneck uncertainty, so an agent-only limit cannot be determined. No passing tier does not mean zero capacity.', '']
+        lines += ['Throughput is actual acknowledged logs divided by measured seconds, rounded to the nearest log/sec—not the configured target. CPU, memory and efficiency come from that same selected window. CPU 100% means one logical core; memory is whole-service cgroup usage in MB = 1,000,000 bytes (peak is the highest sampled value). These resource values are measured at different throughputs; use the fixed-rate tables for equal-throughput comparisons.', '']
     throughput_leaders = {case: leaders({v: data['scenarios'].get(f'{v}/{case}', {}) for v in VENDORS}, 'avg') for case in CASES}
     rows = []
     for vendor, (_, name) in throughput_order(data):
@@ -134,7 +166,7 @@ def render(data, run_url, synthetic=False):
                 else:
                     cells[-1] = {'no_sustained_rate': 'No passing tier', 'generator_limited': 'No passing tier ‡'}.get(status, cells[-1])
         rows.append(['🏆 ' + bold(name) if any(vendor in winners for winners in throughput_leaders.values()) else name,*cells])
-    lines += table(['Agent','Pass-through','Filter','Mask','Lookup'],rows)
+    lines += throughput_resources(data) if rust_search else table(['Agent','Pass-through','Filter','Mask','Lookup'],rows)
     if any(t.get('status') == 'errors' for t in data['scenarios'].values()):
         lines += ['† Completed with request errors; excluded from rankings. The detailed report retains the error counts.', '']
     if f['measured']:

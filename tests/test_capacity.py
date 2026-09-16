@@ -103,6 +103,38 @@ class CapacityTest(unittest.TestCase):
                 passed=[t['acknowledged_logs_per_second'] for t in scenario['trials'] if t['status']=='ok']
                 self.assertEqual(scenario['avg'],max(passed))
 
+    def test_throughput_resources_use_actual_ack_rate_and_same_selected_window(self):
+        def adjust(raw):
+            p=raw['loadgen']['measurement']
+            ack=14992560  # SYNTHETIC: 249,876/sec, not the configured 250,000 target.
+            p.update(dispatched_logs=ack, offered_logs=ack, acknowledged_logs=ack,
+                     expired_before_dispatch_logs=p['scheduled_logs']-ack, http_status_counts={'200':ack},
+                     resource_samples=[fixture.sample(t,cpu=207.3,mem=120000000*(1+t/60*.2)) for t in range(61)])
+        self.edit('red_pass-through_250000.fixed.json',adjust)
+        data=summarize.summarize(self.directory)
+        self.assertAlmostEqual(data['scenarios']['red/pass-through']['avg'],249876)
+        body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
+        section=body.split('### Pass-Through — best sustained throughput')[1].split('### Filter — best sustained throughput')[0]
+        row=next(r for r in section.splitlines() if 'Edge Delta (Rust)' in r)
+        self.assertIn('**249,876** † | 207.3 | 132.0 | 144.0 |',row)
+        self.assertNotIn('250,000',row)
+        self.assertIn('120,538 | 1,893',row)
+        self.assertIn('Avg CPU %',section);self.assertIn('Peak memory MB',section)
+        self.assertIn('actual acknowledged logs divided by measured seconds',body)
+
+    def test_each_throughput_scenario_sorts_by_its_own_measurement(self):
+        data=summarize.summarize(self.directory)
+        data['scenarios']['vector/filter']['avg']=260123.4  # SYNTHETIC rendering input only.
+        data['scenarios']['edgedelta/filter'].update(status='invalid',avg=999999)
+        body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
+        section=body.split('### Filter — best sustained throughput')[1].split('### Mask — best sustained throughput')[0]
+        rows=[r for r in section.splitlines() if r.startswith('| ')][1:]
+        self.assertIn('🏆 **Vector**',rows[0]);self.assertIn('**260,123**',rows[0])
+        self.assertIn('Edge Delta (Rust)',rows[1])
+        invalid=next(r for r in rows if 'Edge Delta (Go)' in r)
+        self.assertIn('| Invalid | N/A | N/A | N/A | N/A | N/A |',invalid)
+        self.assertNotIn('🏆',invalid)
+
     def test_publication_assets_include_probe_evidence_and_no_legacy_logs(self):
         with self.assertRaisesRegex(ValueError,'Synthetic'):check_results.validate(self.directory)
         # Only remove markers in isolated test fixtures to exercise the real evidence gate.
