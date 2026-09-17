@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from check_results import validate
+from report_disclosure import disclosure
 
 
 def release_notes(report, run_url, data=None):
@@ -38,6 +39,7 @@ def release_notes(report, run_url, data=None):
         intro += (f'**Best-throughput reliability: {len(measured_errors)} scenario(s) recorded '
                   f'{errors:,} unrecovered request errors across their worker tiers.** '
                   'These scenarios remain labeled `errors` and are excluded from throughput rankings and cross-scenario comparisons.\n\n')
+    intro = disclosure((data or {}).get('provenance')) + intro
     if synthetic: intro = '> **SYNTHETIC FIXTURE PREVIEW — NOT REAL RESULTS. DO NOT PUBLISH.**\n\n' + intro
     return intro + f'[Workflow run]({run_url})\n\n' + report
 

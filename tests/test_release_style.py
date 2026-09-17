@@ -22,6 +22,18 @@ class ReleaseStyleTest(unittest.TestCase):
     def body(self):
         return publish_release.release_notes((self.directory/'report.md').read_text(), 'https://example.invalid/run', self.data)
 
+    def test_ai_disclosure_is_versioned_and_preserves_fixture_warning(self):
+        self.data['provenance']['benchmark_commit'] = 'b' * 40
+        before = copy.deepcopy(self.data)
+        body = self.body()
+        self.assertIn('/blob/' + 'b' * 40 + '/docs/report-prompt.md', body)
+        self.assertEqual(body.count('**AI disclosure:**'), 1)
+        self.assertLess(body.index('SYNTHETIC FIXTURE'), body.index('**AI disclosure:**'))
+        self.assertLess(body.index('**AI disclosure:**'), body.index('**Benchmark date:**'))
+        self.assertIn('no AI model writes or modifies the results', body)
+        self.assertEqual(self.data, before)
+        self.assertTrue((Path(__file__).resolve().parents[1] / 'docs/report-prompt.md').is_file())
+
     def test_valid_positive_finite_leaders_and_exact_ties(self):
         entries = {name: {'status': status, 'value': value} for name, status, value in [
             ('a', 'ok', 12.1), ('b', 'ok', 12.1), ('rounded', 'ok', 12.09),
