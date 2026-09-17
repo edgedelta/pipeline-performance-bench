@@ -6,6 +6,7 @@ import capacity
 from fixed import rates_for
 from fixed_report import table, val
 from summarize import VENDORS, CASES
+from report_disclosure import disclosure
 
 
 def leaders(entries, metric):
@@ -126,6 +127,7 @@ def render(data, run_url, synthetic=False):
     lines = []
     if synthetic:
         lines += ['> **SYNTHETIC FIXTURE — NOT REAL MEASUREMENTS. DO NOT PUBLISH.**', '']
+    lines += [disclosure(data.get('provenance')).rstrip(), '']
     lines += [f"**Benchmark date:** {data.get('date', 'N/A')} · [Workflow run]({run_url})", '']
     if f['measured']:
         counts = {s: sum(t['status'] == s for t in tiers.values()) for s in ['ok','capacity_limited','generator_limited','skipped_after_shortfall','invalid','missing']}
