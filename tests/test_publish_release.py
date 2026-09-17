@@ -43,7 +43,7 @@ class PublicationTest(unittest.TestCase):
         self.assertIn('Cross-Scenario Summary', notes)
         self.assertIn('Connection', notes)
         self.assertIn('Reliability', notes)
-        self.assertTrue(notes.startswith('> **AI disclosure:**'))
+        self.assertTrue(notes.startswith('> **Impartial analysis and transparency:**'))
         self.assertIn('/blob/main/docs/report-prompt.md', notes)
 
     def test_large_asset_set_is_paginated_and_verified_before_publish(self):

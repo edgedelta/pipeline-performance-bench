@@ -1,5 +1,7 @@
 # Benchmark report: AI involvement and development prompts
 
+Our goal is impartial, objective analysis across the tested agents. We use AI-assisted development to support consistent implementation and reporting, and publish these instructions so readers can assess potential bias, scrutinize the methodology, and propose corrections. Openness about the prompts is part of that goal: AI assistance is a tool, not a guarantee of neutrality. Conclusions must remain supported by reproducible measurements and explicit comparison rules.
+
 The benchmark harness and report generator were developed iteratively with an AI coding assistant at the repository owner's direction. The daily workflow runs code, collects measurements, validates them, and renders Markdown using Python. It does **not** send results to an AI model or invoke a report-writing prompt at runtime.
 
 This document was added on September 17, 2026. It preserves relevant verbatim excerpts from the owner's development requests and summarizes subsequent requirements. It is not a complete conversation transcript or a claim that a single prompt generated each release. The release's source commit, workflow, raw measurements, and checksums are the evidence for what actually ran. AI involvement does not establish neutrality or independently validate the benchmark.
@@ -42,6 +44,7 @@ This document was added on September 17, 2026. It preserves relevant verbatim ex
 - Sort fixed-rate targets highest first. Highlight the highest valid measured throughput, including ties; highlight CPU efficiency leaders only among passing agents at the same scenario and target. Apply the rules to every agent.
 - Explain generator uncertainty and tested ceilings. A bounded search does not establish maximum agent capacity. HTTP acknowledgements do not prove durable delivery or stable agent backlog.
 - Add a top-of-report disclosure of AI involvement with a link to these development instructions.
+- Lead that notice with the purpose: support impartial, objective analysis and make the instructions open to scrutiny, rather than merely disclose AI usage.
 
 The request to display high fixed-rate tiers first included the observation that Edge Delta Rust performed best there. That is a presentation choice made by the repository owner, not evidence of independent or neutral study design. The measurements, exclusions, sort rules, and highlighting rules remain inspectable in the source and assets.
 
