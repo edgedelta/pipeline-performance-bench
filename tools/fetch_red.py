@@ -10,6 +10,8 @@ import subprocess
 import zipfile
 
 BASE = 'https://release.edgedelta.com/red'
+REPO = 'edgedelta/red'
+STABLE = re.compile(r'\d+\.\d+\.\d+')
 
 def download(url, output=None):
     # curl uses the host trust store, including macOS enterprise certificates.
@@ -21,10 +23,29 @@ def download(url, output=None):
     return subprocess.check_output(command)
 
 
+def latest_tag():
+    # The latest GitHub release excludes drafts and prereleases (RC tags).
+    tag = subprocess.check_output(['gh', 'api', f'repos/{REPO}/releases/latest',
+                                   '--jq', '.tag_name']).decode().strip()
+    return tag.removeprefix('v')
+
+
+def stable_version():
+    # release.edgedelta.com answers missing paths with an HTML index page, so a
+    # vanished stable-version pointer is only detectable by its content.
+    pointer = download(BASE + '/stable-version').decode().strip()
+    if STABLE.fullmatch(pointer):
+        return pointer
+    if not os.environ.get('GH_TOKEN'):
+        raise ValueError(f'{BASE}/stable-version did not return X.Y.Z; set RED_VERSION '
+                         f'or GH_TOKEN with read access to {REPO} releases')
+    return latest_tag()
+
+
 def fetch(directory, version=None):
     directory = Path(directory)
-    version = version or download(BASE + '/stable-version').decode().strip()
-    if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+    version = version or stable_version()
+    if not STABLE.fullmatch(version):
         raise ValueError('RED_VERSION must be a stable X.Y.Z release')
     name = f'red-{version}-x86_64-unknown-linux-gnu.zip'
     url = f'{BASE}/{version}/{name}'

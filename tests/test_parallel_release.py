@@ -41,6 +41,16 @@ class ReleaseTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'stable'):
             fetch_red.fetch('/unused', '../bad')
 
+    def test_stable_pointer_falls_back_to_latest_github_release(self):
+        html = lambda url, output=None: b'<!doctype html><title>Releases</title>4.3.1'
+        with patch.object(fetch_red, 'download', side_effect=html):
+            with patch.dict('os.environ', {'GH_TOKEN': 'token'}), \
+                    patch.object(fetch_red.subprocess, 'check_output', return_value=b'v3.15.0\n') as gh:
+                self.assertEqual(fetch_red.stable_version(), '3.15.0')
+                self.assertIn('repos/edgedelta/red/releases/latest', gh.call_args.args[0])
+            with patch.dict('os.environ', {}, clear=True), self.assertRaisesRegex(ValueError, 'RED_VERSION'):
+                fetch_red.stable_version()
+
 class ParallelTest(unittest.TestCase):
     def test_plan(self):
         plan = parallel.plan(','.join(parallel.VENDORS), ','.join(parallel.CASES))
