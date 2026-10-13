@@ -109,6 +109,8 @@ jobs:
           CRIBL_ORG: ${{ secrets.CRIBL_ORG }}
           CRIBL_WORKSPACE: ${{ secrets.CRIBL_WORKSPACE }}
           CRIBL_WORKER_GROUP: ${{ secrets.CRIBL_WORKER_GROUP }}
+          # Resolves the latest stable RED release; github.token cannot read edgedelta/red.
+          GH_TOKEN: ${{ secrets.RED_RELEASES_TOKEN }}
         run: timeout --signal=TERM --kill-after=5m 120m ./run.sh --vendors "$VENDORS" --cases "$CASES"
       - name: Refresh credentials for AWS cleanup
         if: always()
