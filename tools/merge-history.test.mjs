@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mergeHistory, fromTag, validateRun, shortVersion, slimRun } from "./merge-history.mjs";
+import { mergeHistory, fromTag, validateRun, shortVersion, slimRun, slimLadder } from "./merge-history.mjs";
 
 const mk = (runId, date) => ({ runId, date, vendors: { ed: { avg: [1,2,3,4], peak: [1,2,3,4] } } });
 
@@ -42,9 +42,22 @@ test("shortVersion extracts the version token", () => {
 test("slimRun keeps only page fields", () => {
   const out = slimRun({ runId: "a", date: "2026-01-01", aggregation: "x", scenarios: { "red/filter": {} }, fixed_throughput: {}, provenance: {},
     versions: { red: "red 3.15.0" }, vendors: { red: { name: "Edge Delta (Rust)", avg: [1,2,3,4], peak: [null,null,null,null], cpu: 1, mem: 2, perCpu: 3, extra: 9 } } });
-  assert.deepEqual(Object.keys(out), ["runId", "date", "aggregation", "scenarios", "versions", "vendors"]);
+  assert.deepEqual(Object.keys(out), ["runId", "date", "aggregation", "scenarios", "versions", "vendors", "ladder"]);
   assert.deepEqual(out.scenarios, ["Pass-Through", "Filter", "Mask", "Lookup"]);
   assert.equal(out.versions.red, "3.15.0");
   assert.equal(out.vendors.red.extra, undefined);
   assert.ok(validateRun(out));
+});
+
+test("slimLadder keeps metrics only for sustained tiers", () => {
+  const tier = (ok, status) => ({ sustains_target: ok, status, agent_cpu_percent: 193.04, agent_avg_memory_mb: 62.33, logs_per_second_per_core: 64896.4, logs_per_second_per_mb: 2009.18 });
+  const out = slimLadder({ targets: [10000, 125000], tiers: {
+    "red/pass-through/10000": tier(true, "ok"),
+    "edgedelta/filter/125000": tier(false, "generator_limited"),
+  } });
+  assert.deepEqual(out.targets, [10000, 125000]);
+  assert.deepEqual(out.agents.red[0][0], { s: "ok", cpu: 193, mem: 62.3, lpc: 64896, lpm: 2009.2 });
+  assert.deepEqual(out.agents.ed[1][1], { s: "generator_limited" });
+  assert.equal(out.agents.otel[0][0], null);
+  assert.equal(slimLadder(undefined), null);
 });

@@ -30,6 +30,32 @@ export function shortVersion(v) {
   return m ? m[0] : String(v);
 }
 
+const LADDER_AGENTS = { edgedelta: "ed", red: "red", otelcol: "otel", cribl: "cribl", fluentd: "fluentd", vector: "vector", fluentbit: "fluentbit" };
+const LADDER_SCENARIOS = ["pass-through", "filter", "mask", "lookup"];
+const round = (x, d = 1) => (x == null ? null : Math.round(x * 10 ** d) / 10 ** d);
+
+// Per fixed-rate tier: status plus resource metrics. Metrics are kept only for
+// sustained tiers; a missed target's resources are not comparable.
+export function slimLadder(fixed) {
+  if (!fixed || !fixed.tiers || !Array.isArray(fixed.targets)) return null;
+  const agents = {};
+  for (const [agent, key] of Object.entries(LADDER_AGENTS)) {
+    agents[key] = LADDER_SCENARIOS.map((sc) => fixed.targets.map((target) => {
+      const t = fixed.tiers[`${agent}/${sc}/${target}`];
+      if (!t) return null;
+      if (!t.sustains_target) return { s: t.status };
+      return {
+        s: t.status,
+        cpu: round(t.agent_cpu_percent),
+        mem: round(t.agent_avg_memory_mb),
+        lpc: round(t.logs_per_second_per_core, 0),
+        lpm: round(t.logs_per_second_per_mb),
+      };
+    }));
+  }
+  return { targets: fixed.targets, agents };
+}
+
 export function slimRun(run) {
   const versions = {};
   for (const [k, v] of Object.entries(run.versions || {})) versions[k] = shortVersion(v);
@@ -37,7 +63,7 @@ export function slimRun(run) {
   for (const [k, v] of Object.entries(run.vendors || {})) {
     vendors[k] = { name: v.name ?? null, avg: v.avg ?? null, peak: v.peak ?? null, cpu: v.cpu ?? null, mem: v.mem ?? null, perCpu: v.perCpu ?? null };
   }
-  return { runId: run.runId, date: run.date, aggregation: run.aggregation ?? null, scenarios: ["Pass-Through", "Filter", "Mask", "Lookup"], versions, vendors };
+  return { runId: run.runId, date: run.date, aggregation: run.aggregation ?? null, scenarios: ["Pass-Through", "Filter", "Mask", "Lookup"], versions, vendors, ladder: slimLadder(run.fixed_throughput) };
 }
 
 // Go-loadgen "best-tier" releases predate the Rust method and are not comparable.

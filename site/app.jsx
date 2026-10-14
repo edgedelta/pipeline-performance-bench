@@ -31,7 +31,7 @@ function niceScale(maxVal, targetTicks = 7) {
 }
 
 /* ───── Throughput (grouped bars) ───── */
-function ThroughputChart({ data, axisMax, ticks }) {
+function ThroughputChart({ data, axisMax, ticks, fmtv = fmt0, unit = "logs/sec", tipFmt = fmt, missing = () => "N/A" }) {
   return (
     <div className="tp">
       <div className="plot">
@@ -50,7 +50,7 @@ function ThroughputChart({ data, axisMax, ticks }) {
                   if (val == null) {
                     return (
                       <div className="barslot" key={v.key} data-na="1">
-                        <div className="na">N/A</div>
+                        <div className="na">{missing(v.key, si)}</div>
                         <div className="na-base" style={{ background: vendorColor(v.key) }} />
                       </div>
                     );
@@ -58,12 +58,12 @@ function ThroughputChart({ data, axisMax, ticks }) {
                   const h = (val / axisMax) * PLOT_H;
                   return (
                     <div className="barslot" key={v.key}>
-                      <div className="bval" style={{ bottom: h + 8 + "px" }}>{fmt0(val)}</div>
+                      <div className="bval" style={{ bottom: h + 8 + "px" }}>{fmtv(val)}</div>
                       <div className={"bar" + (v.key === "ed" ? " ed" : "")} style={{ height: h + "px", background: vendorColor(v.key) }}>
                         <div className="tip">
                           <div className="tip-v" style={{ color: vendorColor(v.key) }}>{v.name}</div>
                           <div className="tip-s">{sc}</div>
-                          <div className="tip-n">{fmt(val)} <span>logs/sec</span></div>
+                          <div className="tip-n">{tipFmt(val)} <span>{unit}</span></div>
                         </div>
                       </div>
                     </div>
@@ -125,6 +125,125 @@ function EfficiencyView({ eff }) {
       <Bars title="Avg CPU usage" unit="%" note="Cores consumed · context" better="higher" markBest={false} get={(k) => eff[k].cpu} fmtv={(v) => v.toFixed(1)} />
     </div>
   );
+}
+
+/* ───── Efficiency at fixed load (per-tier ladder) ───── */
+const LADDER_METRICS = [
+  { key: "lpc", label: "Logs/sec per core", unit: "logs/sec/core", better: "higher", get: (c) => c.lpc, fmtv: (v) => fmtK(Math.round(v / 100) * 100) },
+  { key: "lpm", label: "Logs/sec per MB", unit: "logs/sec/MB", better: "higher", get: (c) => c.lpm, fmtv: fmt0 },
+  { key: "cpu", label: "CPU cores", unit: "cores", better: "lower", get: (c) => c.cpu / 100, fmtv: (v) => v.toFixed(2) },
+  { key: "mem", label: "Memory MB", unit: "MB", better: "lower", get: (c) => c.mem, fmtv: fmt0 },
+];
+const tierLabel = (t) => fmtK(t);
+const STATUS_SHORT = { capacity_limited: "✕", generator_limited: "✕", skipped_after_shortfall: "—", unsupported: "N/A", invalid: "!", missing: "?" };
+const sustained = (c) => c && c.s === "ok" && c.cpu != null;
+const ladderCell = (ladder, key, si, ti) => ladder?.agents?.[key]?.[si]?.[ti] ?? null;
+const fmtFull = (v) => v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+
+function CellTip({ v, sc, target, cell }) {
+  return (
+    <>
+      <div className="tip-v" style={{ color: vendorColor(v.key) }}>{v.name}</div>
+      <div className="tip-s">{sc} · {fmt0(target)} logs/sec offered</div>
+      <div className="tip-grid">
+        <span>CPU</span><b>{(cell.cpu / 100).toFixed(2)} cores</b>
+        <span>Memory</span><b>{fmt0(cell.mem)} MB</b>
+        <span>Per core</span><b>{fmt0(cell.lpc)} logs/s</b>
+        <span>Per MB</span><b>{fmt0(cell.lpm)} logs/s</b>
+      </div>
+    </>
+  );
+}
+
+function LadderChart({ ladder, scenarioIndex, metric, visible, hover, setHover }) {
+  const W = 1040, H = 440, padL = 64, padR = 24, padT = 18, padB = 42;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const targets = ladder.targets;
+  const n = targets.length;
+  const series = VENDORS.map((v) => ({
+    v,
+    pts: targets.map((target, ti) => {
+      const cell = ladderCell(ladder, v.key, scenarioIndex, ti);
+      return { ti, target, cell, val: sustained(cell) ? metric.get(cell) : null };
+    }),
+  }));
+  const vals = [];
+  series.forEach((s) => { if (visible.has(s.v.key)) s.pts.forEach((p) => { if (p.val != null) vals.push(p.val); }); });
+  const { max: yMax, ticks } = niceScale(vals.length ? Math.max(...vals) : 10);
+  const X = (ti) => padL + (n <= 1 ? plotW / 2 : (ti / (n - 1)) * plotW);
+  const Y = (val) => padT + plotH - (val / yMax) * plotH;
+  const tickFmt = metric.key === "cpu" ? (t) => String(t) : fmtK;
+
+  React.useEffect(() => { setHover(null); }, [scenarioIndex, metric.key]);
+
+  return (
+    <div className="trend-plot">
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={padL} x2={W - padR} y1={Y(t)} y2={Y(t)} stroke="var(--ed-border-1)" strokeWidth="1" />
+            <text x={padL - 10} y={Y(t)} textAnchor="end" dominantBaseline="middle" fontFamily="var(--ed-font-mono)" fontSize="11" fill="var(--ed-text-secondary)">{tickFmt(t)}</text>
+          </g>
+        ))}
+        <line x1={padL} x2={W - padR} y1={Y(0)} y2={Y(0)} stroke="var(--ed-border-2)" strokeWidth="1" />
+        {targets.map((t, ti) => (
+          <text key={t} x={X(ti)} y={H - padB + 20} textAnchor="middle" fontFamily="var(--ed-font-mono)" fontSize="11" fill="var(--ed-text-secondary)">{tierLabel(t)}</text>
+        ))}
+        <text x={W - padR} y={H - 2} textAnchor="end" fontSize="10.5" fill="var(--ed-text-secondary)">offered logs/sec</text>
+        {series.map((s) => {
+          if (!visible.has(s.v.key)) return null;
+          const isEd = s.v.key === "ed" || s.v.key === "red";
+          const segs = []; let cur = [];
+          s.pts.forEach((p) => { if (p.val == null) { if (cur.length) segs.push(cur); cur = []; } else cur.push(p); });
+          if (cur.length) segs.push(cur);
+          const lastOk = s.pts.reduce((m, p) => (p.val != null ? p.ti : m), -1);
+          const fail = s.pts.find((p) => p.ti > lastOk && p.cell && (p.cell.s === "capacity_limited" || p.cell.s === "generator_limited"));
+          return (
+            <g key={s.v.key}>
+              {segs.map((seg, k) => (
+                <polyline key={k} fill="none" stroke={vendorColor(s.v.key)} strokeWidth={isEd ? 2.6 : 1.6}
+                  strokeLinejoin="round" strokeLinecap="round" points={seg.map((p) => `${X(p.ti)},${Y(p.val)}`).join(" ")} />
+              ))}
+              {s.pts.map((p) => p.val == null ? null : (
+                <circle key={p.ti} cx={X(p.ti)} cy={Y(p.val)} r={isEd ? 3.8 : 3.2} fill="var(--ed-surface-1)" stroke={vendorColor(s.v.key)} strokeWidth="2"
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={() => setHover({ v: s.v, target: p.target, cell: p.cell, x: X(p.ti), y: Y(p.val) })}
+                  onMouseLeave={() => setHover(null)} />
+              ))}
+              {fail && (
+                <text x={X(fail.ti)} y={Y(0) - 8 - 12 * VENDORS.findIndex((v) => v.key === s.v.key)} textAnchor="middle" dominantBaseline="middle"
+                  fontSize="12" fontWeight="700" fill={vendorColor(s.v.key)}>✕</text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {hover && (
+        <div className="trend-tip" style={{ left: (hover.x / W * 100) + "%", top: (hover.y / H * 100) + "%" }}>
+          <CellTip v={hover.v} sc={SCENARIOS[scenarioIndex]} target={hover.target} cell={hover.cell} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TierBars({ ladder, tierIndex, metric }) {
+  const data = {}, vals = [];
+  VENDORS.forEach((v) => {
+    data[v.key] = SCENARIOS.map((_, si) => {
+      const cell = ladderCell(ladder, v.key, si, tierIndex);
+      const val = sustained(cell) ? metric.get(cell) : null;
+      if (val != null) vals.push(val);
+      return val;
+    });
+  });
+  const { max, ticks } = niceScale(vals.length ? Math.max(...vals) : 10);
+  const missing = (key, si) => {
+    const cell = ladderCell(ladder, key, si, tierIndex);
+    return cell ? (STATUS_SHORT[cell.s] ?? "?") : "N/A";
+  };
+  return <ThroughputChart key={metric.key + tierIndex} data={data} axisMax={max} ticks={ticks}
+    fmtv={metric.fmtv} unit={metric.unit} tipFmt={fmtFull} missing={missing} />;
 }
 
 /* ───── Trend (line chart over time) ───── */
@@ -217,14 +336,19 @@ function TrendChart({ history, scenarioIndex, metric, visible, hover, setHover }
 }
 
 /* ───── App ───── */
+const QS = new URLSearchParams(location.search);
+const qsInt = (k) => (QS.has(k) && !isNaN(+QS.get(k)) ? +QS.get(k) : null);
+
 function App() {
   const [history, setHistory] = React.useState(null);
   const [err, setErr] = React.useState(null);
   const [metric, setMetric] = React.useState("avg");
-  const [view, setView] = React.useState("throughput");
-  const [scenarioIdx, setScenarioIdx] = React.useState(0);
+  const [view, setView] = React.useState(QS.get("view") || "throughput");
+  const [scenarioIdx, setScenarioIdx] = React.useState(qsInt("scenario") ?? 0);
   const [hidden, setHidden] = React.useState(() => new Set());
   const [hover, setHover] = React.useState(null);
+  const [effMetric, setEffMetric] = React.useState(LADDER_METRICS.some((m) => m.key === QS.get("metric")) ? QS.get("metric") : "lpc");
+  const [tierIdx, setTierIdx] = React.useState(qsInt("tier"));
 
   React.useEffect(() => {
     fetch("data/history.json", { cache: "no-cache" })
@@ -252,9 +376,14 @@ function App() {
   const { max: axisMax, ticks } = niceScale(allLatest.length ? Math.max(...allLatest) : 10);
 
   const visible = new Set(VENDORS.map((v) => v.key).filter((k) => !hidden.has(k)));
+  const ladder = latest.ladder;
+  const lm = LADDER_METRICS.find((m) => m.key === effMetric);
+  const tierI = tierIdx ?? (ladder ? ladder.targets.length - 1 : 0);
+  const isLadderView = view === "ladder" || view === "tier";
+  const clickable = view === "trend" || view === "ladder";
 
   const toggle = (k) => {
-    if (view !== "trend") return;
+    if (!clickable) return;
     setHidden((prev) => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
   };
 
@@ -266,7 +395,9 @@ function App() {
             <div className="titles">
               <h1>Pipeline throughput benchmark</h1>
               <p className="sub">
-                {view === "throughput" ? "Across four processing scenarios · logs/sec · higher is better"
+                {view === "throughput" ? "Highest sustained rate per scenario · logs/sec · tests stop at the top tier"
+                  : view === "ladder" ? lm.label + " at each offered load · " + SCENARIOS[scenarioIdx] + " · " + lm.better + " is better"
+                  : view === "tier" ? lm.label + " at " + fmt0(ladder.targets[tierI]) + " logs/sec offered · " + lm.better + " is better"
                   : view === "efficiency" ? "Resource efficiency across all scenarios"
                   : "Trend over time · logs/sec · " + SCENARIOS[scenarioIdx]}
               </p>
@@ -275,29 +406,51 @@ function App() {
           <div className="controls">
             <div className="seg">
               <button className={view === "throughput" ? "on" : ""} onClick={() => { setView("throughput"); setHover(null); }}>Throughput</button>
+              {ladder && <button className={view === "ladder" ? "on" : ""} onClick={() => { setView("ladder"); setHover(null); }}>Ladder</button>}
+              {ladder && <button className={view === "tier" ? "on" : ""} onClick={() => { setView("tier"); setHover(null); }}>By tier</button>}
               <button className={view === "efficiency" ? "on" : ""} onClick={() => { setView("efficiency"); setHover(null); }}>Efficiency</button>
               <button className={view === "trend" ? "on" : ""} onClick={() => setView("trend")}>Trend</button>
             </div>
-            <div className="seg">
-              <button className={metric === "avg" ? "on" : ""} disabled={view === "efficiency"} onClick={() => setMetric("avg")}>Average</button>
-              <button className={metric === "peak" ? "on" : ""} disabled={view === "efficiency"} onClick={() => setMetric("peak")}>Peak</button>
-            </div>
+            {!isLadderView && (
+              <div className="seg">
+                <button className={metric === "avg" ? "on" : ""} disabled={view === "efficiency"} onClick={() => setMetric("avg")}>Average</button>
+                <button className={metric === "peak" ? "on" : ""} disabled={view === "efficiency"} onClick={() => setMetric("peak")}>Peak</button>
+              </div>
+            )}
           </div>
         </header>
 
-        {view === "trend" && (
-          <div className="seg seg-scn">
-            {SCENARIOS.map((sc, i) => (
-              <button key={sc} className={scenarioIdx === i ? "on" : ""} onClick={() => setScenarioIdx(i)}>{sc}</button>
-            ))}
+        {(view === "trend" || isLadderView) && (
+          <div className="subcontrols">
+            {(view === "trend" || view === "ladder") && (
+              <div className="seg seg-scn">
+                {SCENARIOS.map((sc, i) => (
+                  <button key={sc} className={scenarioIdx === i ? "on" : ""} onClick={() => setScenarioIdx(i)}>{sc}</button>
+                ))}
+              </div>
+            )}
+            {view === "tier" && (
+              <div className="seg seg-scn">
+                {ladder.targets.map((t, i) => (
+                  <button key={t} className={tierI === i ? "on" : ""} onClick={() => setTierIdx(i)}>{tierLabel(t)}</button>
+                ))}
+              </div>
+            )}
+            {isLadderView && (
+              <div className="seg seg-scn">
+                {LADDER_METRICS.map((m) => (
+                  <button key={m.key} className={effMetric === m.key ? "on" : ""} onClick={() => setEffMetric(m.key)}>{m.label}</button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         <div className="legend">
           {VENDORS.map((v) => {
-            const off = view === "trend" && hidden.has(v.key);
+            const off = clickable && hidden.has(v.key);
             return (
-              <div className={"leg" + (view === "trend" ? " leg-click" : "") + (off ? " off" : "")} key={v.key} onClick={() => toggle(v.key)}>
+              <div className={"leg" + (clickable ? " leg-click" : "") + (off ? " off" : "")} key={v.key} onClick={() => toggle(v.key)}>
                 <span className="sw" style={{ background: vendorColor(v.key) }} />
                 <span className={v.key === "ed" ? "leg-ed" : ""}>{v.name}</span>
                 {latest.versions?.[v.key] && <span className="leg-ver">{latest.versions[v.key]}</span>}
@@ -308,13 +461,18 @@ function App() {
 
         <div className="viewbody">
           {view === "throughput" && <ThroughputChart key={metric} data={data} axisMax={axisMax} ticks={ticks} />}
+          {view === "ladder" && <LadderChart ladder={ladder} scenarioIndex={scenarioIdx} metric={lm} visible={visible} hover={hover} setHover={setHover} />}
+          {view === "tier" && <TierBars ladder={ladder} tierIndex={tierI} metric={lm} />}
           {view === "efficiency" && <EfficiencyView eff={EFF} />}
           {view === "trend" && <TrendChart history={history} scenarioIndex={scenarioIdx} metric={metric} visible={visible} hover={hover} setHover={setHover} />}
         </div>
 
         <footer className="foot">
           <span>{latest.date} · run {latest.runId}{view === "trend" ? " · " + history.length + " runs" : ""}</span>
-          <span className="na-key">{view === "trend" ? "◆ = agent version change · " : ""}N/A = scenario not supported by that vendor</span>
+          <span className="na-key">
+            {isLadderView ? "Only rates an agent sustained (within 2%) are plotted · ✕ = could not sustain · — = not tested after a shortfall · N/A = unsupported"
+              : (view === "trend" ? "◆ = agent version change · " : "") + "N/A = scenario not supported by that vendor"}
+          </span>
         </footer>
       </div>
     </div>
