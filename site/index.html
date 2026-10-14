@@ -21,7 +21,7 @@
   .titles h1 { font-size: 22px; font-weight: var(--ed-fw-bold); color: var(--ed-text-contrast); letter-spacing: -0.015em; line-height: 1.15; }
   .titles .sub { font-size: 13px; color: var(--ed-text-secondary); margin-top: 4px; }
 
-  .controls { display: flex; gap: 10px; align-items: center; }
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .seg { display: inline-flex; background: var(--ed-surface-0); border: 1px solid var(--ed-border-1); border-radius: var(--ed-radius-lg); padding: 3px; gap: 2px; }
   .seg button { font: inherit; font-size: 13px; font-weight: var(--ed-fw-medium); color: var(--ed-text-secondary); background: transparent; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: background 140ms ease, color 140ms ease; }
   .seg button:hover { color: var(--ed-text); }
@@ -50,15 +50,15 @@
   .grid:first-child .gline { background: var(--ed-border-2); }
   .grid .ytick { position: absolute; right: calc(100% + 10px); top: 0; transform: translateY(-50%); font-family: var(--ed-font-mono); font-size: 11px; color: var(--ed-text-secondary); white-space: nowrap; }
   .groups { position: absolute; inset: 0; display: flex; }
-  .group { flex: 1; display: flex; align-items: flex-end; justify-content: center; height: 100%; }
-  .bars { display: flex; align-items: flex-end; gap: 10px; height: 100%; }
-  .barslot { position: relative; width: 38px; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
-  .bar { width: 38px; border-radius: 4px 4px 0 0; position: relative; animation: growUp 780ms cubic-bezier(.22,1,.36,1); cursor: default; }
+  .group { flex: 1; min-width: 0; padding: 0 8px; display: flex; align-items: flex-end; justify-content: center; height: 100%; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 100%; width: 100%; justify-content: center; }
+  .barslot { position: relative; flex: 1 1 0; min-width: 0; max-width: 38px; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; position: relative; animation: growUp 780ms cubic-bezier(.22,1,.36,1); cursor: default; }
   @keyframes growUp { from { height: 0 !important; } }
   .bar.ed { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ed-brand-green) 30%, transparent); }
   .barslot .na { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: var(--ed-font-mono); color: var(--ed-text-disabled); letter-spacing: 0.04em; }
-  .barslot .na-base { width: 38px; height: 2px; border-radius: 2px; opacity: 0.3; }
-  .bval { position: absolute; left: 50%; transform: translateX(-50%); font-family: var(--ed-font-mono); font-size: 10.5px; font-weight: 500; color: var(--ed-text-secondary); white-space: nowrap; animation: fadeIn 500ms ease 280ms; }
+  .barslot .na-base { width: 100%; height: 2px; border-radius: 2px; opacity: 0.3; }
+  .bval { position: absolute; left: 50%; transform: translateX(-50%); font-family: var(--ed-font-mono); font-size: 9.5px; font-weight: 500; color: var(--ed-text-secondary); white-space: nowrap; animation: fadeIn 500ms ease 280ms; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .barslot:has(.bar.ed) .bval { color: var(--ed-text-contrast); }
   .tip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(4px); background: var(--ed-popover-bg, var(--ed-surface-2)); border: 1px solid var(--ed-border-2); border-radius: var(--ed-radius-md); padding: 8px 11px; min-width: 132px; box-shadow: var(--ed-shadow-popover); opacity: 0; pointer-events: none; transition: opacity 130ms ease, transform 130ms ease; z-index: 20; }
@@ -94,7 +94,7 @@
   .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--ed-border-1); font-size: 11px; color: var(--ed-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
   .foot .na-key { text-transform: none; letter-spacing: 0; font-family: var(--ed-font-mono); font-size: 10.5px; }
 
-  @media (max-width: 760px) { .eff { grid-template-columns: 1fr; } .headline { margin-left: 0; } }
+  @media (max-width: 760px) { .eff { grid-template-columns: 1fr; } .headline { margin-left: 0; } body { padding: 16px; } .card { padding: 20px 16px 16px; } .group { padding: 0 3px; } .bars { gap: 2px; } .bval { display: none; } }
 </style>
 </head>
 <body>
