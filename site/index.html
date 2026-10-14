@@ -58,6 +58,10 @@
   .bar.ed { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ed-brand-green) 30%, transparent); }
   .barslot .na { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: var(--ed-font-mono); color: var(--ed-text-disabled); letter-spacing: 0.04em; }
   .barslot .na-base { width: 100%; height: 2px; border-radius: 2px; opacity: 0.3; }
+  .bar.failed { height: 18px; background: var(--ed-surface-2); border: 1px dashed var(--ed-border-2); border-bottom: none; animation: none; }
+  .barslot:has(.bar.failed) .bval { color: var(--ed-text-disabled); }
+  .leg.fails { color: var(--ed-text-disabled); }
+  .leg.fails .leg-ed { color: var(--ed-text-disabled); }
   .bval { position: absolute; left: 50%; transform: translateX(-50%); font-family: var(--ed-font-mono); font-size: 9.5px; font-weight: 500; color: var(--ed-text-secondary); white-space: nowrap; animation: fadeIn 500ms ease 280ms; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .barslot:has(.bar.ed) .bval { color: var(--ed-text-contrast); }
