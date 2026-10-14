@@ -89,6 +89,10 @@
   .eff-val .eff-unit { color: var(--ed-text-secondary); font-size: 10px; }
 
   .trend-plot { position: relative; margin-top: 6px; }
+  .subcontrols { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .subcontrols .seg-scn { margin-top: 0; }
+  .tip-grid { display: grid; grid-template-columns: auto auto; gap: 2px 12px; margin-top: 6px; font-size: 11px; color: var(--ed-text-secondary); white-space: nowrap; }
+  .tip-grid b { font-family: var(--ed-font-mono); font-weight: 500; color: var(--ed-text-contrast); text-align: right; }
   .trend-tip { position: absolute; transform: translate(-50%, -130%); background: var(--ed-popover-bg, var(--ed-surface-2)); border: 1px solid var(--ed-border-2); border-radius: var(--ed-radius-md); padding: 7px 10px; min-width: 130px; box-shadow: var(--ed-shadow-popover); pointer-events: none; z-index: 20; }
 
   .foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--ed-border-1); font-size: 11px; color: var(--ed-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
