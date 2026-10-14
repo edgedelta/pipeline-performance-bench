@@ -14,6 +14,12 @@ mkdir -p "$out/data"
 cp -R "$root/site/." "$out/"
 rm -rf "$out/data/"*
 touch "$out/.nojekyll"
+
+# Version local asset URLs so browsers fetch the new app.jsx after each deploy.
+version=$(git -C "$root" rev-parse --short HEAD 2>/dev/null || date +%s)
+sed -i.bak -e "s|src=\"app.jsx\"|src=\"app.jsx?v=$version\"|" \
+  -e "s|href=\"assets/colors_and_type.css\"|href=\"assets/colors_and_type.css?v=$version\"|" "$out/index.html"
+rm "$out/index.html.bak"
 echo "[]" > "$out/data/history.json"
 
 gh release list --repo "$repo" --limit 1000 --exclude-drafts --json tagName --jq '.[].tagName' |
