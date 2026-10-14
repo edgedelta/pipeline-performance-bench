@@ -89,7 +89,14 @@ Incomplete evidence, missing probes and service restarts block publication. Meas
 
 Filter drops events whose `pii.color` is `Green`. Lookup matches `pii.ipv4` against the shared CSV's `ipv4` column and emits `region`/`env`, with miss defaults. Vector uses an indexed enrichment table; Fluent Bit loads the bundled simple unquoted CSV once in Lua. Mask uses the inherited nine regexes in Vector. Inherited vendor implementations vary in which fields they scan. New results are not directly interchangeable with old published results: lookup wiring was corrected in this successor.
 
-The inherited `site/` chart viewer and history utilities now recognize all seven agents. Daily full runs publish GitHub releases; website publishing remains separate. To preview a real local report:
+The `site/` chart viewer is published to GitHub Pages by `.github/workflows/publish-pages.yml` after each successful benchmark workflow run, on release publication, or manually. It rebuilds `data/history.json` from every release's `data.json`, keeping only the summary fields the page reads and skipping the earlier Go-loadgen `best-tier` releases, which are not comparable. To build the same page locally:
+
+```bash
+tools/build_pages.sh /tmp/bench-site
+python3 -m http.server 8000 --directory /tmp/bench-site
+```
+
+To preview one local report instead:
 
 ```bash
 mkdir -p site/data
