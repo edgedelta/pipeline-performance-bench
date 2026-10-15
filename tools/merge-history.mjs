@@ -34,8 +34,9 @@ const LADDER_AGENTS = { edgedelta: "ed", red: "red", otelcol: "otel", cribl: "cr
 const LADDER_SCENARIOS = ["pass-through", "filter", "mask", "lookup"];
 const round = (x, d = 1) => (x == null ? null : Math.round(x * 10 ** d) / 10 ** d);
 
-// Per fixed-rate tier: status plus resource metrics. Metrics are kept only for
-// sustained tiers; a missed target's resources are not comparable.
+// Per fixed-rate tier: status plus what was measured. Tiers that fell short keep
+// their measurements (with status) so the page can show what was reached;
+// skipped and unsupported tiers have none.
 export function slimLadder(fixed) {
   if (!fixed || !fixed.tiers || !Array.isArray(fixed.targets)) return null;
   const agents = {};
@@ -43,9 +44,11 @@ export function slimLadder(fixed) {
     agents[key] = LADDER_SCENARIOS.map((sc) => fixed.targets.map((target) => {
       const t = fixed.tiers[`${agent}/${sc}/${target}`];
       if (!t) return null;
-      if (!t.sustains_target) return { s: t.status };
+      if (t.agent_cpu_percent == null) return { s: t.status };
       return {
         s: t.status,
+        ack: round(t.acknowledged_logs_per_second, 0),
+        off: round(t.offered_logs_per_second, 0),
         cpu: round(t.agent_cpu_percent),
         mem: round(t.agent_avg_memory_mb),
         lpc: round(t.logs_per_second_per_core, 0),
