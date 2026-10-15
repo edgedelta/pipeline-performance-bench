@@ -344,12 +344,14 @@ function App() {
           {VENDORS.map((v) => {
             const off = clickable && hidden.has(v.key);
             const fails = failsTier(v.key);
+            const hasMeasurements = ladder.agents?.[v.key]?.some((scenario) => scenario.some(measured));
+            const versionLabel = latest.versions?.[v.key] || (hasMeasurements ? "Version unavailable" : "Not measured");
             return (
               <div className={"leg" + (clickable ? " leg-click" : "") + (off ? " off" : "") + (fails ? " fails" : "")} key={v.key} onClick={() => toggle(v.key)}
                 title={fails ? `Could not sustain ${fmt0(target)} logs/sec` : undefined}>
                 <span className="sw" style={{ background: vendorColor(v.key) }} />
                 <span className={v.key === "red" ? "leg-ed" : ""}>{v.name}</span>
-                {latest.versions?.[v.key] && <span className="leg-ver">{latest.versions[v.key]}</span>}
+                <span className="leg-ver">{versionLabel}</span>
               </div>
             );
           })}
