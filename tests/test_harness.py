@@ -113,7 +113,7 @@ class HarnessTest(unittest.TestCase):
             report = (directory / 'report.md').read_text()
             self.assertIn('| Edge Delta (Rust) | errors | 80 | 100.00 logs/sec |', report)
             self.assertIn('| Edge Delta (Rust) | 6 | 0 | errors |', report)
-            self.assertEqual(len((directory / 'SHA256SUMS').read_text().splitlines()), 30)
+            self.assertEqual(len((directory / 'SHA256SUMS').read_text().splitlines()), 34)
 
     def test_report_distinguishes_missing_from_unsupported(self):
         with tempfile.TemporaryDirectory() as tmp:

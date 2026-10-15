@@ -1,0 +1,30 @@
+receivers:
+  webhook_event:
+    endpoint: 0.0.0.0:9085
+    path: "/"
+    read_timeout: "10s"
+    write_timeout: "10s"
+
+processors:
+  batch:
+    send_batch_size: 8192
+    send_batch_max_size: 8192
+    timeout: 30s
+
+exporters:
+  awss3:
+    s3uploader:
+      region: us-west-2
+      s3_bucket: "{S3_PLACEHOLDER}"
+      s3_prefix: bindplane
+      s3_partition_format: 'year=%Y/month=%m/day=%d/hour=%H/minute=%M'
+      compression: gzip
+    marshaler: otlp_json
+    timeout: 30s
+
+service:
+  pipelines:
+    logs:
+      receivers: [webhook_event]
+      processors: [batch]
+      exporters: [awss3]

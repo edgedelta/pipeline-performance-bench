@@ -79,4 +79,4 @@ if __name__ == '__main__':
         validate(args.directory)
     except (ValueError, FileNotFoundError) as error:
         parser.exit(1, f'Release validation failed:\n{error}\n')
-    print('All 26 supported scenarios and seven versions validated; SHA256SUMS written.')
+    print('All supported scenarios and agent versions validated; SHA256SUMS written.')

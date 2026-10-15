@@ -11,7 +11,7 @@ import hashlib
 import fixed
 import collect_machine
 
-SERVICES = {'edgedelta': ('edgedelta.service', 8085), 'red': ('red.service', 7085), 'cribl': ('cribl-edge.service', 6085), 'otelcol': ('otelcol-contrib.service', 5085), 'fluentd': ('fluentd.service', 3085), 'vector': ('vector.service', 4085), 'fluentbit': ('fluent-bit.service', 2085)}
+SERVICES = {'bindplane': ('observiq-otel-collector.service', 9085), 'edgedelta': ('edgedelta.service', 8085), 'red': ('red.service', 7085), 'cribl': ('cribl-edge.service', 6085), 'otelcol': ('otelcol-contrib.service', 5085), 'fluentd': ('fluentd.service', 3085), 'vector': ('vector.service', 4085), 'fluentbit': ('fluent-bit.service', 2085)}
 RATES = fixed.rates_for({"schema_version": 3, "benchmark_profile": os.environ.get("BENCHMARK_PROFILE", "full")})
 
 

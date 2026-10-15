@@ -66,7 +66,7 @@ def add_rust_search(directory, profile='full'):
     provenance['fixed_rate'].update(targets=rates, generator={'generator':'rust','dispatch_mode':'workers','version':'pipeline-loadgen-rust 0.1.1'})
     write(directory/'provenance.json', provenance)
     sha = provenance['fixed_rate']['payload_sha256']
-    for vendor, limit in zip(VENDORS, [125000,250000,1000,5000,10000,200000,25000]):
+    for vendor, limit in zip(VENDORS, [125000,250000,1000,5000,10000,200000,25000,75000]):
         for case in CASES:
             if (vendor,case) in UNSUPPORTED: continue
             template = json.loads((directory/f'{vendor}_{case}_10000.fixed.json').read_text())

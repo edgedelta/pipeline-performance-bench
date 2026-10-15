@@ -1,16 +1,17 @@
-/* Pipeline Throughput Benchmark — driven by data/history.json */
+/* Pipeline Performance Benchmarks — driven by data/history.json */
 
 const SCENARIOS = ["Pass-Through", "Filter", "Mask", "Lookup"];
 const VENDORS = [
+  { key: "bp", name: "Bindplane (Dynatrace)", short: "Bindplane (Dynatrace)" },
   { key: "red",      name: "Edge Delta (Rust)",       short: "ED Rust" },
   { key: "ed",       name: "Edge Delta (Go)",              short: "Edge Delta" },
   { key: "otel",     name: "OpenTelemetry Collector", short: "OTel Collector" },
   { key: "cribl",    name: "Cribl",                   short: "Cribl" },
-  { key: "vector", name: "Vector", short: "Vector" },
+  { key: "vector", name: "Vector (Datadog)", short: "Vector (Datadog)" },
   { key: "fluentbit", name: "Fluent Bit", short: "Fluent Bit" },
   { key: "fluentd",  name: "Fluentd",                 short: "Fluentd" },
 ];
-const PALETTE = { ed: "#3B82F6", red: "#00DA63", otel: "#9F4FFF", cribl: "#FF9554", fluentd: "#00C2D7", vector: "#E5C454", fluentbit: "#F472B6" };
+const PALETTE = { bp: "#38BDF8", ed: "#3B82F6", red: "#00DA63", otel: "#9F4FFF", cribl: "#FF9554", fluentd: "#00C2D7", vector: "#E5C454", fluentbit: "#F472B6" };
 const vendorColor = (k) => PALETTE[k];
 const PLOT_H = 440;
 
@@ -151,7 +152,7 @@ function TierBars({ ladder, tierIndex, metric }) {
       tip: (<>
         <div className="tip-v" style={{ color: vendorColor(v.key) }}>{v.name}</div>
         <div className="tip-s">{sc}</div>
-        <div className="tip-n">{skip ? "Not tested: fell short at a lower load" : "Scenario not supported"}</div>
+        <div className="tip-n">{skip ? "Not tested: fell short at a lower load" : cell?.s === "unsupported" ? "Scenario not supported" : "No measurement for this run"}</div>
       </>) };
   }), metric.better));
   const { max, ticks } = niceScale(vals.length ? Math.max(...vals) : 10);
@@ -299,7 +300,7 @@ function App() {
         <header className="head">
           <div className="brand">
             <div className="titles">
-              <h1>Pipeline throughput benchmark</h1>
+              <h1>Pipeline Performance Benchmarks</h1>
               <p className="sub">
                 {lm.label + " at " + loadName(tierI, ladder.targets.length).toLowerCase() + " load (" + fmt0(target) + " logs/sec in) · " + (tierView ? "" : SCENARIOS[scenarioIdx] + " over time · ") + lm.better + " is better"}
               </p>
@@ -362,7 +363,7 @@ function App() {
         <footer className="foot">
           <span>{latest.date} · run {latest.runId}{view === "trend" ? " · " + history.length + " runs" : ""}</span>
           <span className="na-key">
-            {tierView ? "Best on the left · dashed = fell short of this load (small label = logs/sec it reached) · — = not tested after a lower shortfall · N/A = unsupported"
+            {tierView ? "Best on the left · dashed = fell short of this load (small label = logs/sec it reached) · — = not tested after a lower shortfall · N/A = unsupported or not measured"
               : "Click legend to hide agents · ◆ = agent version change · dashed hollow point = fell short of this load that day (value is what it reached)"}
           </span>
         </footer>

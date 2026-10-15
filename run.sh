@@ -12,7 +12,7 @@ cribl_benchmark=0
 
 # All pipeline cases and vendors the suite knows about, in canonical run order.
 ALL_CASES=("pass-through" "filter" "mask" "lookup")
-ALL_VENDORS=("edgedelta" "red" "cribl" "otelcol" "fluentd" "vector" "fluentbit")
+ALL_VENDORS=("edgedelta" "red" "cribl" "otelcol" "fluentd" "vector" "fluentbit" "bindplane")
 
 # Selections default to everything (preserves the previous "run all" behaviour).
 SELECTED_CASES=("${ALL_CASES[@]}")
@@ -369,6 +369,17 @@ function run_otelcol_benchmark() {
   done
 }
 
+function run_bindplane_benchmark() {
+  run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_bindplane.sh"
+  upload_folder_to_ec2_instance "$runtime_dir/pipelines/bindplane"
+  for type in $(cases_for bindplane); do
+    run_command_on_ec2_instance "sudo cp /home/ubuntu/bindplane/$type.yaml /opt/observiq-otel-collector/config.yaml"
+    for BENCHMARK_MODE in capacity; do
+      trigger_benchmark bindplane "$type"
+    done
+  done
+}
+
 function run_fluentd_benchmark() {
   echo "Running Fluentd benchmark..."
   echo "Installing Fluentd agent..."
@@ -426,6 +437,7 @@ function generate_versions_csv() {
       edgedelta) command='/opt/edgedelta/agent/edgedelta --version' ;;
       red) command='/opt/red/red --version' ;;
       cribl) command='/opt/cribl/bin/cribl version' ;;
+      bindplane) command='/opt/observiq-otel-collector/observiq-otel-collector --version' ;;
       otelcol) command='otelcol-contrib --version' ;;
       fluentd) command='/opt/fluent/bin/fluentd --version' ;;
       vector) command='/usr/local/bin/vector --version' ;;
@@ -465,5 +477,6 @@ maybe_run otelcol run_otelcol_benchmark
 maybe_run fluentd run_fluentd_benchmark
 maybe_run vector run_vector_benchmark
 maybe_run fluentbit run_fluentbit_benchmark
+maybe_run bindplane run_bindplane_benchmark
 download_benchmark_results
 generate_versions_csv

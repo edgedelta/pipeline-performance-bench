@@ -1,6 +1,6 @@
 # Fixed-throughput methodology and result contract
 
-The daily suite preserves the 26 supported best-throughput scenarios and their
+The daily suite runs 30 supported best-throughput scenarios and their
 80/100/120-worker measurements. It schedules up to 130 additional fixed-rate tiers:
 each supported agent/scenario at 10,000, 25,000, 50,000, 75,000 and 125,000 **total input
 logs/second**. Fixed-rate results are independent measurements, never estimates
@@ -8,7 +8,7 @@ from maximum-throughput results. These two workloads are separate experiments.
 
 ## Workload and topology
 
-Seven daily jobs run concurrently, each with its own AWS instance and resources.
+Eight daily jobs run concurrently, each with its own AWS instance and resources.
 Within each job, installation happens once. Each scenario is configured once,
 then its legacy throughput tiers and ascending fixed rates run sequentially.
 The next scenario starts afterward. Every measured tier keeps its own resource
@@ -122,7 +122,7 @@ For each measured agent/scenario/target:
 
 Zero denominators remain N/A. Metrics from failed attainment can describe those
 runs but cannot establish equal-throughput resource wins. Cross-agent aggregates
-use only pass-through and filter, supported by all seven agents. Each included
+use only pass-through and filter, supported by all eight agents. Each included
 agent must sustain both at the selected target. Aggregate ratios divide summed
 acknowledged rates by summed measured cores or average memory, on those same
 scenarios. No agent gets a different scenario set to improve its aggregate.
@@ -184,7 +184,7 @@ gh workflow run benchmark.yml --repo edgedelta/pipeline-performance-bench --ref 
 ```
 
 The existing daily 09:17 UTC schedule, latest agent installation channels and
-seven-agent parallelism are preserved. The job allows 120 minutes for provisioning,
+eight-agent parallelism are preserved. The job allows 120 minutes for provisioning,
 installation and both workloads; timeout/failure still triggers cleanup, with
 refreshed AWS credentials. The extended suite duration has not been measured in
 AWS yet. Real results must be collected; no fixture or old maximum is substituted.

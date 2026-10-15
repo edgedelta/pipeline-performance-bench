@@ -1,0 +1,53 @@
+receivers:
+  webhook_event:
+    endpoint: 0.0.0.0:9085
+    path: "/"
+    read_timeout: "10s"
+    write_timeout: "10s"
+
+processors:
+  transform/parse:
+    error_mode: propagate
+    log_statements:
+      - context: log
+        statements:
+          - set(body, ParseJSON(body)) where IsString(body)
+          - set(attributes["ipv4"], body["pii"]["ipv4"]) where body["pii"] != nil
+          - set(attributes["region"], "Unknown")
+          - set(attributes["env"], "Unknown")
+  lookup:
+    csv: /tmp/lookup-benchmark.csv
+    context: attributes
+    field: ipv4
+  transform/enrich:
+    error_mode: propagate
+    log_statements:
+      - context: log
+        statements:
+          - set(body["region"], attributes["region"])
+          - set(body["env"], attributes["env"])
+          - delete_key(attributes, "ipv4")
+          - delete_key(attributes, "region")
+          - delete_key(attributes, "env")
+  batch:
+    send_batch_size: 8192
+    send_batch_max_size: 8192
+    timeout: 30s
+
+exporters:
+  awss3:
+    s3uploader:
+      region: us-west-2
+      s3_bucket: "{S3_PLACEHOLDER}"
+      s3_prefix: bindplane
+      s3_partition_format: 'year=%Y/month=%m/day=%d/hour=%H/minute=%M'
+      compression: gzip
+    marshaler: otlp_json
+    timeout: 30s
+
+service:
+  pipelines:
+    logs:
+      receivers: [webhook_event]
+      processors: [transform/parse, lookup, transform/enrich, batch]
+      exporters: [awss3]

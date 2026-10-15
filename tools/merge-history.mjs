@@ -30,7 +30,7 @@ export function shortVersion(v) {
   return m ? m[0] : String(v);
 }
 
-const LADDER_AGENTS = { edgedelta: "ed", red: "red", otelcol: "otel", cribl: "cribl", fluentd: "fluentd", vector: "vector", fluentbit: "fluentbit" };
+const LADDER_AGENTS = { bindplane: "bp", edgedelta: "ed", red: "red", otelcol: "otel", cribl: "cribl", fluentd: "fluentd", vector: "vector", fluentbit: "fluentbit" };
 const LADDER_SCENARIOS = ["pass-through", "filter", "mask", "lookup"];
 const round = (x, d = 1) => (x == null ? null : Math.round(x * 10 ** d) / 10 ** d);
 

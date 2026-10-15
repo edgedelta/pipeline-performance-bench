@@ -1,10 +1,10 @@
 # Pipeline performance bench
 
-A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Compare HTTP log ingestion by Edge Delta's Go and Rust agents, Cribl, OpenTelemetry Collector, Fluentd, Vector, and Fluent Bit. Source provenance is recorded in [UPSTREAM.md](UPSTREAM.md).
+A successor to [edgedelta/benchmark](https://github.com/edgedelta/benchmark). Compare HTTP log ingestion by Edge Delta's Go and Rust agents, Cribl, OpenTelemetry Collector, Fluentd, Vector (Datadog), Bindplane (Dynatrace), and Fluent Bit. Source provenance is recorded in [UPSTREAM.md](UPSTREAM.md).
 
 Initial results: [20260914-083749](https://github.com/edgedelta/pipeline-performance-bench/releases/tag/20260914-083749) — seven agents, 26 measured scenarios, raw logs, recorded versions, source provenance, report, and checksums. The four Rust scenarios recorded HTTP errors; their measured values and error counts are shown explicitly and excluded from rankings.
 
-The harness retains the EC2/S3 setup and now uses the Rust load generator for both fixed-rate resource measurements and best sustained throughput. Every measurement uses 256 workers, the same immutable JSON corpus, a global rate limiter and a 60-second measurement window. The workflow runs up to seven agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
+The harness retains the EC2/S3 setup and now uses the Rust load generator for both fixed-rate resource measurements and best sustained throughput. Every measurement uses 256 workers, the same immutable JSON corpus, a global rate limiter and a 60-second measurement window. The workflow runs up to eight agents concurrently on separate Ubuntu 24.04 `c8i.2xlarge` instances, each with isolated AWS resources. Cases and tiers run sequentially within each agent job. A direct `run.sh` invocation remains sequential on one instance. The workflow runs daily and supports manual dispatch; complete validated suites publish dated releases.
 
 | Agent selector | Agent | Pass-through | Filter | Mask | CSV lookup |
 |---|---|---|---|---|---|
@@ -13,7 +13,8 @@ The harness retains the EC2/S3 setup and now uses the Rust load generator for bo
 | `cribl` | Cribl | Yes | Yes | Yes | Yes |
 | `otelcol` | OpenTelemetry Collector | Yes | Yes | Yes | N/A |
 | `fluentd` | Fluentd | Yes | Yes | Yes | Yes |
-| `vector` | Vector | Yes | Yes | Yes | Yes |
+| `vector` | Vector (Datadog) | Yes | Yes | Yes | Yes |
+| `bindplane` | Bindplane (Dynatrace) | Yes | Yes | Yes | Yes |
 | `fluentbit` | Fluent Bit | Yes | Yes | N/A | Yes (Lua) |
 
 Fluentd and Fluent Bit are separate competitors. Unsupported cases are skipped and reported as `unsupported`, never as zero throughput. This suite does not implement Fluent Bit regex masking: its bundled Lua string patterns do not match the upstream regex workload. OpenTelemetry's inherited config has no CSV lookup processor.
@@ -26,10 +27,10 @@ Prerequisites: Ubuntu 24.04 x86_64 with Rust 1.98.0 (or a matching prebuilt CI g
 ./run.sh --dry-run
 ./run.sh --dry-run --vendors vector,fluentbit,red --cases filter,lookup
 ./run.sh --vendors vector,fluentbit
-./run.sh --vendors edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit
+./run.sh --vendors edgedelta,red,cribl,otelcol,fluentd,vector,fluentbit,bindplane
 ```
 
-Lists accept commas or spaces. `passthrough` aliases `pass-through`. The script works from any working directory. A real run of all 26 supported scenarios takes several hours including installation/build time.
+Lists accept commas or spaces. `passthrough` aliases `pass-through`. The script works from any working directory. A real run of all 30 supported scenarios takes several hours including installation/build time.
 
 ## Agent sources and credentials
 
@@ -77,7 +78,7 @@ Each new run writes `benchmark_results/<timestamp>/` containing raw `.fixed.json
 
 ```bash
 python3 tools/summarize.py benchmark_results/<timestamp>
-# Before publishing a complete seven-agent release:
+# Before publishing a complete eight-agent release:
 python3 tools/check_results.py benchmark_results/<timestamp>
 ```
 
@@ -127,7 +128,7 @@ Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/so
 ## Daily releases
 
 The benchmark workflow runs daily at **09:17 UTC**. Each agent gets a separate
-EC2 instance, and all seven jobs run concurrently. Each complete validated full suite
+EC2 instance, and all eight jobs run concurrently. Each complete validated full suite
 publishes a new UTC-dated release, including the measured versions, report,
 raw logs, provenance, and verified checksums. Previous releases remain intact.
 Partial manual runs produce workflow artifacts only. Invalid, incomplete and generator-limited runs do not publish
@@ -142,7 +143,8 @@ Every run installs fresh agents without fixed agent version numbers:
 |---|---|
 | Edge Delta Go | Latest candidate installer (the existing Go benchmark channel) |
 | Edge Delta Rust | Latest stable released binary, checksum verified |
-| Vector | Latest stable GitHub release |
+| Vector (Datadog) | Latest stable GitHub release |
+| Bindplane (Dynatrace) | Latest stable Bindplane collector GitHub release, checksum verified |
 | Fluent Bit | Latest package in the vendor's Ubuntu repository |
 | Fluentd | Latest fluent-package generation, then latest stable Fluentd gem |
 | OpenTelemetry Collector | Latest stable contrib GitHub release |
@@ -160,3 +162,9 @@ The daily [Rust fixed-rate generator](docs/rust-loadgen.md) implements the same 
 ### Short validation run
 
 Use workflow input `profile=short` (or `./run.sh --profile short`) for pass-through-only validation across the selected agents at 10k and 125k. It keeps 60-second fixed-rate measurement windows, reuses them for the throughput summary, omits extra capacity probes, and normally takes about 8–12 minutes including setup. Short results are labeled validation artifacts and cannot publish a benchmark release. The scheduled job keeps `profile=full`. See [the validation gate and commands](docs/rust-loadgen.md#short-aws-validation-before-a-full-run).
+
+### Bindplane collector
+
+The `bindplane` adapter runs the standalone [Bindplane distribution of OpenTelemetry](https://github.com/observIQ/bindplane-otel-collector) without a management server. Pass-through, filter and mask use the same processors as the OTel comparison; CSV lookup uses Bindplane’s lookup processor with `Unknown` miss defaults. Historical runs without Bindplane measurements display N/A; results are never backfilled from another collector. Run `./run.sh --dry-run --vendors bindplane` to inspect its four scenarios.
+
+Validate an unpacked official Bindplane release locally with `python3 tests/bindplane_smoke.py /path/to/observiq-otel-collector`. This checks production-config startup and pass-through, filter, nine-field masking, and CSV hit/miss behavior through its HTTP receiver using a local file sink.
