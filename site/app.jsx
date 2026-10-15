@@ -2,16 +2,16 @@
 
 const SCENARIOS = ["Pass-Through", "Filter", "Mask", "Lookup"];
 const VENDORS = [
-  { key: "bp", name: "Bindplane (Dynatrace)", short: "Bindplane (Dynatrace)" },
   { key: "red",      name: "Edge Delta (Rust)",       short: "ED Rust" },
   { key: "ed",       name: "Edge Delta (Go)",              short: "Edge Delta" },
+  { key: "bp", name: "Bindplane (Dynatrace)", short: "Bindplane (Dynatrace)" },
   { key: "otel",     name: "OpenTelemetry Collector", short: "OTel Collector" },
   { key: "cribl",    name: "Cribl",                   short: "Cribl" },
   { key: "vector", name: "Vector (Datadog)", short: "Vector (Datadog)" },
   { key: "fluentbit", name: "Fluent Bit", short: "Fluent Bit" },
   { key: "fluentd",  name: "Fluentd",                 short: "Fluentd" },
 ];
-const PALETTE = { bp: "#38BDF8", ed: "#3B82F6", red: "#00DA63", otel: "#9F4FFF", cribl: "#FF9554", fluentd: "#00C2D7", vector: "#E5C454", fluentbit: "#F472B6" };
+const PALETTE = { bp: "#EF4444", ed: "#3B82F6", red: "#00DA63", otel: "#9F4FFF", cribl: "#FF9554", fluentd: "#00C2D7", vector: "#E5C454", fluentbit: "#F472B6" };
 const vendorColor = (k) => PALETTE[k];
 const PLOT_H = 440;
 
