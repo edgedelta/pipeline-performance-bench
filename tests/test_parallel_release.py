@@ -54,7 +54,7 @@ class ReleaseTest(unittest.TestCase):
 class ParallelTest(unittest.TestCase):
     def test_plan(self):
         plan = parallel.plan(','.join(parallel.VENDORS), ','.join(parallel.CASES))
-        self.assertEqual(len(plan['include']), 7)
+        self.assertEqual(len(plan['include']), 8)
         fb = next(j for j in plan['include'] if j['vendor'] == 'fluentbit')
         self.assertNotIn('mask', fb['cases'])
         with self.assertRaises(ValueError):

@@ -49,11 +49,11 @@ class FixedTest(unittest.TestCase):
         self.realish_fixture_for_gate_test_only()
         data = check_results.validate(self.directory)
         self.assertEqual(data['fixed_throughput']['targets'], fixed.LEGACY_RATES)
-        self.assertEqual(len(data['fixed_throughput']['tiers']), 112)
+        self.assertEqual(len(data['fixed_throughput']['tiers']), 128)
         self.assertNotIn('red/filter/125000', data['fixed_throughput']['tiers'])
         body = publish_release.release_notes((self.directory/'report.md').read_text(), 'https://example.invalid', data)
         self.assertNotIn('| 125,000 |', body)
-        self.assertEqual(len((self.directory/'SHA256SUMS').read_text().splitlines()), 170)
+        self.assertEqual(len((self.directory/'SHA256SUMS').read_text().splitlines()), 195)
 
     def test_metric_formulas_units_and_scope(self):
         t=self.get()
@@ -162,7 +162,7 @@ class FixedTest(unittest.TestCase):
         data['hardware']['red']['runtime']['observed']['os']=None
         body=publish_release.release_notes(report,'https://example.invalid',data)
         row=next(line for line in body.splitlines() if line.startswith('| OS / kernel'))
-        self.assertIn('Vector: Different OS',row)
+        self.assertIn('Vector (Datadog): Different OS',row)
         self.assertIn('Edge Delta (Rust): N/A',row)
 
     def test_release_sorts_throughput_by_raw_values_and_flags_after_valid_rows(self):
@@ -173,7 +173,7 @@ class FixedTest(unittest.TestCase):
         body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
         overview=body.split('## Best-tested throughput')[1].split('## Highest sustained')[0]
         overview=overview.replace('**','').replace('🏆 ','')
-        self.assertLess(overview.index('| Vector |'),overview.index('| Edge Delta (Rust) |'))
+        self.assertLess(overview.index('| Vector (Datadog) |'),overview.index('| Edge Delta (Rust) |'))
         self.assertLess(overview.index('| Fluentd |'),overview.index('| Edge Delta (Go) |'))
         self.assertIn('sorted by pass-through throughput',overview)
 
@@ -186,7 +186,7 @@ class FixedTest(unittest.TestCase):
         body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
         section=body.split('### Filter — measured CPU')[1].split('### Mask — measured CPU')[0]
         section=section.replace('**','').replace('🔹 ','')
-        self.assertLess(section.index('| 10,000 | Vector |'),section.index('| 10,000 | Edge Delta (Rust) |'))
+        self.assertLess(section.index('| 10,000 | Vector (Datadog) |'),section.index('| 10,000 | Edge Delta (Rust) |'))
         self.assertLess(section.index('| 10,000 | Fluentd |'),section.index('| 10,000 | Edge Delta (Go) |'))
         positions = [section.index(f'\n| {rate:,} |') for rate in [125000,75000,50000,25000,10000]]
         self.assertEqual(positions,sorted(positions))
@@ -219,9 +219,9 @@ class FixedTest(unittest.TestCase):
         self.realish_fixture_for_gate_test_only()
         data=check_results.validate(self.directory)
         files=(self.directory/'SHA256SUMS').read_text().splitlines()
-        self.assertEqual(len(files),203) # 26 logs + 4 legacy assets + 130 tiers + 35 calibrations + 7 hardware + corpus
+        self.assertEqual(len(files),233) # 30 logs + 4 legacy assets + 150 tiers + 40 calibrations + 8 hardware + corpus
         self.assertTrue(any('red_filter_10000.fixed.json' in f for f in files))
-        self.assertEqual(len(data['fixed_throughput']['tiers']),140)
+        self.assertEqual(len(data['fixed_throughput']['tiers']),160)
         (self.directory/'red_filter_10000.fixed.json').unlink()
         with self.assertRaisesRegex(ValueError,'missing'):check_results.validate(self.directory)
         self.assertFalse((self.directory/'SHA256SUMS').exists())

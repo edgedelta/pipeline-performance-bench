@@ -64,3 +64,17 @@ test("slimLadder keeps measurements, including tiers that fell short", () => {
   assert.equal(out.agents.otel[0][0], null);
   assert.equal(slimLadder(undefined), null);
 });
+
+
+test("Bindplane measurements survive history export while old runs remain missing", () => {
+  const fixed = { targets: [10000], tiers: { "bindplane/lookup/10000": {
+    status: "ok", agent_cpu_percent: 125, acknowledged_logs_per_second: 10000,
+    agent_avg_memory_mb: 100, logs_per_second_per_core: 8000,
+    logs_per_second_per_mb: 100,
+  } } };
+  const out = slimRun({ runId: "bindplane", date: "2026-10-15",
+    versions: { bp: "observiq-otel-collector version v1.110.1" }, vendors: {}, fixed_throughput: fixed });
+  assert.equal(out.versions.bp, "v1.110.1");
+  assert.equal(out.ladder.agents.bp[3][0].lpc, 8000);
+  assert.equal(out.ladder.agents.bp[0][0], null);
+});

@@ -129,7 +129,7 @@ class CapacityTest(unittest.TestCase):
         body=publish_release.release_notes((self.directory/'report.md').read_text(),'https://example.invalid',data)
         section=body.split('### Filter — best sustained throughput')[1].split('### Mask — best sustained throughput')[0]
         rows=[r for r in section.splitlines() if r.startswith('| ')][1:]
-        self.assertIn('🏆 **Vector**',rows[0]);self.assertIn('**260,123**',rows[0])
+        self.assertIn('🏆 **Vector (Datadog)**',rows[0]);self.assertIn('**260,123**',rows[0])
         self.assertIn('Edge Delta (Rust)',rows[1])
         invalid=next(r for r in rows if 'Edge Delta (Go)' in r)
         self.assertIn('| Invalid | N/A | N/A | N/A | N/A | N/A |',invalid)
@@ -229,6 +229,6 @@ class CapacityTest(unittest.TestCase):
 
     def test_new_harness_never_launches_legacy_go_sweep(self):
         self.assertNotIn('in throughput fixed;', (ROOT/'run.sh').read_text())
-        self.assertEqual((ROOT/'run.sh').read_text().count('for BENCHMARK_MODE in capacity;'),7)
+        self.assertEqual((ROOT/'run.sh').read_text().count('for BENCHMARK_MODE in capacity;'),8)
         self.assertIn('run_capacity.py',(ROOT/'benchmark_scripts/trigger_benchmark.sh').read_text())
         self.assertIn('tools/capacity.py',(ROOT/'run.sh').read_text())

@@ -15,7 +15,7 @@ if [[ "$mode" == fixed ]]; then exec python3 ./run_fixed.py "$app" "$type"; fi
 
 if [[ -z "$app" ]]; then
   echo "Select app for benchmark:"
-  select app in edgedelta red cribl otelcol fluentd vector fluentbit; do
+  select app in edgedelta red cribl otelcol fluentd vector fluentbit bindplane; do
     if [[ -n "$app" ]]; then
       break
     fi

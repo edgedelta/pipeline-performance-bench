@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 
 const SCENARIOS = ["Pass-Through", "Filter", "Mask", "Lookup"];
-const NAME2KEY = { "Edge Delta": "ed", "Edge Delta (Go)": "ed", "Edge Delta (Rust)": "red", "Fluentd": "fluentd", "Vector": "vector", "Fluent Bit": "fluentbit", "Bindplane": "bp", "OpenTelemetry Collector": "otel", "Cribl": "cribl" };
+const NAME2KEY = { "Vector (Datadog)": "vector", "Bindplane (Dynatrace)": "bp", "Edge Delta": "ed", "Edge Delta (Go)": "ed", "Edge Delta (Rust)": "red", "Fluentd": "fluentd", "Vector": "vector", "Fluent Bit": "fluentbit", "Bindplane": "bp", "OpenTelemetry Collector": "otel", "Cribl": "cribl" };
 
 export function num(s) {
   if (s == null) return null;

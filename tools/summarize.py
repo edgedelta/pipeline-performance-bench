@@ -11,7 +11,7 @@ import fixed
 import fixed_report
 import capacity
 
-VENDORS = {'edgedelta': ('ed', 'Edge Delta (Go)'), 'red': ('red', 'Edge Delta (Rust)'), 'cribl': ('cribl', 'Cribl'), 'otelcol': ('otel', 'OpenTelemetry Collector'), 'fluentd': ('fluentd', 'Fluentd'), 'vector': ('vector', 'Vector'), 'fluentbit': ('fluentbit', 'Fluent Bit')}
+VENDORS = {'edgedelta': ('ed', 'Edge Delta (Go)'), 'red': ('red', 'Edge Delta (Rust)'), 'cribl': ('cribl', 'Cribl'), 'otelcol': ('otel', 'OpenTelemetry Collector'), 'fluentd': ('fluentd', 'Fluentd'), 'vector': ('vector', 'Vector (Datadog)'), 'fluentbit': ('fluentbit', 'Fluent Bit'), 'bindplane': ('bp', 'Bindplane (Dynatrace)')}
 RETRY_FIELDS = ['connection_errors', 'retry_attempts', 'recovered_requests', 'ambiguous_deliveries']
 CASES = ['pass-through', 'filter', 'mask', 'lookup']
 UNSUPPORTED = {('otelcol', 'lookup'), ('fluentbit', 'mask')}

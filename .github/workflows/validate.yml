@@ -32,6 +32,24 @@ jobs:
       - run: node --test tools/*.test.mjs
       - run: python3 tests/fixed_smoke.py
       - run: python3 tests/smoke.py
+      - name: Validate Bindplane production configs and HTTP behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(curl -fLsS --retry 3 https://api.github.com/repos/observIQ/bindplane-otel-collector/releases/latest | jq -er '.tag_name')
+          [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          base="https://github.com/observIQ/bindplane-otel-collector/releases/download/$version"
+          archive="observiq-otel-collector-${version}-linux-amd64.tar.gz"
+          checksums="observiq-otel-collector-${version}-SHA256SUMS"
+          mkdir -p "$RUNNER_TEMP/bindplane"
+          cd "$RUNNER_TEMP/bindplane"
+          curl -fLsS --retry 3 -O "$base/$archive"
+          curl -fLsS --retry 3 -O "$base/$checksums"
+          awk -v archive="$archive" '$2 == archive || $2 == "*" archive { print; found=1 } END { if (!found) exit 1 }' "$checksums" > archive.sha256
+          sha256sum --check archive.sha256
+          tar -xzf "$archive"
+          cd "$GITHUB_WORKSPACE"
+          python3 tests/bindplane_smoke.py "$RUNNER_TEMP/bindplane/observiq-otel-collector"
       - name: Upload fixture artifact to verify release transport
         uses: actions/upload-artifact@v7
         with:

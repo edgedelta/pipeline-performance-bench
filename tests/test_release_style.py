@@ -52,7 +52,7 @@ class ReleaseStyleTest(unittest.TestCase):
         scenarios['fluentd/pass-through'].update(avg=100000.1, status='ok')
         scenarios['edgedelta/pass-through'].update(avg=999999, status='errors')
         overview = self.body().split('## Best-tested throughput')[1].split('## Highest sustained')[0]
-        self.assertIn('| 🏆 **Vector** | **100,000** |', overview)
+        self.assertIn('| 🏆 **Vector (Datadog)** | **100,000** |', overview)
         self.assertIn('| 🏆 **Edge Delta (Rust)** | **100,000** |', overview)
         self.assertIn('| 🏆 **Fluentd** | 100,000 |', overview)
         self.assertIn('| 🏆 **Edge Delta (Go)** | 999,999 † |', overview)
@@ -72,7 +72,7 @@ class ReleaseStyleTest(unittest.TestCase):
         self.assertEqual(len(highlighted), 2)
         self.assertTrue(all('**Pass**' in row for row in highlighted))
         self.assertIn('🔹 **Edge Delta (Rust)**', highlighted[0])
-        self.assertIn('🔹 **Vector**', highlighted[1])
+        self.assertIn('🔹 **Vector (Datadog)**', highlighted[1])
         self.assertNotIn('**Fail', body)
         tiers['vector/filter/10000']['status'] = 'generator_limited'
         section = self.body().split('### Filter —')[1].split('### Mask —')[0]
@@ -89,7 +89,7 @@ class ReleaseStyleTest(unittest.TestCase):
             tiers[f'{v}/pass-through/125000']['status'] = 'ok'
         tiers['vector/filter/75000']['status'] = 'ok'
         section = self.body().split('## Highest sustained fixed-rate target')[1].split('## Hardware')[0]
-        self.assertLess(section.index('**Vector**'), section.index('**Edge Delta (Rust)**'))
+        self.assertLess(section.index('**Vector (Datadog)**'), section.index('**Edge Delta (Rust)**'))
         self.assertEqual(section.count('**125,000**'), 2)
         self.assertNotIn('**None**', section)
         self.assertNotIn('**Unsupported**', section)

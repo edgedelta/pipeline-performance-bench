@@ -20,6 +20,9 @@ elif [[ "$app" == "red" ]]; then
 elif [[ "$app" == "cribl" ]]; then
   service="cribl-edge.service"
   port=6085
+elif [[ "$app" == "bindplane" ]]; then
+  service="observiq-otel-collector.service"
+  port=9085
 elif [[ "$app" == "otelcol" ]]; then
   service="otelcol-contrib.service"
   port=5085
@@ -149,7 +152,7 @@ for i in 80 100 120; do
     if [[ -n "$cribl_monitor_pid" ]]; then
       kill "$cribl_monitor_pid" 2>/dev/null || true
     fi
-  elif [[ "$app" == "red" || "$app" == "vector" || "$app" == "fluentbit" ]]; then
+  elif [[ "$app" == "red" || "$app" == "vector" || "$app" == "fluentbit" || "$app" == "bindplane" ]]; then
     # pgrep "red" would match unrelated processes; monitor the systemd main PID.
     red_pid=$(systemctl show -p MainPID --value "$service")
     [[ -z "$red_pid" || "$red_pid" == "0" ]] && echo "Warning: could not find red main PID"
