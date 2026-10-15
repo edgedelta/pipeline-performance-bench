@@ -49,15 +49,18 @@ test("slimRun keeps only page fields", () => {
   assert.ok(validateRun(out));
 });
 
-test("slimLadder keeps metrics only for sustained tiers", () => {
-  const tier = (ok, status) => ({ sustains_target: ok, status, agent_cpu_percent: 193.04, agent_avg_memory_mb: 62.33, logs_per_second_per_core: 64896.4, logs_per_second_per_mb: 2009.18 });
+test("slimLadder keeps measurements, including tiers that fell short", () => {
+  const tier = (ok, status) => ({ sustains_target: ok, status, acknowledged_logs_per_second: 124956.9, offered_logs_per_second: 124957.2, agent_cpu_percent: 193.04, agent_avg_memory_mb: 62.33, logs_per_second_per_core: 64896.4, logs_per_second_per_mb: 2009.18 });
   const out = slimLadder({ targets: [10000, 125000], tiers: {
     "red/pass-through/10000": tier(true, "ok"),
     "edgedelta/filter/125000": tier(false, "generator_limited"),
+    "cribl/filter/125000": { sustains_target: false, status: "skipped_after_shortfall" },
   } });
   assert.deepEqual(out.targets, [10000, 125000]);
-  assert.deepEqual(out.agents.red[0][0], { s: "ok", cpu: 193, mem: 62.3, lpc: 64896, lpm: 2009.2 });
-  assert.deepEqual(out.agents.ed[1][1], { s: "generator_limited" });
+  assert.deepEqual(out.agents.red[0][0], { s: "ok", ack: 124957, off: 124957, cpu: 193, mem: 62.3, lpc: 64896, lpm: 2009.2 });
+  assert.equal(out.agents.ed[1][1].s, "generator_limited");
+  assert.equal(out.agents.ed[1][1].lpc, 64896);
+  assert.deepEqual(out.agents.cribl[1][1], { s: "skipped_after_shortfall" });
   assert.equal(out.agents.otel[0][0], null);
   assert.equal(slimLadder(undefined), null);
 });
