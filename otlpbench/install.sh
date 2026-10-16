@@ -18,7 +18,14 @@ case "$vendor" in
     echo '629ef9d26d216a4f6f2b570bdc4d6eadf49ac03d98de84efd50e33768780d9f0  /tmp/cribl.tgz' | sha256sum --check
     sudo tar -xzf /tmp/cribl.tgz -C /opt
     ;;
-  otelcol|bindplane|vector|fluentbit|fluentd)
+  otelcol)
+    # Keep rechecks on the same released binary as the initial preview.
+    version=0.162.0
+    curl -fLsS --retry 3 "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${version}/otelcol-contrib_${version}_linux_amd64.deb" -o /tmp/otelcol.deb
+    sudo dpkg -i /tmp/otelcol.deb
+    sudo systemctl stop otelcol-contrib
+    ;;
+  bindplane|vector|fluentbit|fluentd)
     bash "scripts/install_agent_${vendor}.sh"
     if [[ "$vendor" == fluentd ]]; then sudo /opt/fluent/bin/fluent-gem install fluent-plugin-opentelemetry grpc --no-document; fi
     ;;

@@ -29,7 +29,9 @@ Report fields include accepted input rate, delivered output count, partial rejec
 
 Status `not_configured` means an adapter is still needed, not that the vendor is incapable. This draft initially exercises all scenarios for OTel and Bindplane, the native Edge Delta scenarios, Fluent Bit trace processing and metric enrichment, Cribl forwarding/basic transforms, and forwarding for Vector/Fluentd. Other transformation adapters remain pending. These gaps must remain visible in the PR report.
 
-The OTel interval processor passes delta metrics through; it is included as a candidate to show the contract mismatch, not treated as equivalent rollup. OTel metricstransform aggregation is confined to an incoming batch; the cross-request fixture checks that limitation. Reference docs: [interval](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/intervalprocessor), [metricstransform](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/metricstransformprocessor).
+The interval processor is tested as a candidate for Rollup. The observed 0.162.0 output combined eight event-time buckets into one flush-time series, which does not satisfy the aligned event-time contract. OTel metricstransform aggregation is confined to an incoming batch; the cross-request fixture checks that limitation. Treat native output captures as evidence rather than assuming similarly named processors are equivalent. Reference docs: [interval](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.162.0/processor/intervalprocessor), [metricstransform](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.162.0/processor/metricstransformprocessor).
+
+OTel is pinned to 0.162.0 for this preview so rechecks use the same binary. Other installed versions and binary hashes are recorded in the results.
 
 ## Local validation
 
