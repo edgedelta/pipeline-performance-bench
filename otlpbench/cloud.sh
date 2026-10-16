@@ -3,6 +3,8 @@ set -euo pipefail
 vendor=$1
 GITHUB_SHA=${GITHUB_SHA:-$(git rev-parse HEAD)}
 scenarios=${OTLP_SCENARIOS:-}
+signals=${OTLP_SIGNALS:-metrics,traces}
+[[ "$signals" =~ ^(metrics|traces|metrics,traces)$ ]]
 [[ "$scenarios" =~ ^[a-z,-]*$ ]]
 [[ "$vendor" =~ ^(red|edgedelta|bindplane|otelcol|vector|fluentbit|fluentd|cribl)$ ]]
 collect_and_cleanup() {
@@ -38,4 +40,4 @@ if [[ "$vendor" == red ]]; then
 fi
 mkdir -p "otlp-results/$vendor"
 ssh "${opts[@]}" "ubuntu@$ip" "cd bench && bash otlpbench/install.sh '$vendor'"
-ssh "${opts[@]}" "ubuntu@$ip" "cd bench && sudo env BENCHMARK_SHA='$GITHUB_SHA' .otlp-venv/bin/python -m otlpbench.runner --vendor '$vendor' --seconds 30 --rates 1000,10000,25000,50000,125000 --scenarios '$scenarios'"
+ssh "${opts[@]}" "ubuntu@$ip" "cd bench && sudo env BENCHMARK_SHA='$GITHUB_SHA' .otlp-venv/bin/python -m otlpbench.runner --vendor '$vendor' --seconds 30 --rates 1000,10000,25000,50000,125000 --scenarios '$scenarios' --signals '$signals'"

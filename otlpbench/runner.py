@@ -120,6 +120,7 @@ def main():
     ap.add_argument('--seconds', type=int, default=30)
     ap.add_argument('--rates', default='1000,10000,25000,50000,125000')
     ap.add_argument('--scenarios', default='')
+    ap.add_argument('--signals', default='metrics,traces')
     args=ap.parse_args()
     out=Path(args.output); out.mkdir(parents=True,exist_ok=True)
     result={'vendor':args.vendor, 'commit':os.getenv('BENCHMARK_SHA','local'), 'platform':platform.platform(), 'cpu':platform.processor(), 'logical_cpus':os.cpu_count(), 'batch':512, 'concurrency':4, 'compression':'none', 'seconds':args.seconds, 'rows':[], 'calibration':[]}
@@ -136,7 +137,7 @@ def main():
         with open(binary,'rb') as f:
             for chunk in iter(lambda: f.read(1024*1024), b''): h.update(chunk)
         result['binary_sha256'] = h.hexdigest()
-        for signal in SCENARIOS:
+        for signal in args.signals.split(','):
             for rate in map(int,args.rates.split(',')):
                 sink('reset')
                 c=load(signal,14317,rate,min(10,args.seconds))
@@ -144,6 +145,7 @@ def main():
                 c['passed']=c['accepted_per_second']>=rate*.95 and c['delivered']==c['accepted'] and not c['rpc_errors']
                 result['calibration'].append(c)
         for signal,scenarios in SCENARIOS.items():
+            if signal not in args.signals.split(','): continue
             for scenario in scenarios:
                 if args.scenarios and scenario not in args.scenarios.split(','): continue
                 row={'signal':signal,'scenario':scenario}; result['rows'].append(row)
