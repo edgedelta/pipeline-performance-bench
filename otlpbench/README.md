@@ -1,0 +1,43 @@
+# OTLP metrics and traces preview
+
+This suite runs on a pull-request branch before merge. Dispatch **Validate benchmark harness** with `otlp_benchmark=true` and the PR branch ref. It creates a separate Ubuntu 24.04 `c8i.2xlarge` for each installed agent, uploads evidence, and destroys the instances. It does not create releases, write Pages data, or merge the PR.
+
+## Contracts
+
+| Signal | Scenario | Required behavior |
+|---|---|---|
+| Both | Pass-Through | Preserve points/spans and their resource/scope identity. |
+| Both | Filter | Drop records with route=health (25%). |
+| Both | Enrich | Add bench.enriched=yes. |
+| Metrics | Aggregate | Sum delta counters across host labels; retain route and 10-second buckets. |
+| Metrics | Rollup | Sum 10-second delta counters into aligned 60-second buckets, retaining host and route. |
+| Metrics | Combined | Reduce host cardinality and produce 60-second buckets. |
+| Traces | Mask | Replace secret attribute with REDACTED. |
+| Traces | Sample | Keep approximately 50% of whole traces using trace-ID sampling. |
+| Traces | Tail | Retain whole traces containing an ERROR child span, including their OK parents. |
+| Traces | Metrics | Generate span counts and latency histograms. |
+
+Metrics use one delta monotonic sum, 64 hosts, two routes, and six event-time buckets. Traces contain two SERVER spans each, with IDs, parent relationships, events, links, a secret attribute, and 20ms durations. Only one child in every fourth trace is ERROR. Each correctness fixture is split across two requests to catch per-request-only aggregation and incomplete-trace sampling. Raw sent/received records are retained.
+
+Aggregation is an event-time contract: bucket end timestamps and interval start timestamps are checked. Old event times allow flushes without a minute-long initial alignment wait. Correctness drain is 25 seconds for aggregation and 4 seconds otherwise. This is a bounded preview, not a claim that slower-flushing configurations are unsupported.
+
+## Measurements
+
+Persistent OTLP/gRPC input, no compression, four clients, 512 points/spans per request. Native OTLP/HTTP protobuf output goes to the same local destination implementation. This first preview measures fixed offered rates of 1,000 and 10,000 items/sec for 30 seconds after warm-up, with a direct-to-destination calibration at each rate. It is not a maximum-throughput benchmark and is not comparable to the existing Rust-generator log results.
+
+Report fields include accepted input rate, delivered output count, partial rejections/RPC errors, p95 export acknowledgment latency (not end-to-end latency), process-tree CPU cores, and process-tree average/peak RSS. Resource samples cover the sending interval. Correctness failures do not receive performance scores. Output counts and rates flag delivery or input shortfalls. Generator calibration failures suppress measurement.
+
+Status `not_configured` means an adapter is still needed, not that the vendor is incapable. This draft initially exercises all scenarios for OTel and Bindplane, the native Edge Delta scenarios, and forwarding for Vector/Fluent Bit/Fluentd. Cribl and the other transformation adapters remain pending. These gaps must remain visible in the PR report.
+
+The OTel interval processor passes delta metrics through; it is included as a candidate to show the contract mismatch, not treated as equivalent rollup. OTel metricstransform aggregation is confined to an incoming batch; the cross-request fixture checks that limitation. Reference docs: [interval](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/intervalprocessor), [metricstransform](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/metricstransformprocessor).
+
+## Local validation
+
+```sh
+python3 -m venv /tmp/otlp-venv
+/tmp/otlp-venv/bin/pip install -r otlpbench/requirements.txt
+/tmp/otlp-venv/bin/python -m unittest otlpbench.test_model -v
+/tmp/otlp-venv/bin/python -m otlpbench.runner --vendor bindplane --binary /path/to/observiq-otel-collector --output /tmp/otlp-results
+```
+
+The first preview does not yet cover gauges/histogram input workloads, an input batch-size sweep, higher-rate capacity search, repeated trials, or end-to-end latency. Keep the PR draft until the evidence and remaining adapters are reviewed.

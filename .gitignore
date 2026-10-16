@@ -63,3 +63,6 @@ __pycache__/
 .loadgen-build/
 
 /loadgen-rust/target/
+
+/otlp-results/
+/.otlp-venv/
