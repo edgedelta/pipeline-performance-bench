@@ -49,11 +49,31 @@ def config(vendor, signal, scenario):
             key,value = ('bench.enriched','yes') if scenario=='enrich' else ('secret','REDACTED')
             action = f'for (const p of items) {{ p.attributes = (p.attributes || []).filter(a => a.key !== "{key}"); p.attributes.push({{key:"{key}",value:{{stringValue:"{value}"}}}}); }}'
         if scenario == 'sample': action = 'items = items.filter(p => parseInt(p.traceId.slice(-1),16) < 8);'
-        code = ('for (const r of __e.resourceMetrics || []) { for (const s of r.scopeMetrics || []) { for (const m of s.metrics || []) { let items=m.sum.dataPoints; '+action+' m.sum.dataPoints=items; } } }') if signal=='metrics' else ('for (const r of __e.resourceSpans || []) { for (const s of r.scopeSpans || []) { let items=s.spans; '+action+' s.spans=items; } }')
+        key,value = ('bench.enriched','yes') if scenario=='enrich' else ('secret','REDACTED')
+        action = ''
+        if scenario == 'filter': action = 'items = items.filter(p => attr(p,"route") !== "health");'
+        if scenario in ('enrich','mask'): action = f'for (const p of items) put(p,"{key}","{value}");'
+        if scenario == 'sample': action = 'items = items.filter(p => parseInt(String(p.trace_id || p.traceId).slice(-1),16) < 8);'
+        code = """function attr(p,k) { const a=p.attributes||{}; if (!Array.isArray(a)) return a[k]; const x=a.find(x=>x.key===k); return x && (x.value.string_value ?? x.value.stringValue); }
+function put(p,k,v) { if (!Array.isArray(p.attributes)) { p.attributes=p.attributes||{}; p.attributes[k]=v; } else { const snake=p.attributes.some(a=>a.value && 'string_value' in a.value); p.attributes=p.attributes.filter(a=>a.key!==k); p.attributes.push({key:k,value:snake?{string_value:v}:{stringValue:v}}); } }
+function visit(o) { if (!o || typeof o !== 'object') return; for (const k of Object.keys(o)) { if (k.startsWith('__')) continue; if (['spans','data_points','dataPoints'].includes(k) && Array.isArray(o[k])) { let items=o[k]; """+action+""" o[k]=items; } else if (Array.isArray(o[k])) { for(const child of o[k]) visit(child); } else visit(o[k]); } }
+visit(__e);"""
         c = {'cribl.yml': {'api': {'host':'127.0.0.1','port':9420}, 'workers': {'count':1,'minimum':1}}, 'inputs.yml': {'inputs': {'in_system_metrics': {'disabled':True}, 'in_system_state': {'disabled':True}, 'in_windows_metrics': {'disabled':True}, 'bench': {'type':'open_telemetry','host':'127.0.0.1','port':4317,'protocol':'grpc','otlpVersion':'1.3.1','extractSpans':False,'extractMetrics':False,'tls':{'disabled':True},'sendToRoutes':False,'connections':[{'output':'bench','pipeline':'bench'}]}}}, 'outputs.yml': {'outputs': {'bench': {'type':'open_telemetry','protocol':'http','endpoint':'http://127.0.0.1:14318','otlpVersion':'1.3.1','preserveNativeAnyValue':True,'httpCompress':'none','flushPeriodSec':.1,'concurrency':4,'systemFields':[]}}}, 'pipelines/bench/conf.yml': {'functions': [] if scenario=='pass-through' else [{'id':'code','filter':'true','conf':{'code':code}}]}}
         return yaml.safe_dump(c,sort_keys=False), None
-    if vendor == 'vector' and scenario == 'pass-through':
-        return yaml.safe_dump({'data_dir': '/tmp/vector-otlp-bench', 'sources': {'in': {'type': 'opentelemetry', 'grpc': {'address': '127.0.0.1:4317'}, 'http': {'address': '127.0.0.1:4318'}, 'use_otlp_decoding': True}}, 'sinks': {'out': {'type': 'opentelemetry', 'inputs': ['in.'+signal], 'protocol': {'type': 'http', 'uri': 'http://127.0.0.1:14318/v1/'+signal, 'encoding': {'codec': 'otlp'}, 'batch': {'max_events': 512, 'timeout_secs': 0.1}}}}}, sort_keys=False), None
+    if vendor == 'vector' and scenario in ('pass-through','filter','enrich','mask','sample'):
+        c = {'data_dir': '/tmp/vector-otlp-bench', 'sources': {'in': {'type': 'opentelemetry', 'grpc': {'address': '127.0.0.1:4317'}, 'http': {'address': '127.0.0.1:4318'}, 'use_otlp_decoding': True}}, 'sinks': {'out': {'type': 'opentelemetry', 'inputs': ['in.'+signal], 'protocol': {'type': 'http', 'uri': 'http://127.0.0.1:14318/v1/'+signal, 'encoding': {'codec': 'otlp'}, 'batch': {'max_events': 512, 'timeout_secs': 0.1}}}}}
+        if scenario != 'pass-through':
+            target = 'm.sum.dataPoints' if signal=='metrics' else 's.spans'
+            action = ''
+            if scenario=='filter': action = f'{target} = filter(array!({target})) -> |_, p| {{ !any(array!(p.attributes)) -> |a| {{ a.key == "route" && a.value.stringValue == "health" }} }}'
+            if scenario in ('enrich','mask'):
+                k,v = ('bench.enriched','yes') if scenario=='enrich' else ('secret','REDACTED')
+                action = f'{target} = map_values(array!({target})) -> |p| {{ p.attributes = filter(array!(p.attributes)) -> |_, a| {{ a.key != "{k}" }}; p.attributes = push(p.attributes, {{"key":"{k}","value":{{"stringValue":"{v}"}}}}); p }}'
+            if scenario=='sample': action = f'{target} = filter(array!({target})) -> |_, p| {{ match(string!(p.traceId), r\'[0-7]$\') }}'
+            code = '.resourceMetrics = map_values(array!(.resourceMetrics)) -> |r| { r.scopeMetrics = map_values(array!(r.scopeMetrics)) -> |s| { s.metrics = map_values(array!(s.metrics)) -> |m| { '+action+'; m }; s }; r }' if signal=='metrics' else '.resourceSpans = map_values(array!(.resourceSpans)) -> |r| { r.scopeSpans = map_values(array!(r.scopeSpans)) -> |s| { '+action+'; s }; r }'
+            c['transforms']={'process':{'type':'remap','inputs':['in.'+signal],'source':code}}
+            c['sinks']['out']['inputs']=['process']
+        return yaml.safe_dump(c,sort_keys=False),None
     if vendor == 'fluentbit' and (scenario in ('pass-through','enrich') or signal == 'traces' and scenario in ('enrich','mask','sample','tail')):
         source = {'name': 'opentelemetry', 'listen': '127.0.0.1', 'port': 4317}
         p = []
@@ -64,6 +84,18 @@ def config(vendor, signal, scenario):
         if signal == 'metrics' and scenario == 'enrich': p = [{'name': 'labels', 'insert': 'bench.enriched yes'}]
         if p: source['processors'] = {signal: p}
         return yaml.safe_dump({'service': {'flush': 1, 'log_level': 'info'}, 'pipeline': {'inputs': [source], 'outputs': [{'name': 'opentelemetry', 'match': '*', 'host': '127.0.0.1', 'port': 14318, 'metrics_uri': '/v1/metrics', 'traces_uri': '/v1/traces', 'tls': 'off'}]}},sort_keys=False), None
-    if vendor == 'fluentd' and scenario == 'pass-through':
-        return '<source>\n  @type opentelemetry\n  tag otlp.${type}\n  <grpc>\n    bind 127.0.0.1\n    port 4317\n  </grpc>\n</source>\n<match otlp.**>\n  @type opentelemetry\n  <http>\n    endpoint http://127.0.0.1:14318\n  </http>\n  <buffer>\n    flush_mode interval\n    flush_interval 0.1s\n    flush_thread_count 4\n  </buffer>\n</match>\n', None
+    if vendor == 'fluentd' and scenario in ('pass-through','filter','enrich','mask','sample','aggregate'):
+        transform = ''
+        if scenario != 'pass-through':
+            action = ''
+            if scenario=='filter': action = 'items.reject! { |p| p.fetch("attributes",[]).any? { |a| a["key"]=="route" && a.dig("value","stringValue")=="health" } }'
+            if scenario in ('enrich','mask'):
+                k,v = ('bench.enriched','yes') if scenario=='enrich' else ('secret','REDACTED')
+                action = f'items.each {{ |p| p["attributes"].reject! {{ |a| a["key"]=="{k}" }}; p["attributes"] << {{"key"=>"{k}","value"=>{{"stringValue"=>"{v}"}}}} }}'
+            if scenario=='sample': action = 'items.select! { |p| p["traceId"][-1].to_i(16) < 8 }'
+            if scenario=='aggregate': action = 'items.replace(items.group_by { |p| [p["timeUnixNano"],p["attributes"].reject { |a| a["key"]=="host" }] }.map { |key,ps| q=ps.first.dup; q["attributes"]=key[1]; q.delete("asInt"); q["asDouble"]=ps.sum { |p| (p["asInt"] || p["asDouble"]).to_f }; q })'
+            body = 'x["resourceMetrics"].each { |r| r["scopeMetrics"].each { |s| s["metrics"].each { |m| items=m["sum"]["dataPoints"]; '+action+' } } }' if signal=='metrics' else 'x["resourceSpans"].each { |r| r["scopeSpans"].each { |s| items=s["spans"]; '+action+' } }'
+            expression = 'x=JSON.parse(record["message"]); '+body+'; JSON.generate(x)'
+            transform = '<filter otlp.**>\n  @type record_transformer\n  enable_ruby true\n  <record>\n    message ${'+expression+'}\n  </record>\n</filter>\n'
+        return '<source>\n  @type opentelemetry\n  tag otlp.${type}\n  <grpc>\n    bind 127.0.0.1\n    port 4317\n  </grpc>\n</source>\n'+transform+'<match otlp.**>\n  @type opentelemetry\n  <http>\n    endpoint http://127.0.0.1:14318\n  </http>\n  <buffer>\n    flush_mode interval\n    flush_interval 0.1s\n    flush_thread_count 4\n  </buffer>\n</match>\n', None
     return None, 'Native scenario adapter pending; this is not an unsupported-vendor claim.'
