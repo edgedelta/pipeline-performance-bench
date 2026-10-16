@@ -10,9 +10,27 @@ import unittest
 import urllib.request
 
 from .model import fixture
+from .rps import output_batch_matches, matched_output_config
 
 
 class TrafficTest(unittest.TestCase):
+    def test_output_batch_gate_rejects_mixed_sizes_with_same_average(self):
+        self.assertTrue(output_batch_matches({'requests':2,'points':1024,'request_points':{'512':2}},512))
+        self.assertFalse(output_batch_matches({'requests':2,'points':1024,'request_points':{'1':1,'1023':1}},512))
+        self.assertFalse(output_batch_matches({'requests':0,'points':0,'request_points':{}},512))
+        self.assertFalse(output_batch_matches({'requests':2,'points':1024},512))
+
+    def test_config_preserves_input_batches(self):
+        for vendor in ['otelcol','bindplane']:
+            c=matched_output_config(vendor,'127.0.0.1')
+            self.assertNotIn('processors',c)
+            self.assertEqual(c['service']['pipelines']['metrics']['processors'],[])
+            self.assertFalse(c['exporters']['otlphttp']['sending_queue']['enabled'])
+            self.assertEqual(c['exporters']['otlphttp']['max_idle_conns_per_host'],1024)
+            self.assertEqual(c['exporters']['otlphttp']['max_conns_per_host'],1024)
+        self.assertEqual(matched_output_config('otelcol','127.0.0.1',64)['exporters']['otlphttp']['max_conns_per_host'],64)
+        self.assertEqual(matched_output_config('red','127.0.0.1')['settings'],{'tag':'otlp-benchmark'})
+
     def test_delivery_and_accounting(self):
         binary = Path(os.environ.get('OTLP_TRAFFIC_BINARY', Path(__file__).parent/'traffic-rs/target/release/otlp-traffic'))
         if not binary.exists(): self.skipTest('build the Rust traffic harness first')
@@ -42,12 +60,15 @@ class TrafficTest(unittest.TestCase):
                 self.assertGreater(r['completed'],0)
                 self.assertEqual(actual['points'],r['accepted_points'])
                 self.assertEqual(actual['points'],r['completed']*16)
+                self.assertTrue(output_batch_matches(actual,16))
+                self.assertEqual(actual['request_points'],{'16':r['completed']})
                 self.assertEqual(actual['value_sum'],actual['points'])
                 self.assertEqual(sum(r['latency_buckets']),r['started'])
                 call('/reset',b'')
                 req=urllib.request.Request(base+'/v1/metrics',data=f.SerializeToString(),headers={'Content-Type':'application/x-protobuf'})
                 with urllib.request.urlopen(req,timeout=5) as response: self.assertEqual(response.status,200)
                 self.assertEqual(json.loads(call('/stats'))['points'],16)
+                self.assertEqual(json.loads(call('/stats'))['request_points'],{'16':1})
                 path.write_bytes(b'bad protobuf')
                 failed=subprocess.run([str(binary),'load','--fixture',str(path)],capture_output=True)
                 self.assertNotEqual(failed.returncode,0)

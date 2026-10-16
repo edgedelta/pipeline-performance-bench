@@ -70,6 +70,7 @@ struct Counts {
     points: u64,
     value_sum: f64,
     bytes: u64,
+    request_points: std::collections::BTreeMap<u64, u64>,
 }
 fn count(req: &ExportMetricsServiceRequest) -> Counts {
     let mut c = Counts {
@@ -122,6 +123,7 @@ impl Sink {
         t.points += c.points;
         t.value_sum += c.value_sum;
         t.bytes += bytes as u64;
+        *t.request_points.entry(c.points).or_default() += 1;
         Ok(())
     }
     async fn http(&self, req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {

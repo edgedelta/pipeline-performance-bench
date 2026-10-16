@@ -1,3 +1,5 @@
+> Superseded by the [matched-output comparison](../matched-output/README.md). This historical run used different output batching across agents.
+
 # Rust request-rate benchmark preview
 
 [Download the interactive report](index.html) and open it locally. This report is separate from the public Pages site and the previous item-rate report.

@@ -3,6 +3,7 @@ import argparse
 import concurrent.futures
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -30,6 +31,7 @@ def main():
             tmp=Path(tmp)
             archive=tmp/'source.tgz'
             subprocess.run(['tar','--exclude=target','-czf',str(archive),'-C',str(root/'otlpbench'),'traffic-rs'],check=True)
+            shutil.copy2(archive, out/'measured-harness-source.tgz')
             install=tmp/'install.tgz'
             subprocess.run(['tar','-czf',str(install),'-C',str(root),'scripts','otlpbench/install.sh','otlpbench/requirements.txt'],check=True)
             subprocess.run([sys.executable,str(root/'tools/fetch_red.py'),str(tmp/'red')],check=True,env={**os.environ,'RED_VERSION':'3.15.0'})

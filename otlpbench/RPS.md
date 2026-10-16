@@ -2,7 +2,7 @@
 
 This harness uses Rust for the load generator and destination. Python only orchestrates remote processes and records resource measurements; it is not in the telemetry path. Metrics Pass-Through is currently supported. The existing multi-scenario benchmark and public site remain separate.
 
-Requests/sec and points/sec are distinct: `points/sec = requests/sec × points/request`. At 100,000 requests/sec, a batch of 1 offers 100,000 points/sec; a batch of 512 offers 51.2 million points/sec. Output requests are independently counted because agents may rebatch.
+Requests/sec and points/sec are distinct: `points/sec = requests/sec × points/request`. At 100,000 requests/sec, a batch of 1 offers 100,000 points/sec; a batch of 512 offers 51.2 million points/sec. Output requests are independently counted. In the matched-output mode, every output request must contain exactly the input batch size: 1 point in → 1 point out, or 512 points in → 512 points out. The sink records a distribution of output request sizes, not just an average.
 
 ## Run
 
@@ -21,6 +21,12 @@ Use the existing Python requirements, Terraform, SSH, curl, tar, and authenticat
 
 The controller installs RED 3.15.0, OTel Collector 0.162.0, and Bindplane 1.110.1 and runs them sequentially on the same agent host with fresh processes. It records binary versions and hashes. No merge or Pages deployment occurs.
 
+## Matched output batching
+
+The tested RED release forwards input batches through `otlp_output` without a configurable rebatching stage. The collectors therefore run without their `batch` processor; all three preserve input batch sizes. All agents receive OTLP/gRPC and export uncompressed OTLP/HTTP protobuf to the same sink. Collector retries and sending queues remain disabled. The collector HTTP connection and idle-pool limits are set to the configured concurrency (default 1,024) to avoid connection churn and ephemeral-port exhaustion when exporting one-point requests. See the [collector HTTP client settings](https://github.com/open-telemetry/opentelemetry-collector/blob/v0.162.0/config/confighttp/client.go). Remote commands also raise the soft file-descriptor limit to 65,536 so the sink can accept the configured connection count. These limits are pool capacity, not a claim that every agent uses the same export concurrency. RED’s unrelated `item_buffer_flush_interval` and archive settings are omitted.
+
+A warm-up gate and a measured-run gate inspect the entire request-size distribution. A mismatch is recorded as `batch_mismatch` and excluded from chart comparisons. Point counts and sums must still match. Matching output batches does not equalize every implementation detail, including acknowledgment behavior, exporter concurrency, resource metadata, or metric-object layout.
+
 ## Load and capacity accounting
 
 - Persistent gRPC connections, no compression, an open-loop offered request schedule paced in 1 ms slices.
@@ -29,7 +35,7 @@ The controller installs RED 3.15.0, OTel Collector 0.162.0, and Bindplane 1.110.
 - Increasing concurrency may be required for a slow-acknowledging agent. For example, 100k requests/sec with 200 ms acknowledgment latency requires at least 20k simultaneous requests. A shortfall at a chosen concurrency is not proof of maximum vendor capacity.
 - Calibration sends the same batch and rate directly from the generator to the Rust sink over gRPC. It must reach at least 95% of target with zero RPC errors/rejections and exact accepted/delivered point counts and sums. Failed calibration marks that case `harness_limited` and skips all vendor rankings.
 - Calibration establishes ingress capacity, not every vendor's export shape. Agents export OTLP/HTTP protobuf to the Rust sink; the report includes output request/byte counts and sink CPU. An expanded output representation or export backpressure can still limit a vendor trial and needs separate diagnosis.
-- A five-second warm-up is drained before counters reset. Each trial records input-window and through-delivery CPU independently. The latter includes final delivery drain. CPU windows include SSH control overhead; use longer trials to reduce its relative impact. RSS is a final snapshot, not a peak or average.
+- A five-second readiness warm-up at up to 1,000 requests/sec is drained before counters reset. Each trial records input-window and through-delivery CPU independently. The latter includes final delivery drain. CPU windows include SSH control overhead; use longer trials to reduce its relative impact. RSS is a final snapshot, not a peak or average.
 - Accepted input, rejected points, RPC errors, scheduled/missed requests, latency buckets, delivered output, and value sums remain in JSON. The fixture uses integer value 1, so its expected sum equals accepted points. No missing measurements are inferred.
 - These are fixed-load measurements. They are neither a maximum-throughput search nor a production workload simulation. Repeat trials before interpreting small differences. A failed test can reflect client concurrency, ingress, export behavior, sink capacity, or network bandwidth.
 
