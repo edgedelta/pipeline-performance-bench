@@ -10,7 +10,7 @@ const SCENARIOS={metrics:['pass-through','filter','enrich','aggregate','rollup',
 const NAMES={'pass-through':'Pass-Through',filter:'Filter',enrich:'Enrich',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail',metrics:'Metrics'};
 const RATES=[1000,10000,25000,50000,125000],TIERS=['Lowest','Low','Medium','High','Highest'];
 const METRICS=[['core','per core','higher'],['memory','per MB','higher'],['cpu','CPU cores','lower'],['rss','Memory MB','lower'],['rate','reached','higher']];
-let signal='metrics',rate=10000,metric='core',scenario='all',hidden=new Set();
+let signal='metrics',rate=125000,metric='core',scenario='all',hidden=new Set();
 const el=id=>document.getElementById(id),unit=()=>signal==='metrics'?'Points/sec':'Spans/sec';
 const short=n=>n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'m':n>=1e3?(n/1e3).toFixed(n>=100000?0:1).replace(/\.0$/,'')+'k':n>=10?Math.round(n).toString():n.toFixed(2).replace(/\.00$/,'');
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US',{maximumFractionDigits:2});
