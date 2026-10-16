@@ -151,7 +151,7 @@ def main():
                 if cfg is None:
                     row.update(status='not_configured',detail=reason); save(); continue
                 folder=out/f'{signal}-{scenario}'; folder.mkdir(exist_ok=True)
-                path=folder/'agent.yaml'; path.write_text(cfg)
+                path=folder/('agent.conf' if args.vendor=='fluentd' else 'agent.yaml'); path.write_text(cfg)
                 env=dict(os.environ,ED_API_KEY='benchmark-local',ED_SKIP_CONF_DOWNLOAD='1',ED_BACKEND_DISABLED='1',ED_DISABLE_CONF_RELOAD='1',ED_COORDINATOR_CLIENT_DISABLED='1')
                 log=(folder/'agent.log').open('w')
                 p=subprocess.Popen(command(args.vendor,path,args.binary),env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
