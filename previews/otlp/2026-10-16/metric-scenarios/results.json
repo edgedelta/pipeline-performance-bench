@@ -1,0 +1,2628 @@
+{
+  "red_source_revision": "c7197c7e329f396698f2fec671d94f5c7dd9fada",
+  "red_merge_commit": "827c832b4b8c382ea24f5e20017cf88d22ae5d70",
+  "seconds": 30,
+  "target_rps": 10000,
+  "batch": 512,
+  "series_groups": 64,
+  "rows": [
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 10,
+        "achieved_rps": 9999.266666666666,
+        "drain_seconds": 0.002145513,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 299990,
+        "completed": 299990,
+        "completed_in_window": 299978,
+        "accepted_points": 153594880,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 10,
+        "latency_buckets": [
+          122,
+          247060,
+          52578,
+          83,
+          146,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 299990,
+        "points": 153594880,
+        "value_sum": 153594880.0,
+        "bytes": 9239392010,
+        "enriched_points": 0,
+        "host_points": 153594880,
+        "health_points": 38398720,
+        "request_points": {
+          "512": 299990
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 255.69,
+        "elapsed_seconds": 31.777733944000005,
+        "cpu_cores": 8.046199909993177,
+        "rss_mb": 275.54296875
+      },
+      "through_delivery": {
+        "cpu_seconds": 255.69,
+        "elapsed_seconds": 32.93916482999998,
+        "cpu_cores": 7.762491894364164,
+        "rss_mb": 275.54296875
+      },
+      "sink_resources": {
+        "cpu_seconds": 54.27,
+        "elapsed_seconds": 32.89686796699999,
+        "cpu_cores": 1.6497011221384406,
+        "rss_mb": 22.41015625
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 0,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.001321883,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 5000,
+          "completed": 5000,
+          "completed_in_window": 4999,
+          "accepted_points": 2560000,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 0,
+          "latency_buckets": [
+            580,
+            4185,
+            235,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 5000,
+          "points": 2560000,
+          "value_sum": 2560000.0,
+          "bytes": 153995000,
+          "enriched_points": 0,
+          "host_points": 2560000,
+          "health_points": 640000,
+          "request_points": {
+            "512": 5000
+          }
+        }
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 10,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001850435,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 299990,
+        "completed": 299990,
+        "completed_in_window": 299980,
+        "accepted_points": 153594880,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 10,
+        "latency_buckets": [
+          64171,
+          226712,
+          8691,
+          192,
+          178,
+          46,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 299990,
+        "points": 153594880,
+        "value_sum": 153594880.0,
+        "bytes": 9188693700,
+        "enriched_points": 0,
+        "host_points": 153594880,
+        "health_points": 38398720,
+        "request_points": {
+          "512": 299990
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 169.2,
+        "elapsed_seconds": 31.57647178900001,
+        "cpu_cores": 5.3584200644906295,
+        "rss_mb": 339.9140625
+      },
+      "through_delivery": {
+        "cpu_seconds": 169.2,
+        "elapsed_seconds": 32.481600703,
+        "cpu_cores": 5.209102887111493,
+        "rss_mb": 339.9140625
+      },
+      "sink_resources": {
+        "cpu_seconds": 56.14,
+        "elapsed_seconds": 32.43490047900002,
+        "cpu_cores": 1.7308516188094318,
+        "rss_mb": 28.91015625
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 0,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.000749141,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 5000,
+          "completed": 5000,
+          "completed_in_window": 4998,
+          "accepted_points": 2560000,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 0,
+          "latency_buckets": [
+            1631,
+            3352,
+            17,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 5000,
+          "points": 2560000,
+          "value_sum": 2560000.0,
+          "bytes": 153150000,
+          "enriched_points": 0,
+          "host_points": 2560000,
+          "health_points": 640000,
+          "request_points": {
+            "512": 5000
+          }
+        }
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.666666666666,
+        "drain_seconds": 0.001053496,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299990,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          78406,
+          210365,
+          11173,
+          56,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 153600000,
+        "value_sum": 153600000.0,
+        "bytes": 9189000000,
+        "enriched_points": 0,
+        "host_points": 153600000,
+        "health_points": 38400000,
+        "request_points": {
+          "512": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 182.67999999999998,
+        "elapsed_seconds": 31.607361572000002,
+        "cpu_cores": 5.779666220600666,
+        "rss_mb": 293.41015625
+      },
+      "through_delivery": {
+        "cpu_seconds": 182.67999999999998,
+        "elapsed_seconds": 32.548636286000004,
+        "cpu_cores": 5.6125239286469055,
+        "rss_mb": 293.41015625
+      },
+      "sink_resources": {
+        "cpu_seconds": 55.68000000000001,
+        "elapsed_seconds": 32.524685628000015,
+        "cpu_cores": 1.711930459123821,
+        "rss_mb": 28.74609375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.001622479,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4999,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            1945,
+            3040,
+            14,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 153119370,
+          "enriched_points": 0,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 91863,
+        "achieved_rps": 6904.2,
+        "drain_seconds": 0.085608601,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 208137,
+        "completed": 208137,
+        "completed_in_window": 207126,
+        "accepted_points": 106566144,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 664,
+        "latency_buckets": [
+          0,
+          0,
+          4,
+          21,
+          288,
+          3437,
+          38788,
+          157425,
+          8174,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 208137,
+        "points": 79924608,
+        "value_sum": 79924608.0,
+        "bytes": 4763631519,
+        "enriched_points": 0,
+        "host_points": 79924608,
+        "health_points": 0,
+        "request_points": {
+          "384": 208137
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 961.7800000000001,
+        "elapsed_seconds": 31.64581824100003,
+        "cpu_cores": 30.392009227744563,
+        "rss_mb": 909.93359375
+      },
+      "through_delivery": {
+        "cpu_seconds": 961.7800000000001,
+        "elapsed_seconds": 32.579934838999975,
+        "cpu_cores": 29.52062380581242,
+        "rss_mb": 909.93359375
+      },
+      "sink_resources": {
+        "cpu_seconds": 29.189999999999998,
+        "elapsed_seconds": 32.57479703299998,
+        "cpu_cores": 0.8960915388184612,
+        "rss_mb": 51.078125
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "filter",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.4,
+          "drain_seconds": 0.002107967,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4997,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            0,
+            0,
+            4962,
+            37,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 1919616,
+          "value_sum": 1919616.0,
+          "bytes": 114412113,
+          "enriched_points": 0,
+          "host_points": 1919616,
+          "health_points": 0,
+          "request_points": {
+            "384": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.6,
+        "drain_seconds": 0.001607412,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299988,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          71570,
+          206794,
+          21543,
+          93,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 115200000,
+        "value_sum": 115200000.0,
+        "bytes": 6815400000,
+        "enriched_points": 0,
+        "host_points": 115200000,
+        "health_points": 0,
+        "request_points": {
+          "384": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 204.51,
+        "elapsed_seconds": 31.759115280999993,
+        "cpu_cores": 6.439411116793573,
+        "rss_mb": 298.109375
+      },
+      "through_delivery": {
+        "cpu_seconds": 204.51,
+        "elapsed_seconds": 32.94627243999997,
+        "cpu_cores": 6.207379009945447,
+        "rss_mb": 298.109375
+      },
+      "sink_resources": {
+        "cpu_seconds": 44.82000000000001,
+        "elapsed_seconds": 32.96385318900002,
+        "cpu_cores": 1.3596711447239538,
+        "rss_mb": 30.98046875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "filter",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.001646797,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4998,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            2259,
+            2716,
+            24,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 1919616,
+          "value_sum": 1919616.0,
+          "bytes": 113567282,
+          "enriched_points": 0,
+          "host_points": 1919616,
+          "health_points": 0,
+          "request_points": {
+            "384": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.00188865,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299980,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          73942,
+          206737,
+          19105,
+          216,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 115200000,
+        "value_sum": 115200000.0,
+        "bytes": 6815400000,
+        "enriched_points": 0,
+        "host_points": 115200000,
+        "health_points": 0,
+        "request_points": {
+          "384": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 198.48,
+        "elapsed_seconds": 31.53744326399999,
+        "cpu_cores": 6.293471488431183,
+        "rss_mb": 313.2265625
+      },
+      "through_delivery": {
+        "cpu_seconds": 198.48,
+        "elapsed_seconds": 32.40569626199999,
+        "cpu_cores": 6.124849112800711,
+        "rss_mb": 313.2265625
+      },
+      "sink_resources": {
+        "cpu_seconds": 45.48999999999998,
+        "elapsed_seconds": 32.377848384,
+        "cpu_cores": 1.4049729142125313,
+        "rss_mb": 31.3125
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "filter",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.002604309,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4999,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            1748,
+            3215,
+            36,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 1919616,
+          "value_sum": 1919616.0,
+          "bytes": 113567282,
+          "enriched_points": 0,
+          "host_points": 1919616,
+          "health_points": 0,
+          "request_points": {
+            "384": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 142516,
+        "achieved_rps": 5215.466666666666,
+        "drain_seconds": 0.115841283,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 157484,
+        "completed": 157484,
+        "completed_in_window": 156464,
+        "accepted_points": 80631808,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 698,
+        "latency_buckets": [
+          0,
+          0,
+          0,
+          9,
+          66,
+          729,
+          10988,
+          112715,
+          32903,
+          74,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 157484,
+        "points": 80631808,
+        "value_sum": 80631808.0,
+        "bytes": 6866144916,
+        "enriched_points": 80631808,
+        "host_points": 80631808,
+        "health_points": 20157952,
+        "request_points": {
+          "512": 157484
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 962.9499999999999,
+        "elapsed_seconds": 31.895992979000027,
+        "cpu_cores": 30.19031264002333,
+        "rss_mb": 1210.59375
+      },
+      "through_delivery": {
+        "cpu_seconds": 962.9499999999999,
+        "elapsed_seconds": 32.80956494499998,
+        "cpu_cores": 29.34967292660639,
+        "rss_mb": 1210.59375
+      },
+      "sink_resources": {
+        "cpu_seconds": 38.67,
+        "elapsed_seconds": 32.682219850000024,
+        "cpu_cores": 1.183212161765076,
+        "rss_mb": 80.4609375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "enrich",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.0,
+          "drain_seconds": 0.003927631,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4995,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            0,
+            0,
+            4750,
+            249,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 217951401,
+          "enriched_points": 2559488,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.233333333334,
+        "drain_seconds": 0.001950169,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299977,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          4809,
+          243049,
+          49226,
+          2912,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 153600000,
+        "value_sum": 153600000.0,
+        "bytes": 13029000000,
+        "enriched_points": 153600000,
+        "host_points": 153600000,
+        "health_points": 38400000,
+        "request_points": {
+          "512": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 245.75999999999996,
+        "elapsed_seconds": 31.92089316199997,
+        "cpu_cores": 7.699032691621657,
+        "rss_mb": 329.6953125
+      },
+      "through_delivery": {
+        "cpu_seconds": 245.75999999999996,
+        "elapsed_seconds": 32.85562391600001,
+        "cpu_cores": 7.479997964072139,
+        "rss_mb": 318.4375
+      },
+      "sink_resources": {
+        "cpu_seconds": 84.97,
+        "elapsed_seconds": 32.67847649999999,
+        "cpu_cores": 2.60018241670477,
+        "rss_mb": 45.8515625
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "enrich",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.002284007,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4998,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            466,
+            4452,
+            81,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 217106570,
+          "enriched_points": 2559488,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.4,
+        "drain_seconds": 0.001643836,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299982,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          9871,
+          255794,
+          31668,
+          2430,
+          209,
+          28,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 153600000,
+        "value_sum": 153600000.0,
+        "bytes": 13029000000,
+        "enriched_points": 153600000,
+        "host_points": 153600000,
+        "health_points": 38400000,
+        "request_points": {
+          "512": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 233.01000000000002,
+        "elapsed_seconds": 31.61051982799995,
+        "cpu_cores": 7.371280234170794,
+        "rss_mb": 354.01953125
+      },
+      "through_delivery": {
+        "cpu_seconds": 233.01000000000002,
+        "elapsed_seconds": 32.69263067700001,
+        "cpu_cores": 7.127294291552001,
+        "rss_mb": 347.62109375
+      },
+      "sink_resources": {
+        "cpu_seconds": 85.91000000000003,
+        "elapsed_seconds": 32.63696853400006,
+        "cpu_cores": 2.632291044755029,
+        "rss_mb": 49.875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "enrich",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 0,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.001119429,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 5000,
+          "completed": 5000,
+          "completed_in_window": 4998,
+          "accepted_points": 2560000,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 0,
+          "latency_buckets": [
+            292,
+            4568,
+            140,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 5000,
+          "points": 2560000,
+          "value_sum": 2560000.0,
+          "bytes": 217150000,
+          "enriched_points": 2560000,
+          "host_points": 2560000,
+          "health_points": 640000,
+          "request_points": {
+            "512": 5000
+          }
+        }
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001738934,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299980,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          0,
+          227341,
+          72547,
+          111,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 10,
+        "points": 10240,
+        "value_sum": 153600000.0,
+        "bytes": 556160,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 5120,
+        "request_points": {
+          "1024": 10
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 434.69,
+        "elapsed_seconds": 31.629636532000063,
+        "cpu_cores": 13.743123464609502,
+        "rss_mb": 262.8046875
+      },
+      "through_delivery": {
+        "cpu_seconds": 434.69,
+        "elapsed_seconds": 32.782153698,
+        "cpu_cores": 13.259958573939572,
+        "rss_mb": 214.66796875
+      },
+      "sink_resources": {
+        "cpu_seconds": 0.0,
+        "elapsed_seconds": 32.75278076299992,
+        "cpu_cores": 0.0,
+        "rss_mb": 20.57421875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "aggregate",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001550808,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299980,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          0,
+          191749,
+          103390,
+          3273,
+          574,
+          496,
+          472,
+          46,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 300000,
+        "points": 4800000,
+        "value_sum": 153600000.0,
+        "bytes": 257400000,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 2400000,
+        "request_points": {
+          "16": 300000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 507.76,
+        "elapsed_seconds": 31.990111264999996,
+        "cpu_cores": 15.87240493769505,
+        "rss_mb": 448.74609375
+      },
+      "through_delivery": {
+        "cpu_seconds": 507.76,
+        "elapsed_seconds": 32.930590639,
+        "cpu_cores": 15.419097870618062,
+        "rss_mb": 448.74609375
+      },
+      "sink_resources": {
+        "cpu_seconds": 7.480000000000004,
+        "elapsed_seconds": 32.949293230999956,
+        "cpu_cores": 0.22701549157851234,
+        "rss_mb": 22.13671875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "aggregate",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 23,
+        "achieved_rps": 9998.566666666668,
+        "drain_seconds": 0.001907784,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 299977,
+        "completed": 299977,
+        "completed_in_window": 299957,
+        "accepted_points": 153588224,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          0,
+          221040,
+          69088,
+          7273,
+          481,
+          363,
+          922,
+          809,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 299977,
+        "points": 4799632,
+        "value_sum": 153588224.0,
+        "bytes": 257380266,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 2399816,
+        "request_points": {
+          "16": 299977
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 480.57000000000005,
+        "elapsed_seconds": 31.61869530299998,
+        "cpu_cores": 15.198919354348046,
+        "rss_mb": 652.83203125
+      },
+      "through_delivery": {
+        "cpu_seconds": 480.57000000000005,
+        "elapsed_seconds": 32.697534652999934,
+        "cpu_cores": 14.697438357356667,
+        "rss_mb": 652.83203125
+      },
+      "sink_resources": {
+        "cpu_seconds": 7.329999999999998,
+        "elapsed_seconds": 32.74832587599997,
+        "cpu_cores": 0.2238282356098051,
+        "rss_mb": 25.46484375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "aggregate",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.4,
+        "drain_seconds": 0.00288448,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299982,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          0,
+          195714,
+          104145,
+          124,
+          17,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 2,
+        "points": 16384,
+        "value_sum": 153600000.0,
+        "bytes": 992384,
+        "enriched_points": 0,
+        "host_points": 16384,
+        "health_points": 4096,
+        "request_points": {
+          "8192": 2
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 465.65,
+        "elapsed_seconds": 31.64177787699998,
+        "cpu_cores": 14.716303294021769,
+        "rss_mb": 296.55859375
+      },
+      "through_delivery": {
+        "cpu_seconds": 465.67,
+        "elapsed_seconds": 36.164703492999934,
+        "cpu_cores": 12.876367148707176,
+        "rss_mb": 313.62890625
+      },
+      "sink_resources": {
+        "cpu_seconds": 0.01999999999999602,
+        "elapsed_seconds": 36.16021991000002,
+        "cpu_cores": 0.0005530939814463094,
+        "rss_mb": 23.12109375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "rollup",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 218506,
+        "achieved_rps": 2682.3333333333335,
+        "drain_seconds": 0.362350699,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 81494,
+        "completed": 81494,
+        "completed_in_window": 80470,
+        "accepted_points": 41724928,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 867,
+        "latency_buckets": [
+          152,
+          79,
+          1,
+          3,
+          35,
+          61,
+          153,
+          553,
+          80349,
+          107,
+          1,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 81495,
+        "points": 4096,
+        "value_sum": 41724928.0,
+        "bytes": 251392,
+        "enriched_points": 0,
+        "host_points": 4096,
+        "health_points": 1024,
+        "request_points": {
+          "0": 81494,
+          "4096": 1
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 56.29,
+        "elapsed_seconds": 32.391926024999975,
+        "cpu_cores": 1.7377787278396344,
+        "rss_mb": 593.5390625
+      },
+      "through_delivery": {
+        "cpu_seconds": 56.29,
+        "elapsed_seconds": 56.70121998299999,
+        "cpu_cores": 0.9927475990265592,
+        "rss_mb": 593.6015625
+      },
+      "sink_resources": {
+        "cpu_seconds": 1.7199999999999989,
+        "elapsed_seconds": 56.69053084199993,
+        "cpu_cores": 0.03034016394719864,
+        "rss_mb": 23.11328125
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "rollup",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      },
+      "initial_status": "delta_rollup_not_applied",
+      "verification_note": "Corrected stale documentation-based exclusion using recorded point reduction and exact value sums."
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 218214,
+        "achieved_rps": 2692.0666666666666,
+        "drain_seconds": 0.440014513,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 81786,
+        "completed": 81786,
+        "completed_in_window": 80762,
+        "accepted_points": 41874432,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 956,
+        "latency_buckets": [
+          156,
+          53,
+          2,
+          3,
+          32,
+          54,
+          135,
+          504,
+          80748,
+          99,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 81787,
+        "points": 4096,
+        "value_sum": 41874432.0,
+        "bytes": 251392,
+        "enriched_points": 0,
+        "host_points": 4096,
+        "health_points": 1024,
+        "request_points": {
+          "0": 81786,
+          "4096": 1
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 57.709999999999994,
+        "elapsed_seconds": 32.42388843499998,
+        "cpu_cores": 1.7798605529898415,
+        "rss_mb": 525.92578125
+      },
+      "through_delivery": {
+        "cpu_seconds": 57.709999999999994,
+        "elapsed_seconds": 56.19300461099999,
+        "cpu_cores": 1.0269961608122133,
+        "rss_mb": 526.171875
+      },
+      "sink_resources": {
+        "cpu_seconds": 1.740000000000002,
+        "elapsed_seconds": 56.179592856,
+        "cpu_cores": 0.03097210057146524,
+        "rss_mb": 23.11328125
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "rollup",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      },
+      "initial_status": "delta_rollup_not_applied",
+      "verification_note": "Corrected stale documentation-based exclusion using recorded point reduction and exact value sums."
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.004419891,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 300000,
+        "completed": 300000,
+        "completed_in_window": 299980,
+        "accepted_points": 153600000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          0,
+          225927,
+          73977,
+          96,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 2,
+        "points": 512,
+        "value_sum": 153600000.0,
+        "bytes": 39808,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 256,
+        "request_points": {
+          "256": 2
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 432.76,
+        "elapsed_seconds": 31.72557948000008,
+        "cpu_cores": 13.640727989627848,
+        "rss_mb": 217.3046875
+      },
+      "through_delivery": {
+        "cpu_seconds": 432.76,
+        "elapsed_seconds": 36.35666405800009,
+        "cpu_cores": 11.903182297188057,
+        "rss_mb": 216.5078125
+      },
+      "sink_resources": {
+        "cpu_seconds": 0.010000000000005116,
+        "elapsed_seconds": 36.339540525000075,
+        "cpu_cores": 0.00027518234560851247,
+        "rss_mb": 21.30859375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "combined",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 146324,
+        "achieved_rps": 5088.533333333334,
+        "drain_seconds": 0.151622254,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 153676,
+        "completed": 153676,
+        "completed_in_window": 152656,
+        "accepted_points": 78682112,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 804,
+        "latency_buckets": [
+          0,
+          724,
+          133,
+          3,
+          4,
+          4,
+          10,
+          145317,
+          7481,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 153677,
+        "points": 128,
+        "value_sum": 78682112.0,
+        "bytes": 13120,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 64,
+        "request_points": {
+          "0": 153676,
+          "128": 1
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 279.77000000000004,
+        "elapsed_seconds": 32.06961113299997,
+        "cpu_cores": 8.72383512352957,
+        "rss_mb": 363.6171875
+      },
+      "through_delivery": {
+        "cpu_seconds": 279.77000000000004,
+        "elapsed_seconds": 56.65809636000006,
+        "cpu_cores": 4.937864453164267,
+        "rss_mb": 363.703125
+      },
+      "sink_resources": {
+        "cpu_seconds": 1.6899999999999977,
+        "elapsed_seconds": 56.63995531300009,
+        "cpu_cores": 0.029837594162298118,
+        "rss_mb": 21.30859375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "combined",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      },
+      "initial_status": "delta_rollup_not_applied",
+      "verification_note": "Corrected stale documentation-based exclusion using recorded point reduction and exact value sums."
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 30,
+        "scheduled_requests": 300000,
+        "missed_requests": 197783,
+        "achieved_rps": 3373.1,
+        "drain_seconds": 0.289456143,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 102217,
+        "completed": 102217,
+        "completed_in_window": 101193,
+        "accepted_points": 52335104,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 865,
+        "latency_buckets": [
+          0,
+          321,
+          87,
+          3,
+          5,
+          3,
+          14,
+          14118,
+          87502,
+          164,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 102218,
+        "points": 128,
+        "value_sum": 52335104.0,
+        "bytes": 13120,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 64,
+        "request_points": {
+          "0": 102217,
+          "128": 1
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 221.35,
+        "elapsed_seconds": 32.105256699000165,
+        "cpu_cores": 6.894509583749672,
+        "rss_mb": 302.49609375
+      },
+      "through_delivery": {
+        "cpu_seconds": 221.35,
+        "elapsed_seconds": 56.48267556100018,
+        "cpu_cores": 3.918900756762954,
+        "rss_mb": 302.52734375
+      },
+      "sink_resources": {
+        "cpu_seconds": 1.9100000000000037,
+        "elapsed_seconds": 56.454270782999856,
+        "cpu_cores": 0.03383269278849962,
+        "rss_mb": 21.30859375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": null,
+      "operation_verified": true,
+      "scenario": "combined",
+      "warmup": {
+        "skipped": "fresh process for stateful windows"
+      },
+      "initial_status": "delta_rollup_not_applied",
+      "verification_note": "Corrected stale documentation-based exclusion using recorded point reduction and exact value sums."
+    }
+  ],
+  "calibrations": {
+    "pass-through": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 10,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.002313456,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 149990,
+        "completed": 149990,
+        "completed_in_window": 149990,
+        "accepted_points": 76794880,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 10,
+        "latency_buckets": [
+          121850,
+          28107,
+          33,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 149990,
+          "points": 76794880,
+          "value_sum": 76794880.0,
+          "bytes": 4594193700,
+          "enriched_points": 0,
+          "host_points": 76794880,
+          "health_points": 19198720,
+          "request_points": {
+            "512": 149990
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.660000000000004,
+          "elapsed_seconds": 16.455127616,
+          "cpu_cores": 2.1671056482920448,
+          "rss_mb": 17.5703125
+        },
+        "passed": true
+      }
+    ],
+    "filter": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 10,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.002013202,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 149990,
+        "completed": 149990,
+        "completed_in_window": 149990,
+        "accepted_points": 76794880,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 10,
+        "latency_buckets": [
+          119842,
+          30092,
+          56,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 149990,
+          "points": 76794880,
+          "value_sum": 76794880.0,
+          "bytes": 4594193700,
+          "enriched_points": 0,
+          "host_points": 76794880,
+          "health_points": 19198720,
+          "request_points": {
+            "512": 149990
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.8,
+          "elapsed_seconds": 16.543347675000007,
+          "cpu_cores": 2.164011825375603,
+          "rss_mb": 19.84375
+        },
+        "passed": true
+      }
+    ],
+    "enrich": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.466666666667,
+        "drain_seconds": 0.001266021,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 150000,
+        "completed": 150000,
+        "completed_in_window": 149992,
+        "accepted_points": 76800000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          121350,
+          28616,
+          34,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 150000,
+          "points": 76800000,
+          "value_sum": 76800000.0,
+          "bytes": 4594500000,
+          "enriched_points": 0,
+          "host_points": 76800000,
+          "health_points": 19200000,
+          "request_points": {
+            "512": 150000
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.73,
+          "elapsed_seconds": 16.716217064000034,
+          "cpu_cores": 2.1374453240947653,
+          "rss_mb": 19.57421875
+        },
+        "passed": true
+      }
+    ],
+    "aggregate": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001832176,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 150000,
+        "completed": 150000,
+        "completed_in_window": 149990,
+        "accepted_points": 76800000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          118808,
+          31153,
+          39,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 150000,
+          "points": 76800000,
+          "value_sum": 76800000.0,
+          "bytes": 4594500000,
+          "enriched_points": 0,
+          "host_points": 76800000,
+          "health_points": 19200000,
+          "request_points": {
+            "512": 150000
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.949999999999996,
+          "elapsed_seconds": 16.46769292800002,
+          "cpu_cores": 2.1830623243450336,
+          "rss_mb": 20.7265625
+        },
+        "passed": true
+      }
+    ],
+    "rollup": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001586329,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 150000,
+        "completed": 150000,
+        "completed_in_window": 149990,
+        "accepted_points": 76800000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          117312,
+          32630,
+          58,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 150000,
+          "points": 76800000,
+          "value_sum": 76800000.0,
+          "bytes": 4594500000,
+          "enriched_points": 0,
+          "host_points": 76800000,
+          "health_points": 19200000,
+          "request_points": {
+            "512": 150000
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.77,
+          "elapsed_seconds": 16.522239929999955,
+          "cpu_cores": 2.1649606924695046,
+          "rss_mb": 19.16015625
+        },
+        "passed": true
+      }
+    ],
+    "combined": [
+      {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 15,
+        "scheduled_requests": 150000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.333333333334,
+        "drain_seconds": 0.001386271,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 150000,
+        "completed": 150000,
+        "completed_in_window": 149990,
+        "accepted_points": 76800000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          124078,
+          25884,
+          38,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "sink": {
+          "requests": 150000,
+          "points": 76800000,
+          "value_sum": 76800000.0,
+          "bytes": 4594500000,
+          "enriched_points": 0,
+          "host_points": 76800000,
+          "health_points": 19200000,
+          "request_points": {
+            "512": 150000
+          }
+        },
+        "sink_resources": {
+          "cpu_seconds": 35.76,
+          "elapsed_seconds": 16.531534785000076,
+          "cpu_cores": 2.1631385388637305,
+          "rss_mb": 21.3359375
+        },
+        "passed": true
+      }
+    ]
+  }
+}

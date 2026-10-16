@@ -62,7 +62,7 @@ OTLP concurrency in the development agent follows incoming requests; no exporter
 ## Default Rust build
 
 `cloud_rps` defaults to the measured automatic-concurrency build recorded in
-[red-build.json](red-build.json), from Rust PR #19 (now merged). It checks the
+[red-build.json](red-build.json), from Rust PR #20 (now merged). It checks the
 local Linux binary's SHA-256 before provisioning cloud hosts and never silently
 falls back to release 3.15.0. The default path assumes sibling `red` and
 `pipeline-performance-bench` checkouts.
@@ -75,3 +75,30 @@ hash. Use the same explicit override to benchmark newer builds. Each run records
 the actual binary hash in its results.
 
 Use `--baseline-red-binary /path/to/prior/red` to rerun Rust on the same hosts after the three-vendor comparison. Baseline results and independent calibration are saved under `baseline/`; infrastructure is destroyed after both runs. The pinned default is preserved under the sibling Rust checkout’s `dist/benchmarks/` directory, separately from compiler outputs.
+
+## Fixed-rate metric scenarios
+
+```sh
+python -m otlpbench.cloud_rps --output scenario-results \
+  --scenarios pass-through,filter,enrich,aggregate,rollup,combined \
+  --rates 10000 --batches 512 --seconds 30 --series-groups 64
+```
+
+Each scenario records separate calibration, configs, operation counters, and results.
+The Rust generator cycles resource IDs over 64 groups so stateful processors see
+recurring series. This changes resource cardinality from the earlier unique-ID
+pass-through fixture; compare vendors within this run. No explicit collector batch
+processor is added. Filtering produces 384 output points for each 512-point input;
+aggregation and rollup use native reductions and do not require equal output batch
+sizes. Resource metadata differences are permitted.
+
+The sink verifies value sums, removed health points, enrichment, host-label removal,
+and output reduction. Stateful scenarios start fresh without traffic warm-up and
+allow up to 75 seconds for flushing. Report CPU cost as total CPU seconds through
+delivery divided by the input window, so idle flush waits do not dilute cost.
+
+Collector delta rollup behavior is verified from measured output counts and sums.
+The v0.162.0 interval-processor README says delta metrics pass through, but its
+[source implementation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/processor/intervalprocessor/processor.go)
+and these measurements show delta aggregation. Use the operation checks rather
+than a documentation-based vendor exclusion.

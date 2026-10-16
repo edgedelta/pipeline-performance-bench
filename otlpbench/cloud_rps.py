@@ -18,6 +18,7 @@ def main():
     ap.add_argument('--instance-type', default='c8i.8xlarge')
     ap.add_argument('--red-binary', type=Path, help='Explicit override of the pinned Linux agent binary')
     ap.add_argument('--baseline-red-binary', type=Path, help='Rerun Rust with a baseline binary on the same hosts')
+    ap.add_argument('--scenarios', default='pass-through')
     args, extra=ap.parse_known_args()
     if args.baseline_red_binary and not args.baseline_red_binary.is_file(): ap.error('--baseline-red-binary must exist')
     if args.red_binary and not args.red_binary.is_file(): ap.error('--red-binary must exist')
@@ -61,7 +62,9 @@ def main():
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 jobs=[pool.submit(build),pool.submit(agents)]
                 for job in jobs:job.result()
-            subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(out),*extra],cwd=root,check=True)
+            for scenario in args.scenarios.split(','):
+                destination=out if args.scenarios=='pass-through' else out/scenario
+                subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(destination),'--scenario',scenario,*extra],cwd=root,check=True)
             if args.baseline_red_binary:
                 endpoints['agent'].upload(args.baseline_red_binary, '/tmp/red-baseline')
                 endpoints['agent'].command('sudo install -m755 /tmp/red-baseline /opt/red/red')

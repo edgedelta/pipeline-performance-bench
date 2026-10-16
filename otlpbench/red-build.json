@@ -1,7 +1,7 @@
 {
-  "binary": "../red/dist/benchmarks/red-d09072d",
-  "source_commit": "d09072d45412da792af635ccd8f2557ba6547940",
-  "sha256": "3b4ae65c609bfecd8e403f9aa8e608e7042436153ede0369112f5843f54a7313",
-  "merged_pr": "https://github.com/edgedelta/red/pull/19",
-  "merge_commit": "9ddf41c4876222d006423c2d3078799aad2560b6"
+  "binary": "../red/dist/benchmarks/red-c7197c7",
+  "source_commit": "c7197c7e329f396698f2fec671d94f5c7dd9fada",
+  "sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+  "merged_pr": "https://github.com/edgedelta/red/pull/20",
+  "merge_commit": "827c832b4b8c382ea24f5e20017cf88d22ae5d70"
 }

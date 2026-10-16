@@ -52,7 +52,7 @@ class TrafficTest(unittest.TestCase):
                     try: call('/stats'); break
                     except OSError: time.sleep(.02)
                 else: self.fail('sink failed to start')
-                r = json.loads(subprocess.check_output([str(binary),'load','--fixture',str(path),'--endpoint',f'http://127.0.0.1:{grpc_port}','--rps','1000','--seconds','1','--connections','2','--concurrency','16'],text=True))
+                r = json.loads(subprocess.check_output([str(binary),'load','--fixture',str(path),'--endpoint',f'http://127.0.0.1:{grpc_port}','--rps','1000','--seconds','1','--connections','2','--concurrency','16','--series-groups','4'],text=True))
                 actual=json.loads(call('/stats'))
                 self.assertEqual(r['scheduled_requests'],r['started']+r['missed_requests'])
                 self.assertEqual(r['started'],r['completed']+r['rpc_errors'])
@@ -63,6 +63,9 @@ class TrafficTest(unittest.TestCase):
                 self.assertTrue(output_batch_matches(actual,16))
                 self.assertEqual(actual['request_points'],{'16':r['completed']})
                 self.assertEqual(actual['value_sum'],actual['points'])
+                self.assertEqual(actual['host_points'],actual['points'])
+                self.assertEqual(actual['health_points'],actual['points']//4)
+                self.assertEqual(actual['enriched_points'],0)
                 self.assertEqual(sum(r['latency_buckets']),r['started'])
                 call('/reset',b'')
                 req=urllib.request.Request(base+'/v1/metrics',data=f.SerializeToString(),headers={'Content-Type':'application/x-protobuf'})
@@ -74,6 +77,28 @@ class TrafficTest(unittest.TestCase):
                 self.assertNotEqual(failed.returncode,0)
             finally:
                 sink.terminate();sink.wait(timeout=5)
+
+
+class ScenarioTest(unittest.TestCase):
+    def test_operation_checks(self):
+        from .rps import scenario_verified
+        base=dict(points=512,value_sum=512,host_points=512,health_points=128,enriched_points=0)
+        self.assertFalse(scenario_verified('enrich',base,512,512))
+        self.assertTrue(scenario_verified('enrich',dict(base,enriched_points=512),512,512))
+        self.assertTrue(scenario_verified('filter',dict(base,points=384,value_sum=384,health_points=0),512,512))
+        self.assertFalse(scenario_verified('filter',base,512,512))
+        self.assertFalse(scenario_verified('aggregate',dict(base,host_points=0),512,512))
+        self.assertTrue(scenario_verified('aggregate',dict(base,points=2,host_points=0),512,512))
+        self.assertTrue(scenario_verified('rollup',dict(base,points=64,host_points=64),512,512))
+        self.assertFalse(scenario_verified('rollup',dict(base,points=64,host_points=0),512,512))
+
+    def test_scenario_processors_retained(self):
+        from .rps import matched_output_config
+        for vendor in ['otelcol','bindplane']:
+            for scenario in ['filter','enrich','aggregate','rollup','combined']:
+                c=matched_output_config(vendor,'127.0.0.1',scenario=scenario)
+                self.assertTrue(c['processors'])
+                self.assertNotIn('batch',c['processors'])
 
 
 if __name__=='__main__': unittest.main()

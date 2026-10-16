@@ -61,6 +61,8 @@ enum Command {
         timeout_seconds: u64,
         #[arg(long, default_value_t = 0)]
         sequence_offset: u64,
+        #[arg(long, default_value_t = 0)]
+        series_groups: u64,
     },
 }
 
@@ -70,6 +72,9 @@ struct Counts {
     points: u64,
     value_sum: f64,
     bytes: u64,
+    enriched_points: u64,
+    host_points: u64,
+    health_points: u64,
     request_points: std::collections::BTreeMap<u64, u64>,
 }
 fn count(req: &ExportMetricsServiceRequest) -> Counts {
@@ -84,6 +89,12 @@ fn count(req: &ExportMetricsServiceRequest) -> Counts {
                     Some(Data::Sum(v)) => {
                         c.points += v.data_points.len() as u64;
                         for p in &v.data_points {
+                            for a in &p.attributes {
+                                let text = a.value.as_ref().and_then(|v| match &v.value { Some(opentelemetry_proto::tonic::common::v1::any_value::Value::StringValue(s)) => Some(s.as_str()), _ => None });
+                                if a.key == "host" { c.host_points += 1; }
+                                if a.key == "route" && text == Some("health") { c.health_points += 1; }
+                                if a.key == "bench.enriched" && text == Some("yes") { c.enriched_points += 1; }
+                            }
                             c.value_sum += match p.value {
                                 Some(Value::AsInt(n)) => n as f64,
                                 Some(Value::AsDouble(n)) => n,
@@ -94,6 +105,12 @@ fn count(req: &ExportMetricsServiceRequest) -> Counts {
                     Some(Data::Gauge(v)) => {
                         c.points += v.data_points.len() as u64;
                         for p in &v.data_points {
+                            for a in &p.attributes {
+                                let text = a.value.as_ref().and_then(|v| match &v.value { Some(opentelemetry_proto::tonic::common::v1::any_value::Value::StringValue(s)) => Some(s.as_str()), _ => None });
+                                if a.key == "host" { c.host_points += 1; }
+                                if a.key == "route" && text == Some("health") { c.health_points += 1; }
+                                if a.key == "bench.enriched" && text == Some("yes") { c.enriched_points += 1; }
+                            }
                             c.value_sum += match p.value {
                                 Some(Value::AsInt(n)) => n as f64,
                                 Some(Value::AsDouble(n)) => n,
@@ -123,6 +140,9 @@ impl Sink {
         t.points += c.points;
         t.value_sum += c.value_sum;
         t.bytes += bytes as u64;
+        t.enriched_points += c.enriched_points;
+        t.host_points += c.host_points;
+        t.health_points += c.health_points;
         *t.request_points.entry(c.points).or_default() += 1;
         Ok(())
     }
@@ -302,6 +322,7 @@ struct LoadConfig {
     seconds: u64,
     timeout_seconds: u64,
     sequence_offset: u64,
+    series_groups: u64,
 }
 async fn load(c: LoadConfig) -> Result<ResultData, Error> {
     if c.rps == 0
@@ -340,6 +361,7 @@ async fn load(c: LoadConfig) -> Result<ResultData, Error> {
                 .await?,
         )
     }
+    let series_groups = c.series_groups;
     let start = Instant::now() + Duration::from_millis(100);
     let end = start + Duration::from_secs(c.seconds);
     let mut workers = JoinSet::new();
@@ -367,7 +389,7 @@ async fn load(c: LoadConfig) -> Result<ResultData, Error> {
                         .map_err(|e| Status::unavailable(e.to_string()))?;
                     client
                         .unary(
-                            tonic::Request::new(patch_request(&template, offset, seq)),
+                            tonic::Request::new(patch_request(&template, offset, if series_groups == 0 { seq } else { seq % series_groups })),
                             tonic::codegen::http::uri::PathAndQuery::from_static(
                                 "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
                             ),
@@ -492,6 +514,7 @@ async fn main() -> Result<(), Error> {
             seconds,
             timeout_seconds,
             sequence_offset,
+            series_groups,
         } => {
             let r = load(LoadConfig {
                 fixture,
@@ -502,6 +525,7 @@ async fn main() -> Result<(), Error> {
                 seconds,
                 timeout_seconds,
                 sequence_offset,
+                series_groups,
             })
             .await?;
             println!("{}", serde_json::to_string(&r)?);
