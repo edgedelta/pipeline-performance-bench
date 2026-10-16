@@ -186,6 +186,7 @@ def main():
                             row['measurements'].append({'rate':rate,'status':'generator_limited'}); continue
                         p=subprocess.Popen(command(args.vendor,path,args.binary),env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                         ready(p,4317)
+                        sink('reset')
                         # Drain warm-up before resetting the destination counts.
                         load(signal,4317,rate,5,sequence_offset=10000000)
                         time.sleep(drain)
