@@ -4,6 +4,24 @@ from .model import expected, fixture, records, validate
 
 
 class ContractTests(unittest.TestCase):
+    def test_derived_counters_use_latest_snapshot(self):
+        from .receiver import State
+        state=State()
+        request=fixture('metrics',1)
+        metric=request.resource_metrics[0].scope_metrics[0].metrics[0]
+        metric.name='traces.span.metrics.calls'
+        metric.sum.data_points[0].as_int=3
+        state.accept('metrics',request)
+        metric.sum.data_points[0].as_int=5
+        metric.sum.data_points[0].time_unix_nano+=1
+        state.accept('metrics',request)
+        metric.sum.data_points[0].as_int=3
+        metric.sum.data_points[0].time_unix_nano-=1
+        state.accept('metrics',request)
+        self.assertEqual(state.snapshot()['derived']['calls'],5)
+        state.reset(False)
+        self.assertEqual(state.snapshot()['derived']['calls'],0)
+
     def test_forwarding_is_exact(self):
         for signal in ('metrics','traces'):
             with self.subTest(signal=signal):

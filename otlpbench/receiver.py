@@ -39,7 +39,8 @@ class State:
                                 key=(m.name, r.resource.SerializeToString(), tuple(sorted(a.SerializeToString() for a in p.attributes)))
                                 error=any(a.key=='status.code' and a.value.string_value.upper() in ('ERROR','STATUS_CODE_ERROR') for a in p.attributes)
                                 count=(p.as_int if p.WhichOneof('value')=='as_int' else p.as_double) if kind=='sum' else p.count
-                                self.derived[key]={'kind':kind,'count':count,'error':error,'sum':p.sum if kind=='histogram' else 0}
+                                if key not in self.derived or p.time_unix_nano >= self.derived[key]['time']:
+                                    self.derived[key]={'kind':kind,'count':count,'error':error,'sum':p.sum if kind=='histogram' else 0,'time':p.time_unix_nano}
 
             if self.capture:
                 self.data.extend(records(signal, request))

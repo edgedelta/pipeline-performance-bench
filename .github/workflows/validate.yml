@@ -40,6 +40,7 @@ jobs:
         run: |
           python3 -m venv "$RUNNER_TEMP/otlp-test"
           "$RUNNER_TEMP/otlp-test/bin/pip" install -r otlpbench/requirements.txt
+          "$RUNNER_TEMP/otlp-test/bin/python" -m compileall -q otlpbench
           "$RUNNER_TEMP/otlp-test/bin/python" -m unittest otlpbench.test_model -v
       - run: python3 -m unittest discover -s tests -v
       - run: node --test tools/*.test.mjs

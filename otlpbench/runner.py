@@ -140,8 +140,7 @@ def main():
             for rate in map(int,args.rates.split(',')):
                 sink('reset')
                 c=load(signal,14317,rate,min(10,args.seconds))
-                c.update(signal=signal,rate=rate,snapshot=sink()
-                        delivered=snapshot['counts'][signal])
+                c.update(signal=signal,rate=rate,delivered=sink()['counts'][signal])
                 c['passed']=c['accepted_per_second']>=rate*.95 and c['delivered']==c['accepted'] and not c['rpc_errors']
                 result['calibration'].append(c)
         for signal,scenarios in SCENARIOS.items():
