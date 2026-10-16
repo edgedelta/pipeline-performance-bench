@@ -21,6 +21,7 @@ class State:
             self.data = []
             self.counts = {'metrics': 0, 'traces': 0}
             self.derived = {}
+            self.metric_sum = 0
 
     def accept(self, signal, request):
         if signal == 'metrics':
@@ -33,6 +34,8 @@ class State:
                 for r in request.resource_metrics:
                     for scope in r.scope_metrics:
                         for m in scope.metrics:
+                            if m.name == 'bench.requests' and m.WhichOneof('data') == 'sum':
+                                self.metric_sum += sum(p.as_int if p.WhichOneof('value')=='as_int' else p.as_double for p in m.sum.data_points)
                             if not m.name.startswith('traces.span.metrics'): continue
                             kind=m.WhichOneof('data')
                             for p in getattr(m,kind).data_points:
@@ -47,7 +50,7 @@ class State:
 
     def snapshot(self):
         with self.lock:
-            return {'counts': dict(self.counts), 'records': list(self.data), 'derived': {
+            return {'metric_sum': self.metric_sum, 'counts': dict(self.counts), 'records': list(self.data), 'derived': {
                 'calls':sum(v['count'] for v in self.derived.values() if v['kind']=='sum'),
                 'errors':sum(v['count'] for v in self.derived.values() if v['kind']=='sum' and v['error']),
                 'histogram_count':sum(v['count'] for v in self.derived.values() if v['kind']=='histogram'),

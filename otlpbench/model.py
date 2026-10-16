@@ -96,7 +96,7 @@ def expected(signal, scenario, sent):
     return result
 
 
-def validate(signal, scenario, sent, received):
+def strict_validate(signal, scenario, sent, received):
     """Return evidence rather than claiming every configured pipeline is equivalent."""
     from collections import Counter, defaultdict
     import json
@@ -142,3 +142,46 @@ def validate(signal, scenario, sent, received):
     canonical=lambda r: json.dumps(r,sort_keys=True)
     a,b=Counter(map(canonical,want)),Counter(map(canonical,received))
     return a==b, f'expected {len(want)} output records, got {len(received)}; missing={sum((a-b).values())}, unexpected={sum((b-a).values())}'
+
+
+def validate(signal, scenario, sent, received):
+    """Check the requested operation independently of vendor resource metadata."""
+    from collections import Counter, defaultdict
+    import json
+    if scenario == 'metrics':
+        return strict_validate(signal, scenario, sent, received)
+    if not received:
+        return False, 'no output received'
+    if scenario in ('aggregate', 'rollup', 'combined'):
+        keys = ['route', 'host'] if scenario == 'rollup' else ['route']
+        def totals(rows):
+            result = defaultdict(float)
+            for r in rows:
+                key = (r['name'], *(r['attributes'].get(k) for k in keys))
+                result[key] += r['value']
+            return dict(result)
+        reduced = len(received) < len(sent)
+        labels_ok = scenario == 'rollup' or all('host' not in r['attributes'] for r in received)
+        ok = reduced and labels_ok and totals(sent) == totals(received)
+        return ok, f'{len(sent)} input points → {len(received)} output points; grouped sums preserved={totals(sent)==totals(received)}'
+    wanted = expected(signal, scenario, sent)
+    def project(r):
+        a = {k:r['attributes'].get(k) for k in ('host','route','secret') if k in sent[0]['attributes']}
+        if scenario == 'enrich': a['bench.enriched'] = r['attributes'].get('bench.enriched')
+        if signal == 'metrics':
+            return {'name':r['name'], 'value':float(r['value']), 'attributes':a}
+        return {'trace_id':r['trace_id'], 'span_id':r['span_id'], 'parent':r['parent'].lstrip('0'), 'name':r['name'], 'status':r['status'], 'duration_ms':round((r['end']-r['time'])/1e6), 'attributes':a}
+    canonical = lambda r: json.dumps(project(r), sort_keys=True)
+    if scenario == 'sample':
+        originals = {(r['trace_id'],r['span_id']):r for r in sent}
+        seen = set(); per_trace = defaultdict(set)
+        for r in received:
+            key = (r['trace_id'],r['span_id'])
+            if key not in originals or key in seen or project(r)!=project(originals[key]):
+                return False, 'sample changed or duplicated span payload'
+            seen.add(key); per_trace[r['trace_id']].add(r['span_id'])
+        complete = all(len(ids)==2 for ids in per_trace.values())
+        fraction = len(received)/len(sent)
+        return complete and .35 <= fraction <= .65, f'retained {fraction:.1%}; complete traces={complete}'
+    a,b = Counter(map(canonical,wanted)),Counter(map(canonical,received))
+    return a==b, f'expected {len(wanted)} records, received {len(received)}; operation matches={a==b}'

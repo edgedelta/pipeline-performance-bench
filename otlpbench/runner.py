@@ -118,7 +118,7 @@ def main():
     ap.add_argument('--output', default='otlp-results')
     ap.add_argument('--binary')
     ap.add_argument('--seconds', type=int, default=30)
-    ap.add_argument('--rates', default='1000,10000')
+    ap.add_argument('--rates', default='1000,10000,25000,50000,125000')
     ap.add_argument('--scenarios', default='')
     args=ap.parse_args()
     out=Path(args.output); out.mkdir(parents=True,exist_ok=True)
@@ -199,7 +199,11 @@ def main():
                         snapshot=sink()
                         delivered=snapshot['counts']
                         measurement.update(rate=rate, delivered=delivered, status='measured', drain_seconds=drain)
-                        if scenario == 'metrics':
+                        if scenario in ('aggregate','rollup','combined'):
+                            measurement['output_value_sum']=snapshot['metric_sum']
+                            measurement['delivery_verified']=abs(snapshot['metric_sum']-measurement['accepted'])<.01
+                            if not measurement['delivery_verified']: measurement['status']='delivery_mismatch'
+                        elif scenario == 'metrics':
                             delta={k:v-baseline[k] for k,v in snapshot['derived'].items()}
                             measurement['derived_metrics']=delta
                             measurement['delivery_verified']=(delta['calls']==measurement['accepted'] and delta['histogram_count']==measurement['accepted'] and delta['errors']==measurement['accepted']/8 and abs(delta['histogram_sum_ms']-measurement['accepted']*20)<.01)
@@ -213,6 +217,8 @@ def main():
                             if not measurement['delivery_verified']: measurement['status']='delivery_mismatch'
                         if measurement['accepted_per_second'] < rate*.95: measurement['status']='input_shortfall'
                         row['measurements'].append(measurement)
+                        save()
+                        print(json.dumps({'vendor':args.vendor,'signal':signal,'scenario':scenario,'rate':rate,'status':measurement['status']}),flush=True)
                         stop(p)
                 except Exception as exc:
                     row.update(status='error',detail=f'{type(exc).__name__}: {exc}')

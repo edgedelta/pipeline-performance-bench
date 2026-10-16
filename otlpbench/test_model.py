@@ -30,6 +30,20 @@ class ContractTests(unittest.TestCase):
                 self.assertFalse(validate(signal,'pass-through',sent,sent[:-1])[0])
                 self.assertFalse(validate(signal,'pass-through',sent,sent+sent[:1])[0])
 
+    def test_vendor_metadata_is_not_an_operation_failure(self):
+        for signal in ('metrics','traces'):
+            sent=list(records(signal,fixture(signal)))
+            actual=copy.deepcopy(sent)
+            for r in actual:
+                r['resource']={'vendor.host':'worker'}
+                r['scope']='vendor'
+                r['start']=0
+                if signal=='traces':
+                    r['kind']=0
+                    r['time']=round(r['time']/1e6)*1000000
+                    r['end']=r['time']+20000000
+            self.assertTrue(validate(signal,'pass-through',sent,actual)[0])
+
     def test_label_deletion_is_not_aggregation(self):
         sent=list(records('metrics',fixture('metrics')))
         wrong=copy.deepcopy(sent)
