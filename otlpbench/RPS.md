@@ -58,3 +58,18 @@ The controller writes binary fixture files. `--sequence-offset` supports disjoin
 Pass `--red-binary /absolute/path/to/linux/red` to `otlpbench.cloud_rps` to install an optimized Linux build instead of the published release. Binary hashes remain in every measured row. Record its source commit alongside the report; the binary's release version alone does not identify a development build.
 
 OTLP concurrency in the development agent follows incoming requests; no exporter worker-count setting is needed. Host SSH descriptor limits are configured by cloud-init, and remote processes use a soft limit of 65,536.
+
+## Default Rust build
+
+`cloud_rps` defaults to the measured automatic-concurrency build recorded in
+[red-build.json](red-build.json), from Rust PR #19 (now merged). It checks the
+local Linux binary's SHA-256 before provisioning cloud hosts and never silently
+falls back to release 3.15.0. The default path assumes sibling `red` and
+`pipeline-performance-bench` checkouts.
+
+The pin identifies the tested PR source, not a stable release or the exact merged
+main tree, which also contains other changes. Preserve this measured binary for
+repeat comparisons. On another machine, supply a Linux x86_64 release binary
+explicitly with `--red-binary /path/to/red`; rebuilding can produce a different
+hash. Use the same explicit override to benchmark newer builds. Each run records
+the actual binary hash in its results.

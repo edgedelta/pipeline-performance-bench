@@ -2,7 +2,7 @@
 import argparse
 import concurrent.futures
 import json
-import os
+import hashlib
 import shutil
 from pathlib import Path
 import subprocess
@@ -16,10 +16,18 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--output', default='otlp-rps-results')
     ap.add_argument('--instance-type', default='c8i.8xlarge')
-    ap.add_argument('--red-binary', type=Path, help='Optimized Linux agent binary to test before release')
+    ap.add_argument('--red-binary', type=Path, help='Explicit override of the pinned Linux agent binary')
     args, extra=ap.parse_known_args()
     if args.red_binary and not args.red_binary.is_file(): ap.error('--red-binary must exist')
     root=Path(__file__).resolve().parents[1]
+    if not args.red_binary:
+        pin=json.loads((root/'otlpbench/red-build.json').read_text())
+        args.red_binary=(root/pin['binary']).resolve()
+        if not args.red_binary.is_file():
+            ap.error('pinned Rust binary is missing; see otlpbench/RPS.md or supply --red-binary')
+        digest=hashlib.sha256(args.red_binary.read_bytes()).hexdigest()
+        if digest != pin['sha256']:
+            ap.error('local Rust binary differs from the pinned build; use --red-binary explicitly to test a new build')
     out=Path(args.output).resolve();out.mkdir(parents=True,exist_ok=True)
     infra=root/'otlpbench/infra-rps'
     def tf(*argv):return subprocess.check_output(['terraform','-chdir='+str(infra),*argv],text=True)
@@ -36,11 +44,8 @@ def main():
             shutil.copy2(archive, out/'measured-harness-source.tgz')
             install=tmp/'install.tgz'
             subprocess.run(['tar','-czf',str(install),'-C',str(root),'scripts','otlpbench/install.sh','otlpbench/requirements.txt'],check=True)
-            if args.red_binary:
-                (tmp/'red').mkdir()
-                shutil.copy2(args.red_binary, tmp/'red/red')
-            else:
-                subprocess.run([sys.executable,str(root/'tools/fetch_red.py'),str(tmp/'red')],check=True,env={**os.environ,'RED_VERSION':'3.15.0'})
+            (tmp/'red').mkdir()
+            shutil.copy2(args.red_binary, tmp/'red/red')
             def build():
                 s=endpoints['sink'];s.upload(archive,'/tmp/source.tgz')
                 s.command('sudo cloud-init status --wait && sudo apt-get update -qq && sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq build-essential python3-psutil && tar -xzf /tmp/source.tgz && curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh && sh /tmp/rustup.sh -y --profile minimal --default-toolchain 1.98.0 && .cargo/bin/cargo build --release --locked --manifest-path traffic-rs/Cargo.toml && cp traffic-rs/target/release/otlp-traffic /home/ubuntu/otlp-traffic')

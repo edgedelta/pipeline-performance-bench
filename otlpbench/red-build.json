@@ -1,0 +1,7 @@
+{
+  "binary": "../red/target/x86_64-unknown-linux-gnu/release/red",
+  "source_commit": "d09072d45412da792af635ccd8f2557ba6547940",
+  "sha256": "3b4ae65c609bfecd8e403f9aa8e608e7042436153ede0369112f5843f54a7313",
+  "merged_pr": "https://github.com/edgedelta/red/pull/19",
+  "merge_commit": "9ddf41c4876222d006423c2d3078799aad2560b6"
+}
