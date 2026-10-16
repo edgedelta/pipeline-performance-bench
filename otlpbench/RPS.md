@@ -19,7 +19,7 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory /tmp/otlp-rps
 
 Use the existing Python requirements, Terraform, SSH, curl, tar, and authenticated AWS credentials. The cloud command provisions three c8i.8xlarge hosts in us-west-2: generator, agent, and sink. Traffic stays on private VPC addresses. OTLP ports are accessible only within the benchmark security group; SSH is restricted to the caller's address. `--instance-type` changes all three hosts. Run concurrent cloud jobs from separate checkouts because each checkout owns its Terraform state. The cloud command destroys its resources in `finally`, including failed benchmarks. Keep stdout/stderr as the run log.
 
-The controller installs RED 3.15.0, OTel Collector 0.162.0, and Bindplane 1.110.1 and runs them sequentially on the same agent host with fresh processes. It records binary versions and hashes. No merge or Pages deployment occurs.
+The controller installs the pinned Rust build (or an explicit `--red-binary`), OTel Collector 0.162.0, and Bindplane 1.110.1 and runs them sequentially on the same agent host with fresh processes. It records binary versions and hashes. No merge or Pages deployment occurs.
 
 ## Matched output batching
 
@@ -73,3 +73,5 @@ repeat comparisons. On another machine, supply a Linux x86_64 release binary
 explicitly with `--red-binary /path/to/red`; rebuilding can produce a different
 hash. Use the same explicit override to benchmark newer builds. Each run records
 the actual binary hash in its results.
+
+Use `--baseline-red-binary /path/to/prior/red` to rerun Rust on the same hosts after the three-vendor comparison. Baseline results and independent calibration are saved under `baseline/`; infrastructure is destroyed after both runs. The pinned default is preserved under the sibling Rust checkout’s `dist/benchmarks/` directory, separately from compiler outputs.

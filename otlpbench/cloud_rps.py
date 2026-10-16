@@ -17,7 +17,9 @@ def main():
     ap.add_argument('--output', default='otlp-rps-results')
     ap.add_argument('--instance-type', default='c8i.8xlarge')
     ap.add_argument('--red-binary', type=Path, help='Explicit override of the pinned Linux agent binary')
+    ap.add_argument('--baseline-red-binary', type=Path, help='Rerun Rust with a baseline binary on the same hosts')
     args, extra=ap.parse_known_args()
+    if args.baseline_red_binary and not args.baseline_red_binary.is_file(): ap.error('--baseline-red-binary must exist')
     if args.red_binary and not args.red_binary.is_file(): ap.error('--red-binary must exist')
     root=Path(__file__).resolve().parents[1]
     if not args.red_binary:
@@ -60,6 +62,10 @@ def main():
                 jobs=[pool.submit(build),pool.submit(agents)]
                 for job in jobs:job.result()
             subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(out),*extra],cwd=root,check=True)
+            if args.baseline_red_binary:
+                endpoints['agent'].upload(args.baseline_red_binary, '/tmp/red-baseline')
+                endpoints['agent'].command('sudo install -m755 /tmp/red-baseline /opt/red/red')
+                subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(out/'baseline'),*extra,'--vendors','red'],cwd=root,check=True)
     finally:
         if (infra/'terraform.tfstate').exists():print(tf('destroy','-auto-approve','-var=instance_type='+args.instance_type),flush=True)
 
