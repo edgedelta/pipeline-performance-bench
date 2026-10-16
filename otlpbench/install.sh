@@ -10,7 +10,7 @@ case "$vendor" in
   edgedelta)
     id -u edgedelta >/dev/null 2>&1 || sudo useradd --system --user-group --home-dir /var/lib/edgedelta edgedelta
     curl -fLsS --retry 3 https://release.edgedelta.com/candidate/edgedelta-linux-amd64.sh -o /tmp/edgedelta-install.sh
-    sudo env ED_API_KEY=benchmark-local ED_ENV_VARS='ED_SKIP_CONF_DOWNLOAD=1 ED_BACKEND_DISABLED=1 ED_DISABLE_CONF_RELOAD=1' bash /tmp/edgedelta-install.sh
+    sudo env ED_API_KEY=benchmark-local ED_ENV_VARS=$'ED_SKIP_CONF_DOWNLOAD=1\nED_BACKEND_DISABLED=1\nED_DISABLE_CONF_RELOAD=1' bash /tmp/edgedelta-install.sh
     sudo systemctl stop edgedelta
     ;;
   cribl)

@@ -37,7 +37,7 @@ def config(vendor, signal, scenario):
             group = ['resource["service.name"]', 'resource["bench.batch"]', 'attributes["route"]']
             if scenario == 'rollup': group.append('attributes["host"]')
             p = [{'type': 'aggregate_metric', 'data_types': dtype, 'aggregate_metric_rules': [{'conditions': ['kind == "sum"'], 'interval': '10s' if scenario == 'aggregate' else '1m', 'aggregation_type': 'sum', 'keep_only_group_by_keys': True, 'group_by': group}]}]
-        if scenario == 'sample': p = [{'type': 'sample', 'data_types': dtype, 'percentage': 50, 'field_paths': ['attributes["trace.id"]'], 'pass_through_on_failure': False}]
+        if scenario == 'sample': p = [{'type': 'sample', 'data_types': dtype, 'percentage': 50, 'field_paths': ['trace.id'], 'pass_through_on_failure': False}]
         if scenario == 'tail': p = [{'type': 'tail_sample', 'data_types': dtype, 'decision_interval': '1s', 'sampling_policies': [{'name': 'errors', 'policy_type': 'status_code', 'status_codes': ['ERROR']}]}]
         c = {'version': 'v3', 'settings': {'tag': 'otlp-benchmark', 'item_buffer_flush_interval': '100ms', 'archive_flush_interval': '1s', 'archive_max_byte_limit': '1MB'}, 'nodes': [{'name': 'in', 'type': 'otlp_input', 'protocol': 'grpc', 'port': 4317}, {'name': 'process', 'type': 'sequence', 'processors': p}, {'name': 'out', 'type': 'otlp_output', 'protocol': 'http', 'endpoint': '127.0.0.1', 'port': 14318, 'compression': 'uncompressed'}], 'links': [{'from': 'in', 'to': 'process'}, {'from': 'process', 'to': 'out'}]}
         return yaml.safe_dump(c, sort_keys=False), None
