@@ -1,6 +1,5 @@
 """Render PR-only evidence; never writes releases or the public Pages dataset."""
 import argparse
-import html
 import json
 from pathlib import Path
 from .model import VENDORS, LABELS, SCENARIOS
@@ -14,7 +13,15 @@ def render(root):
     for vendor,name in VENDORS.items():
         d=datasets.get(vendor,{})
         lines.append(f"| {name} | {d.get('version','Not run').splitlines()[0]} |")
-    lines += ['', '| Signal | Scenario | Agent | Result | Accepted/s at 10k | CPU cores | RSS MB |', '|---|---|---|---|---:|---:|---:|']
+    lines += ['', '## Forwarding at 10k input items/sec', '', '| Agent | Metrics CPU cores | Metrics RSS MB | Traces CPU cores | Traces RSS MB |', '|---|---:|---:|---:|---:|']
+    for vendor,name in VENDORS.items():
+        cells=[]
+        for signal in ('metrics','traces'):
+            row=next((r for r in datasets.get(vendor,{}).get('rows',[]) if r['signal']==signal and r['scenario']=='pass-through'),{})
+            m=next((m for m in row.get('measurements',[]) if m['rate']==10000 and m['status']=='measured'),{})
+            cells += [f"{m[key]:.3f}" if isinstance(m.get(key),(int,float)) else '—' for key in ('cpu_cores','rss_mb')]
+        lines.append('| '+name+' | '+' | '.join(cells)+' |')
+    lines += ['', 'A dash means no validated measurement. These are fixed-load resource costs, not capacity rankings.', '', '## All scenarios', '', '| Signal | Scenario | Agent | Result | Accepted/s at 10k | CPU cores | RSS MB |', '|---|---|---|---|---:|---:|---:|']
     for signal, scenarios in SCENARIOS.items():
         for scenario in scenarios:
             for vendor,name in VENDORS.items():
@@ -22,7 +29,7 @@ def render(root):
                 m=next((m for m in row.get('measurements',[]) if m['rate']==10000),{})
                 def fmt(key):
                     v=m.get(key); return f'{v:,.2f}' if isinstance(v,(int,float)) else '—'
-                lines.append(f"| {signal} | {LABELS.get(scenario,scenario.title())} | {name} | {row.get('status','not_run')} | {fmt('accepted_per_second')} | {fmt('cpu_cores')} | {fmt('rss_mb')} |")
+                lines.append(f"| {signal} | {LABELS.get(scenario,scenario.title())} | {name} | {m.get('status',row.get('status','not_run'))} | {fmt('accepted_per_second')} | {fmt('cpu_cores')} | {fmt('rss_mb')} |")
     lines += ['', '## Correctness and configuration evidence', '']
     for vendor,d in datasets.items():
         lines += [f"### {VENDORS[vendor]}", '', f"Commit: `{d['commit']}`. Binary SHA-256: `{d.get('binary_sha256','unavailable')}`.", '']
@@ -35,4 +42,6 @@ def render(root):
 if __name__=='__main__':
     ap=argparse.ArgumentParser(); ap.add_argument('root'); ap.add_argument('--output',default='otlp-preview.md'); a=ap.parse_args()
     text=render(a.root); Path(a.output).write_text(text)
-    Path(a.output).with_suffix('.html').write_text('<!doctype html><meta charset="utf-8"><title>OTLP benchmark PR preview</title><style>body{font:14px monospace;background:#171717;color:#eee;padding:2em}pre{white-space:pre-wrap}</style><pre>'+html.escape(text)+'</pre>')
+    datasets=[json.loads(p.read_text()) for p in Path(a.root).rglob('results.json')]
+    template=Path(__file__).with_name('preview.html').read_text()
+    Path(a.output).with_suffix('.html').write_text(template.replace('__DATA__',json.dumps(datasets).replace('<',r'\u003c')))
