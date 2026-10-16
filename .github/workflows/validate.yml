@@ -35,8 +35,12 @@ jobs:
           ./tools/build_generators.sh
           python3 tools/generator_bundle.py verify .loadgen-build
           python3 tests/loadgen_protocol.py .loadgen-build/loadgen-rust
-      - run: pip install -r tests/requirements.txt -r otlpbench/requirements.txt
-      - run: python3 -m unittest otlpbench.test_model -v
+      - run: pip install -r tests/requirements.txt
+      - name: Validate OTLP scenario contracts in an isolated environment
+        run: |
+          python3 -m venv "$RUNNER_TEMP/otlp-test"
+          "$RUNNER_TEMP/otlp-test/bin/pip" install -r otlpbench/requirements.txt
+          "$RUNNER_TEMP/otlp-test/bin/python" -m unittest otlpbench.test_model -v
       - run: python3 -m unittest discover -s tests -v
       - run: node --test tools/*.test.mjs
       - run: python3 tests/fixed_smoke.py
@@ -103,6 +107,7 @@ jobs:
       - name: Run isolated OTLP preview
         env:
           GH_TOKEN: ${{ secrets.RED_RELEASES_TOKEN }}
+          OTLP_EXTERNAL_CLEANUP: "1"
         run: bash otlpbench/cloud.sh '${{ matrix.vendor }}'
       - name: Refresh cleanup credentials
         if: always()

@@ -128,15 +128,14 @@ def main():
     def save(): (out/'results.json').write_text(json.dumps(result,indent=2))
     try:
         ready(receiver,14317)
-        if True:
-            binary='/opt/cribl/bin/cribl' if args.vendor=='cribl' else command(args.vendor,out/'unused',args.binary)[0]
-            version=subprocess.run([binary,'version' if args.vendor=='cribl' else '--version'],capture_output=True,text=True,timeout=10)
-            result['version']=(version.stdout+version.stderr).strip()[:2000]
-            import hashlib
-            h = hashlib.sha256()
-            with open(binary,'rb') as f:
-                for chunk in iter(lambda: f.read(1024*1024), b''): h.update(chunk)
-            result['binary_sha256'] = h.hexdigest()
+        binary='/opt/cribl/bin/cribl' if args.vendor=='cribl' else command(args.vendor,out/'unused',args.binary)[0]
+        version=subprocess.run([binary,'version' if args.vendor=='cribl' else '--version'],capture_output=True,text=True,timeout=10)
+        result['version']=(version.stdout+version.stderr).strip()[:2000]
+        import hashlib
+        h = hashlib.sha256()
+        with open(binary,'rb') as f:
+            for chunk in iter(lambda: f.read(1024*1024), b''): h.update(chunk)
+        result['binary_sha256'] = h.hexdigest()
         for signal in SCENARIOS:
             for rate in map(int,args.rates.split(',')):
                 sink('reset')

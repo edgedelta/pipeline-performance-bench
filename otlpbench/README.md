@@ -27,7 +27,7 @@ Persistent OTLP/gRPC input, no compression, four clients, 512 points/spans per r
 
 Report fields include accepted input rate, delivered output count, partial rejections/RPC errors, p95 export acknowledgment latency (not end-to-end latency), process-tree CPU cores, and process-tree average/peak RSS. Resource samples cover the sending interval. Correctness failures do not receive performance scores. Output counts and rates flag delivery or input shortfalls. Generator calibration failures suppress measurement.
 
-Status `not_configured` means an adapter is still needed, not that the vendor is incapable. This draft initially exercises all scenarios for OTel and Bindplane, the native Edge Delta scenarios, and forwarding for Vector/Fluent Bit/Fluentd. Cribl and the other transformation adapters remain pending. These gaps must remain visible in the PR report.
+Status `not_configured` means an adapter is still needed, not that the vendor is incapable. This draft initially exercises all scenarios for OTel and Bindplane, the native Edge Delta scenarios, Fluent Bit trace processing and metric enrichment, Cribl forwarding/basic transforms, and forwarding for Vector/Fluentd. Other transformation adapters remain pending. These gaps must remain visible in the PR report.
 
 The OTel interval processor passes delta metrics through; it is included as a candidate to show the contract mismatch, not treated as equivalent rollup. OTel metricstransform aggregation is confined to an incoming batch; the cross-request fixture checks that limitation. Reference docs: [interval](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/intervalprocessor), [metricstransform](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/metricstransformprocessor).
 
@@ -42,4 +42,4 @@ python3 -m venv /tmp/otlp-venv
 
 The first preview does not yet cover gauges/histogram input workloads, an input batch-size sweep, higher-rate capacity search, repeated trials, or end-to-end latency. Keep the PR draft until the evidence and remaining adapters are reviewed.
 
-The existing AWS role currently trusts only main. Until branch execution is authorized separately, run the PR checkout locally with existing AWS credentials using `bash otlpbench/cloud.sh VENDOR`, always followed by `terraform -chdir=otlpbench/infra destroy -auto-approve`, and attach its SHA-tagged artifacts to the PR. Do not widen the shared role automatically.
+The existing AWS role currently trusts only main. Until branch execution is authorized separately, run the PR checkout locally with existing AWS credentials using `bash otlpbench/cloud.sh VENDOR`, which cleans up its temporary resources on exit, and attach its SHA-tagged artifacts to the PR. Do not widen the shared role automatically.
