@@ -20,6 +20,7 @@ class State:
             self.capture = capture
             self.data = []
             self.counts = {'metrics': 0, 'traces': 0}
+            self.derived = {}
 
     def accept(self, signal, request):
         if signal == 'metrics':
@@ -28,12 +29,28 @@ class State:
             n = sum(len(s.spans) for r in request.resource_spans for s in r.scope_spans)
         with self.lock:
             self.counts[signal] += n
+            if signal == 'metrics':
+                for r in request.resource_metrics:
+                    for scope in r.scope_metrics:
+                        for m in scope.metrics:
+                            if not m.name.startswith('traces.span.metrics'): continue
+                            kind=m.WhichOneof('data')
+                            for p in getattr(m,kind).data_points:
+                                key=(m.name, r.resource.SerializeToString(), tuple(sorted(a.SerializeToString() for a in p.attributes)))
+                                error=any(a.key=='status.code' and a.value.string_value.upper() in ('ERROR','STATUS_CODE_ERROR') for a in p.attributes)
+                                count=(p.as_int if p.WhichOneof('value')=='as_int' else p.as_double) if kind=='sum' else p.count
+                                self.derived[key]={'kind':kind,'count':count,'error':error,'sum':p.sum if kind=='histogram' else 0}
+
             if self.capture:
                 self.data.extend(records(signal, request))
 
     def snapshot(self):
         with self.lock:
-            return {'counts': dict(self.counts), 'records': list(self.data)}
+            return {'counts': dict(self.counts), 'records': list(self.data), 'derived': {
+                'calls':sum(v['count'] for v in self.derived.values() if v['kind']=='sum'),
+                'errors':sum(v['count'] for v in self.derived.values() if v['kind']=='sum' and v['error']),
+                'histogram_count':sum(v['count'] for v in self.derived.values() if v['kind']=='histogram'),
+                'histogram_sum_ms':sum(v['sum'] for v in self.derived.values() if v['kind']=='histogram')}}
 
 
 def serve():

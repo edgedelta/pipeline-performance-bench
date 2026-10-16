@@ -140,7 +140,8 @@ def main():
             for rate in map(int,args.rates.split(',')):
                 sink('reset')
                 c=load(signal,14317,rate,min(10,args.seconds))
-                c.update(signal=signal,rate=rate,delivered=sink()['counts'][signal])
+                c.update(signal=signal,rate=rate,snapshot=sink()
+                        delivered=snapshot['counts'][signal])
                 c['passed']=c['accepted_per_second']>=rate*.95 and c['delivered']==c['accepted'] and not c['rpc_errors']
                 result['calibration'].append(c)
         for signal,scenarios in SCENARIOS.items():
@@ -189,14 +190,21 @@ def main():
                         # Drain warm-up before resetting the destination counts.
                         load(signal,4317,rate,5,sequence_offset=10000000)
                         time.sleep(drain)
+                        baseline=sink()['derived']
                         sink('reset')
                         with Monitor(p) as monitor:
                             measurement=load(signal,4317,rate,args.seconds)
                         time.sleep(drain)
                         measurement.update(monitor.result())
-                        delivered=sink()['counts']
+                        snapshot=sink()
+                        delivered=snapshot['counts']
                         measurement.update(rate=rate, delivered=delivered, status='measured', drain_seconds=drain)
-                        if scenario != 'metrics':
+                        if scenario == 'metrics':
+                            delta={k:v-baseline[k] for k,v in snapshot['derived'].items()}
+                            measurement['derived_metrics']=delta
+                            measurement['delivery_verified']=(delta['calls']==measurement['accepted'] and delta['histogram_count']==measurement['accepted'] and delta['errors']==measurement['accepted']/8 and abs(delta['histogram_sum_ms']-measurement['accepted']*20)<.01)
+                            if not measurement['delivery_verified']: measurement['status']='delivery_shortfall'
+                        else:
                             fraction = .5 if scenario=='sample' else len(expected(signal,scenario,sent))/len(sent)
                             expected_count = measurement['accepted']*fraction
                             got = delivered[signal]
