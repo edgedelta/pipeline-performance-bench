@@ -15,7 +15,7 @@ const el=id=>document.getElementById(id),unit=()=>signal==='metrics'?'Points/sec
 const short=n=>n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'m':n>=1e3?(n/1e3).toFixed(n>=100000?0:1).replace(/\.0$/,'')+'k':n>=10?Math.round(n).toString():n.toFixed(2).replace(/\.00$/,'');
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US',{maximumFractionDigits:2});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function version(v){const raw=DATA[v]?.version||'';return raw.match(/v?\d+\.\d+\.\d+(?:-rc\.\d+)?/)?.[0]||'—'}
+function version(v){const raw=DATA[v]?.rows.find(r=>r.signal===signal)?.version||DATA[v]?.version||'';return raw.match(/v?\d+\.\d+\.\d+(?:-rc\.\d+)?/)?.[0]||'—'}
 function buttons(id,values,selected,cb){el(id).replaceChildren(...values.map(([key,label])=>{const b=document.createElement('button');b.textContent=label;b.className=selected===key?'active':'';b.setAttribute('aria-pressed',selected===key);b.onclick=()=>{cb(key);render()};return b}));}
 function cell(v,s){const row=DATA[v[0]]?.rows.find(r=>r.signal===signal&&r.scenario===s);const m=row?.measurements?.find(m=>m.rate===rate);let value=null;if(m?.cpu_cores!=null){value=metric==='core'?(m.cpu_cores>0?m.accepted_per_second/m.cpu_cores:null):metric==='memory'?m.accepted_per_second/m.rss_mb:metric==='cpu'?m.cpu_cores:metric==='rss'?m.rss_mb:m.accepted_per_second;}return{v,row,m,value,ok:m?.status==='measured'&&m.delivery_verified};}
 function scale(max){if(!(max>0))return{max:1,step:.2};const raw=max/5,p=10**Math.floor(Math.log10(raw)),n=raw/p,step=(n<=1?1:n<=2?2:n<=5?5:10)*p;return{max:Math.ceil(max*1.15/step)*step,step};}
