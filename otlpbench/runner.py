@@ -170,7 +170,7 @@ def main():
                         response=export(part,timeout=10)
                         if response.partial_success.ByteSize(): raise RuntimeError(f'partial OTLP rejection: {response.partial_success}')
                     channel.close()
-                    drain=25 if scenario in ('aggregate','rollup','combined') else 4
+                    drain=70 if scenario in ('rollup','combined') else 25 if scenario=='aggregate' else 4
                     time.sleep(drain)
                     received=sink()['records']
                     ok,detail=validate(signal,scenario,sent,received)

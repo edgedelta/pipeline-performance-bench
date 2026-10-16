@@ -111,7 +111,14 @@ def validate(signal, scenario, sent, received):
         seen = set(); per_trace = defaultdict(set)
         for r in received:
             key=(r['trace_id'],r['span_id'])
-            if key not in original or key in seen or r != original[key]: return False, 'sample changed or duplicated a span'
+            if key not in original or key in seen: return False, 'sample added or duplicated a span'
+            actual=dict(r); wanted=dict(original[key])
+            # OTel samplers may add their standard ot= tracestate member.
+            for item in (actual,wanted):
+                item['trace_state']=','.join(v for v in item.get('trace_state','').split(',') if v and not v.strip().startswith('ot='))
+            if actual != wanted:
+                fields=','.join(k for k in wanted if wanted[k]!=actual.get(k))
+                return False, f'sample changed span fields: {fields}; retained {len(received)} spans'
             seen.add(key); per_trace[r['trace_id']].add(r['span_id'])
         if any(len(ids)!=2 for ids in per_trace.values()): return False, 'sample retained an incomplete trace'
         fraction=len(received)/len(sent)

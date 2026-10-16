@@ -40,6 +40,11 @@ class ContractTests(unittest.TestCase):
     def test_sample_requires_complete_unchanged_traces(self):
         sent=list(records('traces',fixture('traces')))
         self.assertTrue(validate('traces','sample',sent,sent[:256])[0])
+        with_metadata=copy.deepcopy(sent[:256])
+        for r in with_metadata: r['trace_state']='ot=rv:de9c2363dac858;th:8'
+        self.assertTrue(validate('traces','sample',sent,with_metadata)[0])
+        with_metadata[0]['attributes']['secret']='changed'
+        self.assertFalse(validate('traces','sample',sent,with_metadata)[0])
         self.assertFalse(validate('traces','sample',sent,sent[::2])[0])
 
 

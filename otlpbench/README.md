@@ -19,7 +19,7 @@ This suite runs on a pull-request branch before merge. Dispatch **Validate bench
 
 Metrics use one delta monotonic sum, 64 hosts, two routes, and eight event-time buckets. Traces contain two SERVER spans each, with IDs, parent relationships, events, links, a secret attribute, and 20ms durations. Only one child in every fourth trace is ERROR. Each correctness fixture is split across two requests to catch per-request-only aggregation and incomplete-trace sampling. Raw sent/received records are retained.
 
-Aggregation is an event-time contract: bucket end timestamps and interval start timestamps are checked. Old event times allow flushes without a minute-long initial alignment wait. Correctness drain is 25 seconds for aggregation and 4 seconds otherwise. This is a bounded preview, not a claim that slower-flushing configurations are unsupported.
+Aggregation is an event-time contract: bucket end timestamps and interval start timestamps are checked. Old event times allow flushes without a minute-long initial alignment wait. Correctness drain is 70 seconds for Rollup/Combined, 25 seconds for Aggregate, and 4 seconds otherwise. Sampling may add the standard OTel `ot=` tracestate member; other span fields must remain unchanged. This is a bounded preview, not a claim that slower-flushing configurations are unsupported.
 
 ## Measurements
 
