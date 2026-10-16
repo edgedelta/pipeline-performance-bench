@@ -66,3 +66,7 @@ __pycache__/
 
 /otlp-results/
 /.otlp-venv/
+
+/otlpbench/traffic-rs/target/
+/otlpbench/infra-rps/*.pem
+/otlp-rps-results/

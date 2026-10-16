@@ -1,0 +1,25 @@
+version: v3
+settings:
+  tag: otlp-benchmark
+  item_buffer_flush_interval: 100ms
+  archive_flush_interval: 1s
+  archive_max_byte_limit: 1MB
+nodes:
+- name: in
+  type: otlp_input
+  protocol: grpc
+  port: 4317
+- name: process
+  type: sequence
+  processors: []
+- name: out
+  type: otlp_output
+  protocol: http
+  endpoint: 172.31.15.131
+  port: 14318
+  compression: uncompressed
+links:
+- from: in
+  to: process
+- from: process
+  to: out

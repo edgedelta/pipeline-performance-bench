@@ -1,0 +1,48 @@
+# Request-rate Pass-Through benchmark
+
+This harness uses Rust for the load generator and destination. Python only orchestrates remote processes and records resource measurements; it is not in the telemetry path. Metrics Pass-Through is currently supported. The existing multi-scenario benchmark and public site remain separate.
+
+Requests/sec and points/sec are distinct: `points/sec = requests/sec × points/request`. At 100,000 requests/sec, a batch of 1 offers 100,000 points/sec; a batch of 512 offers 51.2 million points/sec. Output requests are independently counted because agents may rebatch.
+
+## Run
+
+```sh
+cargo test --locked --manifest-path otlpbench/traffic-rs/Cargo.toml
+cargo build --release --locked --manifest-path otlpbench/traffic-rs/Cargo.toml
+python3 -m unittest otlpbench.test_rps -v
+python3 -m otlpbench.cloud_rps --output otlp-rps-results \
+  --rates 10000,100000 --batches 1,512 --seconds 60 \
+  --connections 64 --concurrency 1024 --trials 1
+python3 -m otlpbench.rps_chart otlp-rps-results/results.json /tmp/otlp-rps/index.html
+python3 -m http.server 8766 --bind 127.0.0.1 --directory /tmp/otlp-rps
+```
+
+Use the existing Python requirements, Terraform, SSH, curl, tar, and authenticated AWS credentials. The cloud command provisions three c8i.8xlarge hosts in us-west-2: generator, agent, and sink. Traffic stays on private VPC addresses. OTLP ports are accessible only within the benchmark security group; SSH is restricted to the caller's address. `--instance-type` changes all three hosts. Run concurrent cloud jobs from separate checkouts because each checkout owns its Terraform state. The cloud command destroys its resources in `finally`, including failed benchmarks. Keep stdout/stderr as the run log.
+
+The controller installs RED 3.15.0, OTel Collector 0.162.0, and Bindplane 1.110.1 and runs them sequentially on the same agent host with fresh processes. It records binary versions and hashes. No merge or Pages deployment occurs.
+
+## Load and capacity accounting
+
+- Persistent gRPC connections, no compression, an open-loop offered request schedule paced in 1 ms slices.
+- Prepared protobuf bodies avoid reconstructing hundreds of point objects per request. Each request gets a distinct fixed-width `bench.batch` resource value without changing the protobuf layout. Metric values, attributes, and timestamps match the synthetic fixture.
+- Configurable connections and maximum in-flight RPCs. A bounded per-worker queue prevents unlimited backlog. Requests that cannot be scheduled are counted as missed. Late completions are excluded from the achieved in-window request rate.
+- Increasing concurrency may be required for a slow-acknowledging agent. For example, 100k requests/sec with 200 ms acknowledgment latency requires at least 20k simultaneous requests. A shortfall at a chosen concurrency is not proof of maximum vendor capacity.
+- Calibration sends the same batch and rate directly from the generator to the Rust sink over gRPC. It must reach at least 95% of target with zero RPC errors/rejections and exact accepted/delivered point counts and sums. Failed calibration marks that case `harness_limited` and skips all vendor rankings.
+- Calibration establishes ingress capacity, not every vendor's export shape. Agents export OTLP/HTTP protobuf to the Rust sink; the report includes output request/byte counts and sink CPU. An expanded output representation or export backpressure can still limit a vendor trial and needs separate diagnosis.
+- A five-second warm-up is drained before counters reset. Each trial records input-window and through-delivery CPU independently. The latter includes final delivery drain. CPU windows include SSH control overhead; use longer trials to reduce its relative impact. RSS is a final snapshot, not a peak or average.
+- Accepted input, rejected points, RPC errors, scheduled/missed requests, latency buckets, delivered output, and value sums remain in JSON. The fixture uses integer value 1, so its expected sum equals accepted points. No missing measurements are inferred.
+- These are fixed-load measurements. They are neither a maximum-throughput search nor a production workload simulation. Repeat trials before interpreting small differences. A failed test can reflect client concurrency, ingress, export behavior, sink capacity, or network bandwidth.
+
+## Standalone Rust commands
+
+```sh
+otlpbench/traffic-rs/target/release/otlp-traffic sink \
+  --grpc-addr 127.0.0.1:14317 --http-addr 127.0.0.1:14318
+
+otlpbench/traffic-rs/target/release/otlp-traffic load \
+  --fixture otlp-rps-results/fixture-512.pb \
+  --endpoint http://127.0.0.1:14317 --rps 100000 \
+  --seconds 60 --connections 64 --concurrency 1024
+```
+
+The controller writes binary fixture files. `--sequence-offset` supports disjoint request IDs when manually distributing multiple generators; aggregate their counters and calibrate the combined load. Standalone commands bind loopback by default; expose them only on an isolated benchmark network. The sink accepts uncompressed OTLP protobuf over gRPC and HTTP, with 64 MiB message limits. It exposes local `/stats` and POST `/reset` controls; reset only after previous traffic has drained.
