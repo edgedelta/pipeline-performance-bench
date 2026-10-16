@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        vendor: [red, edgedelta, bindplane, otelcol, vector, fluentbit, fluentd]
+        vendor: [red, edgedelta, bindplane, otelcol, vector, fluentbit, fluentd, cribl]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:

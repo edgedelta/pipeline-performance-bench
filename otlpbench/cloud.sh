@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 vendor=$1
-[[ "$vendor" =~ ^(red|edgedelta|bindplane|otelcol|vector|fluentbit|fluentd)$ ]]
+[[ "$vendor" =~ ^(red|edgedelta|bindplane|otelcol|vector|fluentbit|fluentd|cribl)$ ]]
 terraform -chdir=otlpbench/infra init
 terraform -chdir=otlpbench/infra apply -auto-approve
 ip=$(terraform -chdir=otlpbench/infra output -raw ip)

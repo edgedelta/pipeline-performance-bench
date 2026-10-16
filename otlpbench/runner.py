@@ -104,6 +104,7 @@ class Monitor:
 
 
 def command(vendor, path, binary=None):
+    if vendor=='cribl': return [sys.executable,'-m','otlpbench.cribl',str(path.resolve())]
     commands = {'red': ['/opt/red/red','--config'], 'edgedelta': ['/opt/edgedelta/agent/edgedelta','-i','-c'], 'otelcol': ['/usr/bin/otelcol-contrib','--config'], 'bindplane': ['/opt/observiq-otel-collector/observiq-otel-collector','--config'], 'vector': ['/usr/local/bin/vector','--config'], 'fluentbit': ['/opt/fluent-bit/bin/fluent-bit','-c'], 'fluentd': ['/opt/fluent/bin/fluentd','--no-supervisor','-c']}
     result = commands[vendor]+[str(path.resolve())]
     if binary: result[0]=binary
@@ -127,9 +128,9 @@ def main():
     def save(): (out/'results.json').write_text(json.dumps(result,indent=2))
     try:
         ready(receiver,14317)
-        if args.vendor!='cribl':
-            binary=command(args.vendor,out/'unused',args.binary)[0]
-            version=subprocess.run([binary,'--version'],capture_output=True,text=True,timeout=10)
+        if True:
+            binary='/opt/cribl/bin/cribl' if args.vendor=='cribl' else command(args.vendor,out/'unused',args.binary)[0]
+            version=subprocess.run([binary,'version' if args.vendor=='cribl' else '--version'],capture_output=True,text=True,timeout=10)
             result['version']=(version.stdout+version.stderr).strip()[:2000]
             import hashlib
             h = hashlib.sha256()
@@ -152,7 +153,7 @@ def main():
                     row.update(status='not_configured',detail=reason); save(); continue
                 folder=out/f'{signal}-{scenario}'; folder.mkdir(exist_ok=True)
                 path=folder/('agent.conf' if args.vendor=='fluentd' else 'agent.yaml'); path.write_text(cfg)
-                env=dict(os.environ,ED_API_KEY='benchmark-local',ED_SKIP_CONF_DOWNLOAD='1',ED_BACKEND_DISABLED='1',ED_DISABLE_CONF_RELOAD='1',ED_COORDINATOR_CLIENT_DISABLED='1')
+                env=dict(os.environ,ED_API_KEY='benchmark-local',ED_SKIP_CONF_DOWNLOAD='1',ED_BACKEND_DISABLED='1',ED_DISABLE_CONF_RELOAD='1',ED_COORDINATOR_CLIENT_DISABLED='1',ED_DISABLE_LIVE_CAPTURE='1')
                 log=(folder/'agent.log').open('w')
                 p=subprocess.Popen(command(args.vendor,path,args.binary),env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                 try:
