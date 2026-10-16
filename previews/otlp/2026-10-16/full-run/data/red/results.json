@@ -1,0 +1,1779 @@
+{
+  "vendor": "red",
+  "commit": "b8f576ab56898cf0a21d4fc3cba847b4cb41b2b7",
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "cpu": "x86_64",
+  "logical_cpus": 8,
+  "batch": 512,
+  "concurrency": 4,
+  "compression": "none",
+  "seconds": 30,
+  "rows": [
+    {
+      "signal": "metrics",
+      "scenario": "pass-through",
+      "status": "correct",
+      "detail": "expected 512 records, received 512; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000095553999984,
+          "accepted_per_second": 989.8635138193939,
+          "ack_p95_ms": 4.5521880000194415,
+          "cpu_cores": 0.0030032494088445836,
+          "rss_mb": 38.48948720637584,
+          "peak_rss_mb": 47.546875,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 29696,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000084208999994,
+          "accepted_per_second": 9983.971975323466,
+          "ack_p95_ms": 3.6420349999843893,
+          "cpu_cores": 0.021014314617690426,
+          "rss_mb": 38.202181208053695,
+          "peak_rss_mb": 40.50390625,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 299520,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006774100001,
+          "accepted_per_second": 24985.543581809732,
+          "ack_p95_ms": 3.0588200000352117,
+          "cpu_cores": 0.045625892286809286,
+          "rss_mb": 40.38819679054054,
+          "peak_rss_mb": 48.01953125,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 749568,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000067269999988,
+          "accepted_per_second": 49988.15457656141,
+          "ack_p95_ms": 2.9684070000257634,
+          "cpu_cores": 0.08584144822836637,
+          "rss_mb": 41.862595016891895,
+          "peak_rss_mb": 46.0390625,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 1499648,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.003385409000032,
+          "accepted_per_second": 124982.16280870613,
+          "ack_p95_ms": 2.8439459999844985,
+          "cpu_cores": 0.1973778641264258,
+          "rss_mb": 46.5864917652027,
+          "peak_rss_mb": 53.16796875,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 3749888,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "full"
+    },
+    {
+      "signal": "metrics",
+      "scenario": "filter",
+      "status": "correct",
+      "detail": "expected 384 records, received 384; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000164955999992,
+          "accepted_per_second": 989.861223881732,
+          "ack_p95_ms": 5.398314999979448,
+          "cpu_cores": 0.005340454138584427,
+          "rss_mb": 48.54286388422819,
+          "peak_rss_mb": 56.8125,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 22272,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 22272.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00009616699998,
+          "accepted_per_second": 9983.967995724997,
+          "ack_p95_ms": 4.791467000018201,
+          "cpu_cores": 0.0453454529138051,
+          "rss_mb": 53.27920511744966,
+          "peak_rss_mb": 54.67578125,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 224640,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 224640.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006839599996,
+          "accepted_per_second": 24985.543036293315,
+          "ack_p95_ms": 4.2079659999672,
+          "cpu_cores": 0.10072598468925,
+          "rss_mb": 48.208132340604024,
+          "peak_rss_mb": 59.69921875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 562176,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 562176.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000066815999958,
+          "accepted_per_second": 49988.15533304718,
+          "ack_p95_ms": 4.09521999995377,
+          "cpu_cores": 0.19506706930965462,
+          "rss_mb": 54.89651076858108,
+          "peak_rss_mb": 60.34765625,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 1124736,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1124736.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00391505999994,
+          "accepted_per_second": 124979.95653237953,
+          "ack_p95_ms": 4.538568000043597,
+          "cpu_cores": 0.4682926391820954,
+          "rss_mb": 48.9169921875,
+          "peak_rss_mb": 54.51953125,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 2812416,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 2812416.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "full"
+    },
+    {
+      "signal": "metrics",
+      "scenario": "enrich",
+      "status": "correct",
+      "detail": "expected 512 records, received 512; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000159816000064,
+          "accepted_per_second": 989.8613934770492,
+          "ack_p95_ms": 6.617578000032154,
+          "cpu_cores": 0.006342143068547998,
+          "rss_mb": 34.428245595637584,
+          "peak_rss_mb": 36.50390625,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 29696,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000089715999934,
+          "accepted_per_second": 9983.970142604512,
+          "ack_p95_ms": 5.2280109999855995,
+          "cpu_cores": 0.05007667517160311,
+          "rss_mb": 35.45844693791946,
+          "peak_rss_mb": 39.57421875,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 299520,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000065823,
+          "accepted_per_second": 24985.54517921532,
+          "ack_p95_ms": 4.793121000034262,
+          "cpu_cores": 0.11873365758150037,
+          "rss_mb": 44.310559983221474,
+          "peak_rss_mb": 53.10546875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 749568,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006883100002,
+          "accepted_per_second": 49988.15197551701,
+          "ack_p95_ms": 4.834622000089439,
+          "cpu_cores": 0.23380616643172278,
+          "rss_mb": 47.2680004222973,
+          "peak_rss_mb": 50.53515625,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 1499648,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00506605800001,
+          "accepted_per_second": 124975.16228597662,
+          "ack_p95_ms": 5.111910999971769,
+          "cpu_cores": 0.5784702308267419,
+          "rss_mb": 48.358741554054056,
+          "peak_rss_mb": 51.8359375,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 3749888,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "full"
+    },
+    {
+      "signal": "metrics",
+      "scenario": "aggregate",
+      "status": "correct",
+      "detail": "512 input points \u2192 16 output points; grouped sums preserved=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000108796000063,
+          "accepted_per_second": 989.8630768952207,
+          "ack_p95_ms": 3.9690419999942606,
+          "cpu_cores": 0.004673167281309581,
+          "rss_mb": 31.79703229865772,
+          "peak_rss_mb": 33.62890625,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 928,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 25,
+          "output_value_sum": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000107741999955,
+          "accepted_per_second": 9983.964143591189,
+          "ack_p95_ms": 3.456741000036345,
+          "cpu_cores": 0.04404786767085828,
+          "rss_mb": 34.65947462248322,
+          "peak_rss_mb": 44.203125,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 9360,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 25,
+          "output_value_sum": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000069190999966,
+          "accepted_per_second": 24985.54237417795,
+          "ack_p95_ms": 3.200399999968795,
+          "cpu_cores": 0.10635391557056259,
+          "rss_mb": 45.145108011744966,
+          "peak_rss_mb": 56.02734375,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 23424,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 25,
+          "output_value_sum": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000068293999902,
+          "accepted_per_second": 49988.15287030309,
+          "ack_p95_ms": 3.0770920000122715,
+          "cpu_cores": 0.20877474117337413,
+          "rss_mb": 60.6724292652027,
+          "peak_rss_mb": 84.16796875,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 46864,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 25,
+          "output_value_sum": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.003739569000118,
+          "accepted_per_second": 124980.68753650917,
+          "ack_p95_ms": 2.8850319999946805,
+          "cpu_cores": 0.5048860063234121,
+          "rss_mb": 93.87653082770271,
+          "peak_rss_mb": 131.0,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 117184,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 25,
+          "output_value_sum": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "full"
+    },
+    {
+      "signal": "metrics",
+      "scenario": "rollup",
+      "status": "correct",
+      "detail": "512 input points \u2192 128 output points; grouped sums preserved=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000105262999796,
+          "accepted_per_second": 989.8631934676956,
+          "ack_p95_ms": 4.55474199998207,
+          "cpu_cores": 0.006341576792974825,
+          "rss_mb": 37.79118603187919,
+          "peak_rss_mb": 54.14453125,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 7424,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000104368999928,
+          "accepted_per_second": 9983.965266117662,
+          "ack_p95_ms": 3.8286469998638495,
+          "cpu_cores": 0.05440168662989538,
+          "rss_mb": 79.87174916107382,
+          "peak_rss_mb": 209.26171875,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 74880,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000066668999807,
+          "accepted_per_second": 24985.544474624676,
+          "ack_p95_ms": 3.3639180001046043,
+          "cpu_cores": 0.13272848379440735,
+          "rss_mb": 165.45912856543623,
+          "peak_rss_mb": 490.9296875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 187392,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000066452000056,
+          "accepted_per_second": 49988.15593956863,
+          "ack_p95_ms": 3.533475000040198,
+          "cpu_cores": 0.26483882682362486,
+          "rss_mb": 316.9278927364865,
+          "peak_rss_mb": 924.421875,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 374912,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00326360600002,
+          "accepted_per_second": 124982.6701935886,
+          "ack_p95_ms": 5.301345000134461,
+          "cpu_cores": 0.6852685189563997,
+          "rss_mb": 877.6796605603448,
+          "peak_rss_mb": 2323.37109375,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 937472,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "full"
+    },
+    {
+      "signal": "metrics",
+      "scenario": "combined",
+      "status": "correct",
+      "detail": "512 input points \u2192 4 output points; grouped sums preserved=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000143021000042,
+          "accepted_per_second": 989.8619476318115,
+          "ack_p95_ms": 3.490918000011334,
+          "cpu_cores": 0.004683534862096084,
+          "rss_mb": 32.100120595637584,
+          "peak_rss_mb": 34.16796875,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 232,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000118198999985,
+          "accepted_per_second": 9983.960663527789,
+          "ack_p95_ms": 3.0772970000043642,
+          "cpu_cores": 0.040133679717923455,
+          "rss_mb": 36.436870805369125,
+          "peak_rss_mb": 46.546875,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 2340,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006573600001,
+          "accepted_per_second": 24985.545251673237,
+          "ack_p95_ms": 2.9339899999740737,
+          "cpu_cores": 0.09988950882339216,
+          "rss_mb": 36.19662332214765,
+          "peak_rss_mb": 47.29296875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 5856,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000065231000008,
+          "accepted_per_second": 49988.15797408223,
+          "ack_p95_ms": 2.9044080000630856,
+          "cpu_cores": 0.19957403476027086,
+          "rss_mb": 45.648568582214764,
+          "peak_rss_mb": 69.8359375,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 11716,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.003067525999995,
+          "accepted_per_second": 124983.48699680224,
+          "ack_p95_ms": 2.8356619999385657,
+          "cpu_cores": 0.4861504815142554,
+          "rss_mb": 72.71758868243244,
+          "peak_rss_mb": 150.859375,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 29296,
+            "traces": 0
+          },
+          "status": "measured",
+          "drain_seconds": 70,
+          "output_value_sum": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "b8f576ab56898cf0a21d4fc3cba847b4cb41b2b7",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "combined"
+    },
+    {
+      "signal": "traces",
+      "scenario": "pass-through",
+      "status": "correct",
+      "detail": "expected 512 records, received 512; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000115252,
+          "accepted_per_second": 989.862863877507,
+          "ack_p95_ms": 5.909302000020489,
+          "cpu_cores": 0.006684481465073089,
+          "rss_mb": 52.764786073825505,
+          "peak_rss_mb": 59.88671875,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 29696
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000183833999984,
+          "accepted_per_second": 9983.938820419702,
+          "ack_p95_ms": 4.5955880000008165,
+          "cpu_cores": 0.0509217543404948,
+          "rss_mb": 58.65122767857143,
+          "peak_rss_mb": 63.4609375,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 299520
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006615800001,
+          "accepted_per_second": 24985.544900210676,
+          "ack_p95_ms": 3.8413499999592204,
+          "cpu_cores": 0.11809192171265209,
+          "rss_mb": 52.53750527871622,
+          "peak_rss_mb": 59.91796875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 749568
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000068843999998,
+          "accepted_per_second": 49988.151953855566,
+          "ack_p95_ms": 3.9741329999856134,
+          "cpu_cores": 0.24019529648339924,
+          "rss_mb": 58.38305165816327,
+          "peak_rss_mb": 63.2734375,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 1499648
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.005115182999987,
+          "accepted_per_second": 124974.95767403605,
+          "ack_p95_ms": 4.768475999981092,
+          "cpu_cores": 0.6000662735644899,
+          "rss_mb": 66.18978528911565,
+          "peak_rss_mb": 71.4453125,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 3749888
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "filter",
+      "status": "correct",
+      "detail": "expected 384 records, received 384; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00010353800002,
+          "accepted_per_second": 989.8632503846254,
+          "ack_p95_ms": 7.86054000002423,
+          "cpu_cores": 0.01103057642030142,
+          "rss_mb": 53.48919882550336,
+          "peak_rss_mb": 63.66015625,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 22272
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 22272.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000140080999984,
+          "accepted_per_second": 9983.953381260886,
+          "ack_p95_ms": 6.722139999965293,
+          "cpu_cores": 0.0929680853603571,
+          "rss_mb": 54.231154983108105,
+          "peak_rss_mb": 57.71875,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 224640
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 224640.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000073883000027,
+          "accepted_per_second": 24985.538466448692,
+          "ack_p95_ms": 6.134320000001026,
+          "cpu_cores": 0.22402244407623925,
+          "rss_mb": 54.478050595238095,
+          "peak_rss_mb": 57.5859375,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 562176
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 562176.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.002940263000028,
+          "accepted_per_second": 49983.36785842897,
+          "ack_p95_ms": 6.1548030000722065,
+          "cpu_cores": 0.44572327417621505,
+          "rss_mb": 58.705289273648646,
+          "peak_rss_mb": 67.48046875,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 1124736
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1124736.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.008292116000007,
+          "accepted_per_second": 124961.72676220423,
+          "ack_p95_ms": 9.94321099994977,
+          "cpu_cores": 1.2168413106326403,
+          "rss_mb": 70.1871254280822,
+          "peak_rss_mb": 81.44140625,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 2812416
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 2812416.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "enrich",
+      "status": "correct",
+      "detail": "expected 512 records, received 512; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000119627000004,
+          "accepted_per_second": 989.8627195230816,
+          "ack_p95_ms": 9.483595000006062,
+          "cpu_cores": 0.012700069419816018,
+          "rss_mb": 50.42882235738255,
+          "peak_rss_mb": 57.9765625,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 29696
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000077502000067,
+          "accepted_per_second": 9983.97420740101,
+          "ack_p95_ms": 7.538275999991129,
+          "cpu_cores": 0.10851493973067541,
+          "rss_mb": 47.147777660472975,
+          "peak_rss_mb": 51.96484375,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 299520
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000071903000048,
+          "accepted_per_second": 24985.54011549026,
+          "ack_p95_ms": 6.957972000009249,
+          "cpu_cores": 0.26266459258289343,
+          "rss_mb": 53.606656461148646,
+          "peak_rss_mb": 61.671875,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 749568
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.002057056000012,
+          "accepted_per_second": 49984.839279548345,
+          "ack_p95_ms": 7.089440999948238,
+          "cpu_cores": 0.5286922966769722,
+          "rss_mb": 53.57467049319728,
+          "peak_rss_mb": 55.9921875,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 1499648
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.008527662999995,
+          "accepted_per_second": 124960.74589569245,
+          "ack_p95_ms": 13.513040000020737,
+          "cpu_cores": 1.504386955188896,
+          "rss_mb": 74.47971960616438,
+          "peak_rss_mb": 80.8046875,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 3749888
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "mask",
+      "status": "correct",
+      "detail": "expected 512 records, received 512; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000090588000035,
+          "accepted_per_second": 989.8636776743044,
+          "ack_p95_ms": 9.232202000021061,
+          "cpu_cores": 0.01269951717573975,
+          "rss_mb": 42.31412541946309,
+          "peak_rss_mb": 48.859375,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 29696
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 29696.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000168135999957,
+          "accepted_per_second": 9983.944044652819,
+          "ack_p95_ms": 7.639463999908003,
+          "cpu_cores": 0.1070528213574413,
+          "rss_mb": 59.42065263605442,
+          "peak_rss_mb": 63.37109375,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 299520
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 299520.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000032201999943,
+          "accepted_per_second": 24985.573180485797,
+          "ack_p95_ms": 7.209608000039225,
+          "cpu_cores": 0.2661506096086023,
+          "rss_mb": 56.424593538851354,
+          "peak_rss_mb": 63.1484375,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 749568
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749568.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00170085000002,
+          "accepted_per_second": 49985.43274255729,
+          "ack_p95_ms": 6.932234000032622,
+          "cpu_cores": 0.523666695578559,
+          "rss_mb": 59.49444621598639,
+          "peak_rss_mb": 63.36328125,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 1499648
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1499648.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.008947640999963,
+          "accepted_per_second": 124958.99705848684,
+          "ack_p95_ms": 13.22775999994974,
+          "cpu_cores": 1.4826962212682917,
+          "rss_mb": 82.24547838184931,
+          "peak_rss_mb": 113.27734375,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 3749888
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 3749888.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "sample",
+      "status": "correct",
+      "detail": "retained 51.6%; complete traces=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000146036999922,
+          "accepted_per_second": 989.8618481181787,
+          "ack_p95_ms": 6.644184000151654,
+          "cpu_cores": 0.009024651621650812,
+          "rss_mb": 45.762819840604024,
+          "peak_rss_mb": 48.296875,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 14882
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 14848.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000081448999936,
+          "accepted_per_second": 9983.972893846414,
+          "ack_p95_ms": 5.544547999988936,
+          "cpu_cores": 0.0763144243520306,
+          "rss_mb": 54.256123310810814,
+          "peak_rss_mb": 57.9765625,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 149924
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 149760.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006581799994,
+          "accepted_per_second": 24985.54518337962,
+          "ack_p95_ms": 5.39726600004542,
+          "cpu_cores": 0.18848555220264612,
+          "rss_mb": 62.85990287162162,
+          "peak_rss_mb": 77.75,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 374594
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 374784.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.001747955999917,
+          "accepted_per_second": 49985.354260003776,
+          "ack_p95_ms": 5.37989400004335,
+          "cpu_cores": 0.3761339834013824,
+          "rss_mb": 54.469990498310814,
+          "peak_rss_mb": 58.9609375,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 751456
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 749824.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.007349159000114,
+          "accepted_per_second": 124965.65358474175,
+          "ack_p95_ms": 9.664725999982693,
+          "cpu_cores": 1.0514266429913477,
+          "rss_mb": 82.7588024400685,
+          "peak_rss_mb": 94.796875,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 1875638
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 1874944.0,
+          "delivery_verified": true
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "tail",
+      "status": "correct",
+      "detail": "expected 128 records, received 128; operation matches=True",
+      "measurements": [
+        {
+          "scheduled": 29696,
+          "accepted": 29696,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00010489400006,
+          "accepted_per_second": 989.8632056429616,
+          "ack_p95_ms": 3.8078890001997934,
+          "cpu_cores": 0.008021669096768843,
+          "rss_mb": 47.91241086409396,
+          "peak_rss_mb": 61.546875,
+          "rate": 1000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 7424
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 7424.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 299520,
+          "accepted": 299520,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00008209900011,
+          "accepted_per_second": 9983.972677527536,
+          "ack_p95_ms": 3.266911000082473,
+          "cpu_cores": 0.07186306242529095,
+          "rss_mb": 98.35282939189189,
+          "peak_rss_mb": 109.97265625,
+          "rate": 10000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 74880
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 74880.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 749568,
+          "accepted": 749568,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.00006719299995,
+          "accepted_per_second": 24985.544038211356,
+          "ack_p95_ms": 27.46268299983967,
+          "cpu_cores": 0.18820368179302902,
+          "rss_mb": 196.15340667517006,
+          "peak_rss_mb": 238.90625,
+          "rate": 25000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 187392
+          },
+          "status": "measured",
+          "drain_seconds": 4,
+          "expected_output": 187392.0,
+          "delivery_verified": true
+        },
+        {
+          "scheduled": 1499648,
+          "accepted": 1499648,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.000078449000057,
+          "accepted_per_second": 49988.13594935733,
+          "ack_p95_ms": 34.77811200014003,
+          "cpu_cores": 0.3062666716407377,
+          "rss_mb": 300.40550595238096,
+          "peak_rss_mb": 348.26953125,
+          "rate": 50000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 255622
+          },
+          "status": "delivery_mismatch",
+          "drain_seconds": 4,
+          "expected_output": 374912.0,
+          "delivery_verified": false
+        },
+        {
+          "scheduled": 3749888,
+          "accepted": 3749888,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 30.004296706999867,
+          "accepted_per_second": 124978.3668192152,
+          "ack_p95_ms": 4.606297999998787,
+          "cpu_cores": 0.39228020577713707,
+          "rss_mb": 365.4427614795918,
+          "peak_rss_mb": 396.80859375,
+          "rate": 125000,
+          "delivered": {
+            "metrics": 0,
+            "traces": 25000
+          },
+          "status": "delivery_mismatch",
+          "drain_seconds": 4,
+          "expected_output": 937472.0,
+          "delivery_verified": false
+        }
+      ],
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    },
+    {
+      "signal": "traces",
+      "scenario": "metrics",
+      "status": "not_configured",
+      "detail": "Span-to-metrics adapter pending; extract_metric is log-oriented.",
+      "benchmark_commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "version": "red 3.15.0",
+      "run_group": "traces"
+    }
+  ],
+  "calibration": [
+    {
+      "scheduled": 9728,
+      "accepted": 9728,
+      "rejected": 0,
+      "rpc_errors": 0,
+      "send_seconds": 10.000110151000001,
+      "accepted_per_second": 972.7892846287508,
+      "ack_p95_ms": 2.79621900000393,
+      "signal": "metrics",
+      "rate": 1000,
+      "delivered": 9728,
+      "passed": true
+    },
+    {
+      "scheduled": 99840,
+      "accepted": 99840,
+      "rejected": 0,
+      "rpc_errors": 0,
+      "send_seconds": 10.000066222000001,
+      "accepted_per_second": 9983.933884393029,
+      "ack_p95_ms": 1.7491589999991675,
+      "signal": "metrics",
+      "rate": 10000,
+      "delivered": 99840,
+      "passed": true
+    },
+    {
+      "scheduled": 249856,
+      "accepted": 249856,
+      "rejected": 0,
+      "rpc_errors": 0,
+      "send_seconds": 10.000066505999996,
+      "accepted_per_second": 24985.43383187377,
+      "ack_p95_ms": 1.524232999997821,
+      "signal": "metrics",
+      "rate": 25000,
+      "delivered": 249856,
+      "passed": true
+    },
+    {
+      "scheduled": 499712,
+      "accepted": 499712,
+      "rejected": 0,
+      "rpc_errors": 0,
+      "send_seconds": 10.00006662300001,
+      "accepted_per_second": 49970.86707909221,
+      "ack_p95_ms": 1.9813279999993938,
+      "signal": "metrics",
+      "rate": 50000,
+      "delivered": 499712,
+      "passed": true
+    },
+    {
+      "scheduled": 1249792,
+      "accepted": 1249792,
+      "rejected": 0,
+      "rpc_errors": 0,
+      "send_seconds": 10.000715943999992,
+      "accepted_per_second": 124970.2528297309,
+      "ack_p95_ms": 1.7198179999979857,
+      "signal": "metrics",
+      "rate": 125000,
+      "delivered": 1249792,
+      "passed": true
+    }
+  ],
+  "version": "red 3.15.0",
+  "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+  "source_runs": [
+    {
+      "commit": "9a7a1c0de85b9d02f424ca3f21558ae59f5c1966",
+      "version": "red 3.15.0",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "calibration": [
+        {
+          "scheduled": 9728,
+          "accepted": 9728,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000142279999992,
+          "accepted_per_second": 972.7861591985278,
+          "ack_p95_ms": 3.11330699999246,
+          "signal": "metrics",
+          "rate": 1000,
+          "delivered": 9728,
+          "passed": true
+        },
+        {
+          "scheduled": 99840,
+          "accepted": 99840,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000068162000005,
+          "accepted_per_second": 9983.931947523055,
+          "ack_p95_ms": 2.0384099999972705,
+          "signal": "metrics",
+          "rate": 10000,
+          "delivered": 99840,
+          "passed": true
+        },
+        {
+          "scheduled": 249856,
+          "accepted": 249856,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000067548000004,
+          "accepted_per_second": 24985.43122840913,
+          "ack_p95_ms": 1.715442000005396,
+          "signal": "metrics",
+          "rate": 25000,
+          "delivered": 249856,
+          "passed": true
+        },
+        {
+          "scheduled": 499712,
+          "accepted": 499712,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000045277000012,
+          "accepted_per_second": 49970.9737464221,
+          "ack_p95_ms": 2.0415510000049153,
+          "signal": "metrics",
+          "rate": 50000,
+          "delivered": 499712,
+          "passed": true
+        },
+        {
+          "scheduled": 1249792,
+          "accepted": 1249792,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.001253278999982,
+          "accepted_per_second": 124963.53858213316,
+          "ack_p95_ms": 1.7677719999937835,
+          "signal": "metrics",
+          "rate": 125000,
+          "delivered": 1249792,
+          "passed": true
+        },
+        {
+          "scheduled": 9728,
+          "accepted": 9728,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000176583000012,
+          "accepted_per_second": 972.7828223090876,
+          "ack_p95_ms": 2.642481999998836,
+          "signal": "traces",
+          "rate": 1000,
+          "delivered": 9728,
+          "passed": true
+        },
+        {
+          "scheduled": 99840,
+          "accepted": 99840,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000066412999985,
+          "accepted_per_second": 9983.933693701176,
+          "ack_p95_ms": 2.176892999983693,
+          "signal": "traces",
+          "rate": 10000,
+          "delivered": 99840,
+          "passed": true
+        },
+        {
+          "scheduled": 249856,
+          "accepted": 249856,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000067606999977,
+          "accepted_per_second": 24985.43108099615,
+          "ack_p95_ms": 1.9957860000090477,
+          "signal": "traces",
+          "rate": 25000,
+          "delivered": 249856,
+          "passed": true
+        },
+        {
+          "scheduled": 499712,
+          "accepted": 499712,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000067242,
+          "accepted_per_second": 49970.86398591639,
+          "ack_p95_ms": 1.9445939999798156,
+          "signal": "traces",
+          "rate": 50000,
+          "delivered": 499712,
+          "passed": true
+        },
+        {
+          "scheduled": 1249792,
+          "accepted": 1249792,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.002937575000004,
+          "accepted_per_second": 124942.49720437743,
+          "ack_p95_ms": 4.086831000023494,
+          "signal": "traces",
+          "rate": 125000,
+          "delivered": 1249792,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "commit": "8ea59cf1371bd5ec340af2ec608dbfa054a88623",
+      "version": "red 3.15.0",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "calibration": [
+        {
+          "scheduled": 9728,
+          "accepted": 9728,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000101443000005,
+          "accepted_per_second": 972.7901317250662,
+          "ack_p95_ms": 3.0606159999990723,
+          "signal": "traces",
+          "rate": 1000,
+          "delivered": 9728,
+          "passed": true
+        },
+        {
+          "scheduled": 99840,
+          "accepted": 99840,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.00006519499999,
+          "accepted_per_second": 9983.934909736365,
+          "ack_p95_ms": 2.04838999999879,
+          "signal": "traces",
+          "rate": 10000,
+          "delivered": 99840,
+          "passed": true
+        },
+        {
+          "scheduled": 249856,
+          "accepted": 249856,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000066830000009,
+          "accepted_per_second": 24985.43302235109,
+          "ack_p95_ms": 1.7510200000003806,
+          "signal": "traces",
+          "rate": 25000,
+          "delivered": 249856,
+          "passed": true
+        },
+        {
+          "scheduled": 499712,
+          "accepted": 499712,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000067406,
+          "accepted_per_second": 49970.863166399744,
+          "ack_p95_ms": 1.9957309999938389,
+          "signal": "traces",
+          "rate": 50000,
+          "delivered": 499712,
+          "passed": true
+        },
+        {
+          "scheduled": 1249792,
+          "accepted": 1249792,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.002139650999993,
+          "accepted_per_second": 124952.46453343095,
+          "ack_p95_ms": 4.12921500000607,
+          "signal": "traces",
+          "rate": 125000,
+          "delivered": 1249792,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "commit": "b8f576ab56898cf0a21d4fc3cba847b4cb41b2b7",
+      "version": "red 3.15.0",
+      "binary_sha256": "a6a3cced7c870bddd4308c9a7dea970423afb11ff539d8600afeaf4e748a72ad",
+      "calibration": [
+        {
+          "scheduled": 9728,
+          "accepted": 9728,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000110151000001,
+          "accepted_per_second": 972.7892846287508,
+          "ack_p95_ms": 2.79621900000393,
+          "signal": "metrics",
+          "rate": 1000,
+          "delivered": 9728,
+          "passed": true
+        },
+        {
+          "scheduled": 99840,
+          "accepted": 99840,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000066222000001,
+          "accepted_per_second": 9983.933884393029,
+          "ack_p95_ms": 1.7491589999991675,
+          "signal": "metrics",
+          "rate": 10000,
+          "delivered": 99840,
+          "passed": true
+        },
+        {
+          "scheduled": 249856,
+          "accepted": 249856,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000066505999996,
+          "accepted_per_second": 24985.43383187377,
+          "ack_p95_ms": 1.524232999997821,
+          "signal": "metrics",
+          "rate": 25000,
+          "delivered": 249856,
+          "passed": true
+        },
+        {
+          "scheduled": 499712,
+          "accepted": 499712,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.00006662300001,
+          "accepted_per_second": 49970.86707909221,
+          "ack_p95_ms": 1.9813279999993938,
+          "signal": "metrics",
+          "rate": 50000,
+          "delivered": 499712,
+          "passed": true
+        },
+        {
+          "scheduled": 1249792,
+          "accepted": 1249792,
+          "rejected": 0,
+          "rpc_errors": 0,
+          "send_seconds": 10.000715943999992,
+          "accepted_per_second": 124970.2528297309,
+          "ack_p95_ms": 1.7198179999979857,
+          "signal": "metrics",
+          "rate": 125000,
+          "delivered": 1249792,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
