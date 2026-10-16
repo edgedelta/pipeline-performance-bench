@@ -1,0 +1,24 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+exporters:
+  otlphttp:
+    endpoint: http://172.31.2.159:14318
+    compression: none
+    retry_on_failure:
+      enabled: false
+    sending_queue:
+      enabled: false
+    max_idle_conns: 1024
+    max_idle_conns_per_host: 1024
+    max_conns_per_host: 1024
+service:
+  pipelines:
+    metrics:
+      receivers:
+      - otlp
+      processors: []
+      exporters:
+      - otlphttp

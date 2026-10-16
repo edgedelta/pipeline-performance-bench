@@ -1,3 +1,5 @@
+> A newer [automatic-concurrency comparison](../automatic-output/README.md) includes the unreleased Rust PR #19 build and a fresh published-release baseline. This report retains the earlier released-agent measurements.
+
 # Pass-Through with matched output batches
 
 [Download the interactive report](index.html). This supersedes the earlier request-rate comparison, whose output batching differed between agents.

@@ -76,6 +76,17 @@ resource "aws_instance" "bench" {
   vpc_security_group_ids      = [aws_security_group.bench.id]
   subnet_id                   = tolist(data.aws_subnets.default.ids)[0]
   associate_public_ip_address = true
+  user_data                   = <<-EOF
+    #cloud-config
+    write_files:
+      - path: /etc/systemd/system/ssh.service.d/benchmark-limits.conf
+        content: |
+          [Service]
+          LimitNOFILE=1048576
+    runcmd:
+      - [systemctl, daemon-reload]
+      - [systemctl, restart, ssh]
+  EOF
   root_block_device {
     volume_size           = 30
     volume_type           = "gp3"

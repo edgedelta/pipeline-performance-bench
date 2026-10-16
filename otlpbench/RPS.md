@@ -52,3 +52,9 @@ otlpbench/traffic-rs/target/release/otlp-traffic load \
 ```
 
 The controller writes binary fixture files. `--sequence-offset` supports disjoint request IDs when manually distributing multiple generators; aggregate their counters and calibrate the combined load. Standalone commands bind loopback by default; expose them only on an isolated benchmark network. The sink accepts uncompressed OTLP protobuf over gRPC and HTTP, with 64 MiB message limits. It exposes local `/stats` and POST `/reset` controls; reset only after previous traffic has drained.
+
+## Testing an unreleased Rust exporter
+
+Pass `--red-binary /absolute/path/to/linux/red` to `otlpbench.cloud_rps` to install an optimized Linux build instead of the published release. Binary hashes remain in every measured row. Record its source commit alongside the report; the binary's release version alone does not identify a development build.
+
+OTLP concurrency in the development agent follows incoming requests; no exporter worker-count setting is needed. Host SSH descriptor limits are configured by cloud-init, and remote processes use a soft limit of 65,536.
