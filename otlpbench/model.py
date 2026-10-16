@@ -33,7 +33,7 @@ def fixture(signal, batch=512, sequence=0, base=None):
         metric.sum.aggregation_temporality = AGGREGATION_TEMPORALITY_DELTA
         metric.sum.is_monotonic = True
         for i in range(batch):
-            ts = (base + 5 + (i // 64 % 6) * 10) * 10**9
+            ts = (base + 5 + (i // 64) * 10) * 10**9
             p = metric.sum.data_points.add(as_int=1, time_unix_nano=ts, start_time_unix_nano=ts-10*10**9)
             attrs(p.attributes, {'host': str(i % 64), 'route': 'health' if i % 4 == 0 else 'api'})
         return req
@@ -61,12 +61,12 @@ def records(signal, request):
                 for m in s.metrics:
                     kind = m.WhichOneof('data')
                     for p in getattr(m, kind).data_points:
-                        yield {'signal': signal, 'resource': attributes(r.resource.attributes), 'scope': s.scope.name, 'name': m.name, 'kind': kind, 'temporality': getattr(getattr(m,kind), 'aggregation_temporality', None), 'attributes': attributes(p.attributes), 'time': p.time_unix_nano, 'start': p.start_time_unix_nano, 'value': getattr(p, p.WhichOneof('value')) if kind in ('sum','gauge') else p.count, 'point': p.SerializeToString().hex()}
+                        yield {'signal': signal, 'resource': attributes(r.resource.attributes), 'scope': s.scope.name, 'name': m.name, 'unit': m.unit, 'monotonic': getattr(getattr(m,kind), 'is_monotonic', None), 'kind': kind, 'temporality': getattr(getattr(m,kind), 'aggregation_temporality', None), 'attributes': attributes(p.attributes), 'time': p.time_unix_nano, 'start': p.start_time_unix_nano, 'value': getattr(p, p.WhichOneof('value')) if kind in ('sum','gauge') else p.count, 'histogram': {'sum': p.sum, 'bounds': list(p.explicit_bounds), 'buckets': list(p.bucket_counts)} if kind=='histogram' else None, 'point': p.SerializeToString().hex()}
     else:
         for r in request.resource_spans:
             for s in r.scope_spans:
                 for p in s.spans:
-                    yield {'signal': signal, 'resource': attributes(r.resource.attributes), 'scope': s.scope.name, 'trace_id': p.trace_id.hex(), 'span_id': p.span_id.hex(), 'parent': p.parent_span_id.hex(), 'name': p.name, 'attributes': attributes(p.attributes), 'time': p.start_time_unix_nano, 'end': p.end_time_unix_nano, 'status': p.status.code, 'events': [x.SerializeToString().hex() for x in p.events], 'links': [x.SerializeToString().hex() for x in p.links]}
+                    yield {'signal': signal, 'resource': attributes(r.resource.attributes), 'scope': s.scope.name, 'trace_id': p.trace_id.hex(), 'span_id': p.span_id.hex(), 'parent': p.parent_span_id.hex(), 'name': p.name, 'kind': p.kind, 'trace_state': p.trace_state, 'attributes': attributes(p.attributes), 'time': p.start_time_unix_nano, 'end': p.end_time_unix_nano, 'status': p.status.code, 'events': [x.SerializeToString().hex() for x in p.events], 'links': [x.SerializeToString().hex() for x in p.links]}
 
 
 def expected(signal, scenario, sent):
@@ -100,7 +100,7 @@ def validate(signal, scenario, sent, received):
     """Return evidence rather than claiming every configured pipeline is equivalent."""
     from collections import Counter, defaultdict
     import json
-    received = [dict(r) for r in received]
+    received = [dict(r, attributes=dict(r['attributes'])) for r in received]
     for r in received:
         r.pop('point', None)
         # Edge Delta copies scope identity into attributes in addition to its OTLP scope.
@@ -126,8 +126,11 @@ def validate(signal, scenario, sent, received):
                 key=(r['name'],tuple(sorted(r['attributes'].items())),tuple(sorted(r['resource'].items())))
                 if key not in groups or r['time']>=groups[key]['time']: groups[key]=r
             return sum(r['value'] for r in groups.values())
-        ok=totals(sums)==len(sent) and totals(hists)==len(sent)
-        return ok, f'span count={len(sent)}, generated counter={totals(sums)}, histogram count={totals(hists)}'
+        errors=[r for r in sums if str(r['attributes'].get('status.code','')).upper() in ('ERROR','STATUS_CODE_ERROR','2')]
+        error_count=sum(r['status']==2 for r in sent)
+        latency_ok=bool(hists) and all(abs(r['histogram']['sum']-r['value']*20)<.001 and sum(r['histogram']['buckets'])==r['value'] for r in hists)
+        ok=totals(sums)==len(sent) and totals(hists)==len(sent) and totals(errors)==error_count and latency_ok
+        return ok, f'span count={len(sent)}, generated counter={totals(sums)}, histogram count={totals(hists)}, errors={totals(errors)}/{error_count}, latency_sum_valid={latency_ok}'
     want=expected(signal,scenario,sent)
     canonical=lambda r: json.dumps(r,sort_keys=True)
     a,b=Counter(map(canonical,want)),Counter(map(canonical,received))

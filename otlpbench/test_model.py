@@ -24,7 +24,7 @@ class ContractTests(unittest.TestCase):
     def test_batching_is_not_rollup(self):
         sent=list(records('metrics',fixture('metrics')))
         self.assertFalse(validate('metrics','rollup',sent,sent)[0])
-        for scenario,n in [('aggregate',12),('rollup',64),('combined',2)]:
+        for scenario,n in [('aggregate',16),('rollup',128),('combined',4)]:
             with self.subTest(scenario=scenario):
                 output=expected('metrics',scenario,sent)
                 self.assertEqual(len(output),n)
