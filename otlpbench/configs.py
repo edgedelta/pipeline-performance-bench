@@ -96,7 +96,7 @@ visit(__e);"""
             if scenario in ('enrich','mask'):
                 k,v = ('bench.enriched','yes') if scenario=='enrich' else ('secret','REDACTED')
                 action = f'items.each {{ |p| p["attributes"].reject! {{ |a| a["key"]=="{k}" }}; p["attributes"] << {{"key"=>"{k}","value"=>{{"stringValue"=>"{v}"}}}} }}'
-            if scenario=='sample': action = 'items.select! { |p| p["traceId"][-1].to_i(16) < 8 }'
+            if scenario=='sample': action = 'require "digest"; items.select! { |p| Digest::SHA256.hexdigest(p["traceId"])[-1].to_i(16) < 8 }'
             if scenario=='aggregate': action = 'items.replace(items.group_by { |p| [p["timeUnixNano"],p["attributes"].reject { |a| a["key"]=="host" }] }.map { |key,ps| q=ps.first.dup; q["attributes"]=key[1]; q.delete("asInt"); q["asDouble"]=ps.sum { |p| (p["asInt"] || p["asDouble"]).to_f }; q })'
             body = 'x["resourceMetrics"].each { |r| r["scopeMetrics"].each { |s| s["metrics"].each { |m| items=m["sum"]["dataPoints"]; '+action+' } } }' if signal=='metrics' else 'x["resourceSpans"].each { |r| r["scopeSpans"].each { |s| items=s["spans"]; '+action+' } }'
             expression = 'x=JSON.parse(record["message"]); '+body+'; JSON.generate(x)'
