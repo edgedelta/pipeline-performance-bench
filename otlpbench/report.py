@@ -35,7 +35,7 @@ def render(root):
         lines += [f"### {VENDORS[vendor]}", '', f"Commit: `{d['commit']}`. Binary SHA-256: `{d.get('binary_sha256','unavailable')}`.", '']
         for row in d['rows']:
             lines.append(f"- {row['signal']}/{row['scenario']}: **{row['status']}** — {row.get('detail','')}")
-    lines += ['', 'Missing adapters (`not_configured`) are harness work remaining, not proof that a vendor cannot support the scenario. Raw configurations, logs, correctness captures, calibration and measurements are in the workflow artifacts. No release or public website is updated by this workflow.', '']
+    lines += ['', 'Missing adapters (`not_configured`) are harness work remaining, not proof that a vendor cannot support the scenario. Raw configurations, correctness captures, calibration and measurements are in the accompanying evidence archive. Each result records its benchmark commit and binary hash. No release or public website is updated by this workflow.', '']
     return '\n'.join(lines)
 
 

@@ -203,14 +203,14 @@ def main():
                             delta={k:v-baseline[k] for k,v in snapshot['derived'].items()}
                             measurement['derived_metrics']=delta
                             measurement['delivery_verified']=(delta['calls']==measurement['accepted'] and delta['histogram_count']==measurement['accepted'] and delta['errors']==measurement['accepted']/8 and abs(delta['histogram_sum_ms']-measurement['accepted']*20)<.01)
-                            if not measurement['delivery_verified']: measurement['status']='delivery_shortfall'
+                            if not measurement['delivery_verified']: measurement['status']='delivery_mismatch'
                         else:
                             fraction = .5 if scenario=='sample' else len(expected(signal,scenario,sent))/len(sent)
                             expected_count = measurement['accepted']*fraction
                             got = delivered[signal]
                             measurement['expected_output'] = expected_count
                             measurement['delivery_verified'] = abs(got-expected_count)<=expected_count*.1 if scenario=='sample' else got==expected_count
-                            if not measurement['delivery_verified']: measurement['status']='delivery_shortfall'
+                            if not measurement['delivery_verified']: measurement['status']='delivery_mismatch'
                         if measurement['accepted_per_second'] < rate*.95: measurement['status']='input_shortfall'
                         row['measurements'].append(measurement)
                         stop(p)
