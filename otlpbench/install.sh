@@ -2,7 +2,7 @@
 set -euo pipefail
 vendor=$1
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3-venv jq curl
+sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq python3-venv jq curl
 python3 -m venv .otlp-venv
 .otlp-venv/bin/pip install -r otlpbench/requirements.txt
 case "$vendor" in

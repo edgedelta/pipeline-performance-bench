@@ -7,12 +7,12 @@ terraform -chdir=otlpbench/infra apply -auto-approve
 ip=$(terraform -chdir=otlpbench/infra output -raw ip)
 key=otlpbench/infra/otlp-key.pem
 # Terraform's local provider resolves filenames relative to its working directory.
-opts=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ConnectTimeout=10 -i "$key")
+opts=(-o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ConnectTimeout=10 -i "$key")
 for attempt in {1..30}; do
   if ssh "${opts[@]}" "ubuntu@$ip" true; then break; fi
   sleep 5
 done
-ssh "${opts[@]}" "ubuntu@$ip" 'mkdir -p bench'
+ssh "${opts[@]}" "ubuntu@$ip" 'sudo cloud-init status --wait; mkdir -p bench'
 tar --exclude=infra --exclude=__pycache__ -czf /tmp/otlp-bench-code.tgz otlpbench scripts
 scp "${opts[@]}" /tmp/otlp-bench-code.tgz "ubuntu@$ip:/tmp/"
 ssh "${opts[@]}" "ubuntu@$ip" 'cd bench && tar -xzf /tmp/otlp-bench-code.tgz'

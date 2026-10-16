@@ -43,8 +43,15 @@ def config(vendor, signal, scenario):
         return yaml.safe_dump(c, sort_keys=False), None
     if vendor == 'vector' and scenario == 'pass-through':
         return yaml.safe_dump({'data_dir': '/tmp/vector-otlp-bench', 'sources': {'in': {'type': 'opentelemetry', 'grpc': {'address': '127.0.0.1:4317'}, 'http': {'address': '127.0.0.1:4318'}, 'use_otlp_decoding': True}}, 'sinks': {'out': {'type': 'opentelemetry', 'inputs': ['in.'+signal], 'protocol': {'type': 'http', 'uri': 'http://127.0.0.1:14318/v1/'+signal, 'encoding': {'codec': 'otlp'}, 'batch': {'max_events': 512, 'timeout_secs': 0.1}}}}}, sort_keys=False), None
-    if vendor == 'fluentbit' and scenario == 'pass-through':
-        return '[SERVICE]\n    Flush 1\n    Log_Level info\n[INPUT]\n    Name opentelemetry\n    Listen 127.0.0.1\n    Port 4317\n[OUTPUT]\n    Name opentelemetry\n    Match *\n    Host 127.0.0.1\n    Port 14318\n    Metrics_uri /v1/metrics\n    Traces_uri /v1/traces\n    TLS Off\n', None
+    if vendor == 'fluentbit' and (scenario == 'pass-through' or signal == 'traces' and scenario in ('enrich','mask','sample','tail')):
+        source = {'name': 'opentelemetry', 'listen': '127.0.0.1', 'port': 4317}
+        p = []
+        if scenario in ('enrich','mask'):
+            p = [{'name': 'content_modifier', 'context': 'span_attributes', 'action': 'upsert', 'key': 'bench.enriched' if scenario=='enrich' else 'secret', 'value': 'yes' if scenario=='enrich' else 'REDACTED'}]
+        if scenario == 'sample': p = [{'name': 'sampling', 'type': 'probabilistic', 'sampling_settings': {'sampling_percentage': 50}}]
+        if scenario == 'tail': p = [{'name': 'sampling', 'type': 'tail', 'sampling_settings': {'decision_wait': '1s', 'max_traces': 100000}, 'conditions': [{'type': 'status_code', 'status_codes': ['ERROR']}]}]
+        if p: source['processors'] = {'traces': p}
+        return yaml.safe_dump({'service': {'flush': 1, 'log_level': 'info'}, 'pipeline': {'inputs': [source], 'outputs': [{'name': 'opentelemetry', 'match': '*', 'host': '127.0.0.1', 'port': 14318, 'metrics_uri': '/v1/metrics', 'traces_uri': '/v1/traces', 'tls': 'off'}]}},sort_keys=False), None
     if vendor == 'fluentd' and scenario == 'pass-through':
         return '<source>\n  @type opentelemetry\n  tag otlp.${type}\n  <grpc>\n    bind 127.0.0.1\n    port 4317\n  </grpc>\n</source>\n<match otlp.**>\n  @type opentelemetry\n  <http>\n    endpoint http://127.0.0.1:14318\n  </http>\n</match>\n', None
     return None, 'Native scenario adapter pending; this is not an unsupported-vendor claim.'
