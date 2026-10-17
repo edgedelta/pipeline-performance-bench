@@ -25,7 +25,7 @@ nodes:
 - name: out
   type: otlp_output
   protocol: http
-  endpoint: 172.31.14.178
+  endpoint: 172.31.7.140
   port: 14318
   compression: uncompressed
 links:

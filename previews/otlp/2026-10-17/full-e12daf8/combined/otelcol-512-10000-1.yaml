@@ -17,7 +17,7 @@ processors:
     interval: 60s
 exporters:
   otlphttp:
-    endpoint: http://172.31.14.178:14318
+    endpoint: http://172.31.7.140:14318
     compression: none
     retry_on_failure:
       enabled: false
