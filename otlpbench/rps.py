@@ -1,4 +1,4 @@
-"""Remote, request-rate-based metrics Pass-Through benchmark controller."""
+"""Remote, request-rate-based metric scenario benchmark controller."""
 import argparse
 from datetime import datetime, timezone
 import json

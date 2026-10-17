@@ -1,6 +1,6 @@
-# Request-rate Pass-Through benchmark
+# Request-rate metric benchmarks
 
-This harness uses Rust for the load generator and destination. Python only orchestrates remote processes and records resource measurements; it is not in the telemetry path. Metrics Pass-Through is currently supported. The existing multi-scenario benchmark and public site remain separate.
+This harness uses Rust for the load generator and destination. Python only orchestrates remote processes and records resource measurements; it is not in the telemetry path. The current metric ladder covers Pass-Through, Filter, Aggregate, Rollup and Combined. The existing multi-scenario benchmark and public site remain separate.
 
 Requests/sec and points/sec are distinct: `points/sec = requests/sec × points/request`. At 100,000 requests/sec, a batch of 1 offers 100,000 points/sec; a batch of 512 offers 51.2 million points/sec. Output requests are independently counted. In the matched-output mode, every output request must contain exactly the input batch size: 1 point in → 1 point out, or 512 points in → 512 points out. The sink records a distribution of output request sizes, not just an average.
 
@@ -80,8 +80,8 @@ Use `--baseline-red-binary /path/to/prior/red` to rerun Rust on the same hosts a
 
 ```sh
 python -m otlpbench.cloud_rps --output scenario-results \
-  --scenarios pass-through,filter,enrich,aggregate,rollup,combined \
-  --rates 10000 --batches 512 --seconds 30 --series-groups 64
+  --scenarios pass-through,filter,aggregate,rollup,combined \
+  --rates 1000,2000,4000,8000 --batches 512 --seconds 60 --series-groups 64
 ```
 
 Each scenario records separate calibration, configs, operation counters, and results.
@@ -102,3 +102,28 @@ The v0.162.0 interval-processor README says delta metrics pass through, but its
 [source implementation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/v0.162.0/processor/intervalprocessor/processor.go)
 and these measurements show delta aggregation. Use the operation checks rather
 than a documentation-based vendor exclusion.
+
+## Metric load ladder preview
+
+The current ladder uses 1k, 2k, 4k and 8k requests/sec with 512 points/request
+(512k, 1.024M, 2.048M and 4.096M points/sec). All five scenarios and all four
+loads run independently; a lower-tier shortfall does not suppress later tiers.
+Use the same explicit Rust binary for every case and record its source revision.
+One 60-second trial per case gives 60 measurements across the three vendors;
+small differences need repeated measurements before drawing conclusions.
+
+Render a standalone preview after the run, passing the measured Rust source
+revision and binary SHA-256:
+
+```sh
+python -m otlpbench.ladder_chart scenario-results /tmp/otlp-visual/rps/ladder \
+  --source-commit "$RED_BENCH_REVISION" --binary-sha256 "$RED_BENCH_SHA256"
+```
+
+The chart offers a by-load view across the five scenarios and a trend view across
+all four loads for a selected scenario. It includes CPU through delivery divided
+by input-window duration, final RSS, points per CPU core/MB, and achieved request
+or point rates. Dashed bars mark shortfalls; missing or unverified cases are N/A.
+`--allow-partial` shows pending cases while collecting; omit it for the final report.
+Enrich remains supported for historical fixtures but is excluded from this ladder.
+This renderer does not deploy or modify the public Pages site.
