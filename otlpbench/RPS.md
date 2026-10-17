@@ -127,3 +127,27 @@ or point rates. Dashed bars mark shortfalls; missing or unverified cases are N/A
 `--allow-partial` shows pending cases while collecting; omit it for the final report.
 Enrich remains supported for historical fixtures but is excluded from this ladder.
 This renderer does not deploy or modify the public Pages site.
+
+## Trace request-rate ladder
+
+Use the same saved Rust agent and isolated hosts with `--signal traces`, scenarios
+`pass-through,filter,mask,sample,tail`, rates `1000,2000,4000,8000`, batch `512`,
+and one 60-second trial per case. Do not pass `--series-groups`: trace IDs must
+remain unique across requests. Each request contains 256 complete two-span traces.
+OTLP/gRPC input and uncompressed OTLP/HTTP output are used for all three agents.
+
+Filter drops health traces (25%); Mask replaces the secret attribute; Sample uses
+native trace-ID sampling at 50%; Tail retains error traces (25%) with a 1-second
+window and a 4-million-trace buffer in each agent. No added output rebatching is
+used. Pass-Through and Mask preserve 512-span batches; Filter preserves 384-span
+batches. Sampling output batches follow native behavior.
+
+The sink checks span payloads, parent/child counts and matching trace-ID
+fingerprints. Pass-Through, Filter, Mask and Tail also require exact output counts.
+Sample checks 45–55% retention, intact payloads and matched trace pairs, but does
+not independently prove the vendor-specific retained set or rule out small loss.
+Its report stores `sampling_verified` separately from `delivery_verified`.
+
+Generate the local report with `python -m otlpbench.ladder_chart RAW OUTPUT
+--signal traces --source-commit COMMIT --binary-sha256 HASH`. Metrics results and
+the public Pages deployment are unaffected.

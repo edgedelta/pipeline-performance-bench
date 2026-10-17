@@ -1,3 +1,4 @@
+mod traces;
 use bytes::{BufMut, Bytes, BytesMut};
 use clap::{Parser, Subcommand};
 use http_body_util::{BodyExt, Full};
@@ -45,6 +46,8 @@ enum Command {
         http_addr: String,
     },
     Load {
+        #[arg(long, default_value = "metrics", value_parser = ["metrics", "traces"])]
+        signal: String,
         #[arg(long)]
         fixture: String,
         #[arg(long, default_value = "http://127.0.0.1:4317")]
@@ -75,6 +78,7 @@ struct Counts {
     enriched_points: u64,
     host_points: u64,
     health_points: u64,
+    trace_checks: traces::Checks,
     request_points: std::collections::BTreeMap<u64, u64>,
 }
 fn count(req: &ExportMetricsServiceRequest) -> Counts {
@@ -134,8 +138,11 @@ struct Sink {
 }
 impl Sink {
     fn accept(&self, req: &ExportMetricsServiceRequest, bytes: usize) -> Result<(), &'static str> {
-        let c = count(req);
+        self.accept_counts(count(req), bytes)
+    }
+    fn accept_counts(&self, c: Counts, bytes: usize) -> Result<(), &'static str> {
         let mut t = self.totals.lock().map_err(|_| "counter lock poisoned")?;
+        t.trace_checks.merge(&c.trace_checks);
         t.requests += 1;
         t.points += c.points;
         t.value_sum += c.value_sum;
@@ -159,7 +166,7 @@ impl Sink {
                 *self.totals.lock().map_err(|_| "counter lock poisoned")? = Counts::default();
                 return Ok(Vec::new());
             }
-            if path != "/v1/metrics" || method != hyper::Method::POST {
+            if !["/v1/metrics", "/v1/traces"].contains(&path.as_str()) || method != hyper::Method::POST {
                 return Err("unsupported endpoint".into());
             }
             if req.headers().get("content-encoding").is_some() {
@@ -171,8 +178,13 @@ impl Sink {
                 .collect()
                 .await?
                 .to_bytes();
-            let decoded = ExportMetricsServiceRequest::decode(body.clone())?;
-            self.accept(&decoded, body.len())?;
+            if path == "/v1/traces" {
+                let decoded = traces::ExportTraceServiceRequest::decode(body.clone())?;
+                self.accept_counts(traces::count(&decoded), body.len())?;
+            } else {
+                let decoded = ExportMetricsServiceRequest::decode(body.clone())?;
+                self.accept(&decoded, body.len())?;
+            }
             Ok(Vec::new())
         }
         .await;
@@ -213,6 +225,7 @@ async fn serve(grpc_addr: String, http_addr: String) -> Result<(), Error> {
     let grpc = Server::builder()
         .initial_stream_window_size(8 << 20)
         .initial_connection_window_size(32 << 20)
+        .add_service(traces::TraceServiceServer::new(sink.clone()).max_decoding_message_size(64 << 20))
         .add_service(MetricsServiceServer::new(sink.clone()).max_decoding_message_size(64 << 20))
         .serve(grpc_addr.parse()?);
     let http = async move {
@@ -243,6 +256,7 @@ async fn serve(grpc_addr: String, http_addr: String) -> Result<(), Error> {
 #[derive(Default)]
 struct RawCodec;
 struct RawEncoder;
+// Metrics and trace Export responses have the same partial-success wire layout.
 struct ResponseDecoder;
 impl Codec for RawCodec {
     type Encode = Bytes;
@@ -314,6 +328,7 @@ fn patch_request(template: &[u8], offset: usize, seq: u64) -> Bytes {
     b.freeze()
 }
 struct LoadConfig {
+    signal: String,
     fixture: String,
     endpoint: String,
     rps: u64,
@@ -334,10 +349,15 @@ async fn load(c: LoadConfig) -> Result<ResultData, Error> {
         return Err("all load parameters must be positive".into());
     }
     let template = Bytes::from(tokio::fs::read(c.fixture).await?);
-    let decoded = ExportMetricsServiceRequest::decode(template.clone())?;
-    let batch = count(&decoded).points;
+    let is_trace = c.signal == "traces";
+    let batch = if is_trace { traces::count(&traces::ExportTraceServiceRequest::decode(template.clone())?).points }
+        else { count(&ExportMetricsServiceRequest::decode(template.clone())?).points };
+    let trace_offsets: Vec<usize> = if is_trace { template.windows(8).enumerate().filter_map(|(i,v)| (v == b"BENCHID!").then_some(i)).collect() } else { Vec::new() };
+    if is_trace && (trace_offsets.len() as u64 != batch || c.series_groups != 0) {
+        return Err("trace fixtures require one BENCHID! ID prefix per span and no series-group reuse".into());
+    }
     if batch == 0 {
-        return Err("fixture must contain metric points".into());
+        return Err("fixture must contain telemetry items".into());
     }
     let marker = b"00000000000000000000";
     let offsets: Vec<_> = template
@@ -371,6 +391,7 @@ async fn load(c: LoadConfig) -> Result<ResultData, Error> {
         senders.push(tx);
         let channel = channels[i % c.connections].clone();
         let template = template.clone();
+        let trace_offsets = trace_offsets.clone();
         let timeout = Duration::from_secs(c.timeout_seconds);
         workers.spawn(async move {
             let mut stats = WorkerStats::default();
@@ -389,9 +410,9 @@ async fn load(c: LoadConfig) -> Result<ResultData, Error> {
                         .map_err(|e| Status::unavailable(e.to_string()))?;
                     client
                         .unary(
-                            tonic::Request::new(patch_request(&template, offset, if series_groups == 0 { seq } else { seq % series_groups })),
+                            tonic::Request::new(if is_trace { traces::patch(&template, offset, &trace_offsets, seq) } else { patch_request(&template, offset, if series_groups == 0 { seq } else { seq % series_groups }) }),
                             tonic::codegen::http::uri::PathAndQuery::from_static(
-                                "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+                                if is_trace { "/opentelemetry.proto.collector.trace.v1.TraceService/Export" } else { "/opentelemetry.proto.collector.metrics.v1.MetricsService/Export" },
                             ),
                             RawCodec,
                         )
@@ -506,6 +527,7 @@ async fn main() -> Result<(), Error> {
             http_addr,
         } => serve(grpc_addr, http_addr).await?,
         Command::Load {
+            signal,
             fixture,
             endpoint,
             rps,
@@ -517,6 +539,7 @@ async fn main() -> Result<(), Error> {
             series_groups,
         } => {
             let r = load(LoadConfig {
+                signal,
                 fixture,
                 endpoint,
                 rps,

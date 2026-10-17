@@ -1,18 +1,21 @@
-"""Render metric request-rate ladders without publishing the public site."""
+"""Render telemetry request-rate ladders without publishing the public site."""
 import argparse
 import json
 from pathlib import Path
 
 SCENARIOS = ['pass-through', 'filter', 'aggregate', 'rollup', 'combined']
+TRACE_SCENARIOS = ['pass-through', 'filter', 'mask', 'sample', 'tail']
 RATES = [1000, 2000, 4000, 8000]
 VENDORS = ['red', 'otelcol', 'bindplane']
 
 
-def collect(root, source_commit, binary_sha256, allow_partial=False):
+def collect(root, source_commit, binary_sha256, allow_partial=False, signal="metrics"):
     rows, calibrations = [], []
-    for scenario in SCENARIOS:
+    scenarios = TRACE_SCENARIOS if signal == "traces" else SCENARIOS
+    for scenario in scenarios:
         path = root / scenario / 'results.json'
         raw = json.loads(path.read_text()) if path.exists() else {'rows': [], 'calibration': []}
+        if raw.get('signal', signal) != signal: raise ValueError('result signal differs from report')
         calibrations.extend(dict(c, scenario=scenario) for c in raw['calibration'])
         for rate in RATES:
             for vendor in VENDORS:
@@ -29,7 +32,7 @@ def collect(root, source_commit, binary_sha256, allow_partial=False):
                         raise ValueError('Rust binary does not match report provenance')
                 row['scenario'] = scenario
                 rows.append(row)
-    return dict(schema='metrics-request-ladder-v1', scenarios=SCENARIOS, rates=RATES,
+    return dict(schema=signal+'-request-ladder-v1', signal=signal, scenarios=scenarios, rates=RATES,
                 vendors=VENDORS, batch=512, seconds=60, trials=1, source_commit=source_commit,
                 binary_sha256=binary_sha256, rows=rows, calibration=calibrations)
 
@@ -51,13 +54,13 @@ HTML = r'''<!doctype html>
 const data=__DATA__;
 const names={red:'Edge Delta (Rust)',otelcol:'OpenTelemetry Collector',bindplane:'Bindplane (Dynatrace)'};
 const colors={red:'#00cc66',otelcol:'#a348ff',bindplane:'#f04444'};
-const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined'};
+const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail'};
 const versions={red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
 let mode='tier',rate=8000,metric='efficiency',scenario='pass-through';
 const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);
 const shortRate=n=>(n/1000).toFixed(2).replace(/\.00$/,'')+'k';
-const valid=r=>!!(r&&r.load&&r.through_delivery&&r.operation_verified&&r.delivery_verified&&r.output_batch_verified!==false);
+const valid=r=>!!(r&&r.load&&r.through_delivery&&r.operation_verified&&(r.delivery_verified||r.scenario==='sample'&&r.sampling_verified)&&r.output_batch_verified!==false);
 const cpu=r=>r.through_delivery.cpu_seconds/r.input_window.elapsed_seconds;
 const lookup=(s,t,v)=>data.rows.find(r=>r.scenario===s&&r.target_rps===t&&r.vendor===v);
 function value(r){if(!valid(r))return null;const points=r.load.achieved_rps*r.batch;switch(metric){case'cpu':return cpu(r);case'memory':return r.through_delivery.rss_mb;case'rate':return r.load.achieved_rps;case'points':return points;case'memory_efficiency':return r.through_delivery.rss_mb>0?points/r.through_delivery.rss_mb:null;default:return cpu(r)>0?points/cpu(r):null}}
@@ -80,7 +83,7 @@ function render(){
  const completed=data.rows.filter(r=>r.status!=='pending').length,verified=data.rows.filter(valid).length,shortfalls=data.rows.filter(r=>r.status==='input_shortfall').length;
  el('status').textContent=`${completed}/${data.rows.length} cases completed · ${verified} verified · ${shortfalls} load shortfalls${completed<data.rows.length?' · Run in progress; reload for new results.':''}`;
  const shown=data.rows.filter(r=>mode==='tier'?r.target_rps===rate:r.scenario===scenario);
- el('rows').innerHTML=shown.map(r=>`<tr><td>${labels[r.scenario]}</td><td>${fmt(r.target_rps)}</td><td>${names[r.vendor]}</td><td>${r.load?fmt(r.load.achieved_rps):'—'}</td><td>${r.through_delivery?cpu(r).toFixed(3):'—'}</td><td>${r.through_delivery?fmt(r.through_delivery.rss_mb):'—'}</td><td>${valid(r)?'Verified':'Not verified'}</td><td>${r.status.replaceAll('_',' ')}</td></tr>`).join('');
+ el('rows').innerHTML=shown.map(r=>`<tr><td>${labels[r.scenario]}</td><td>${fmt(r.target_rps)}</td><td>${names[r.vendor]}</td><td>${r.load?fmt(r.load.achieved_rps):'—'}</td><td>${r.through_delivery?cpu(r).toFixed(3):'—'}</td><td>${r.through_delivery?fmt(r.through_delivery.rss_mb):'—'}</td><td>${valid(r)?r.scenario==='sample'?'Sampling checks':'Verified':'Not verified'}</td><td>${r.status.replaceAll('_',' ')}</td></tr>`).join('');
 }
 el('legend').innerHTML=data.vendors.map(v=>`<span><i class="dot" style="background:${colors[v]}"></i>${names[v]} <span class="version">${versions[v]}</span></span>`).join('');
 el('tiers').innerHTML=data.rates.map(r=>`<button data-rate="${r}" aria-pressed="${r===rate}">${shortRate(r)} req/s</button>`).join('');
@@ -92,18 +95,30 @@ el('measure').onchange=()=>{metric=el('measure').value;render()};el('scenario').
 </script></html>'''
 
 
+def render(data):
+    html = HTML
+    if data.get('signal') == 'traces':
+        start = html.index('<p>Aggregate uses native behavior:')
+        end = html.index('</p>', start) + 4
+        html = html[:start] + '<p>512 spans/request form 256 complete two-span traces. Trace IDs are unique across requests. Filter drops health traces (25%); Mask replaces the secret attribute; Sample retains approximately 50% by trace ID; Tail retains error traces (25%) after a 1-second decision window, with a 4-million-trace buffer. Sample checks retention and matching parent/child fingerprints; it does not independently prove the exact vendor-specific retained set or rule out small delivery loss. Other scenarios verify exact output counts. Enrich is excluded.</p>' + html[end:]
+        html = html.replace('METRICS', 'TRACES').replace('Metrics ladder', 'Traces ladder').replace('Metric scenario', 'Trace scenario')
+        html = html.replace('Points/sec', 'Spans/sec').replace('points/sec', 'spans/sec').replace('points/request', 'spans/request')
+    return html.replace('__DATA__', json.dumps(data).replace('<', '\\u003c'))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('results', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--binary-sha256', required=True)
+    parser.add_argument('--signal', choices=['metrics','traces'], default='metrics')
     parser.add_argument('--allow-partial', action='store_true')
     args = parser.parse_args()
-    data = collect(args.results, args.source_commit, args.binary_sha256, args.allow_partial)
+    data = collect(args.results, args.source_commit, args.binary_sha256, args.allow_partial, args.signal)
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / 'results.json').write_text(json.dumps(data, indent=2) + '\n')
-    (args.output / 'index.html').write_text(HTML.replace('__DATA__', json.dumps(data).replace('<', '\\u003c')))
+    (args.output / 'index.html').write_text(render(data))
 
 
 if __name__ == '__main__':

@@ -618,6 +618,8 @@ dependencies = [
  "futures-util",
  "glob",
  "opentelemetry",
+ "percent-encoding",
+ "rand",
  "thiserror",
 ]
 
