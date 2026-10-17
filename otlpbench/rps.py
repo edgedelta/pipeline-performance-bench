@@ -64,6 +64,8 @@ def matched_output_config(vendor, sink_address, export_connections=1024, scenari
         else:
             cfg['processors']['tail_sampling/bench']['num_traces'] = 4_000_000
             cfg['processors']['tail_sampling/bench']['expected_new_traces_per_sec'] = 2_048_000
+            cfg['processors']['batch/tail'] = {'timeout': '500ms', 'send_batch_size': 1_000_000, 'send_batch_max_size': 1_000_000}
+            cfg['service']['pipelines']['traces']['processors'].append('batch/tail')
     return cfg
 
 
@@ -147,7 +149,7 @@ def main():
     def generate(endpoint, path, rate, seconds, offset):
         return json.loads(load.argv(['/home/ubuntu/otlp-traffic', 'load', '--endpoint', endpoint,
             '--signal', args.signal, '--fixture', path, '--rps', str(rate), '--seconds', str(seconds), '--connections', str(args.connections),
-            '--concurrency', str(args.concurrency), '--sequence-offset', str(offset), '--series-groups', str(args.series_groups)]))
+            '--concurrency', str(args.concurrency), '--timeout-seconds', '30' if args.signal=='traces' else '5', '--sequence-offset', str(offset), '--series-groups', str(args.series_groups)]))
     def drain(expected, timeout=10, by_value=False):
         end = time.monotonic()+timeout
         last_points, stable_since = -1, time.monotonic()
@@ -233,7 +235,14 @@ def main():
                             save()
                         finally:
                             (out/f'{vendor}-{batch}-{rate}-{trial}-agent.log').write_text(agent.argv(['tail','-c','262144','/home/ubuntu/agent.log']))
-                            agent.command('sudo -n kill -TERM '+str(pid)+' 2>/dev/null || true');time.sleep(1)
+                            agent.command('sudo -n kill -TERM '+str(pid)+' 2>/dev/null || true')
+                            for _ in range(50):
+                                alive = agent.argv(['python3','-c','import psutil,sys; p=psutil.Process(int(sys.argv[1])) if psutil.pid_exists(int(sys.argv[1])) else None; print(bool(p and p.status()!=psutil.STATUS_ZOMBIE))',str(pid)]).strip()
+                                if alive == 'False': break
+                                time.sleep(.1)
+                            else:
+                                agent.command('sudo -n kill -KILL '+str(pid)+' 2>/dev/null || true')
+                            time.sleep(1)
     finally:
         sink.argv(['kill','-TERM',str(sink_pid)]);save()
 

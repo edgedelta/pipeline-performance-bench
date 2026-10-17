@@ -60,15 +60,15 @@ pub fn count(req: &ExportTraceServiceRequest) -> Counts {
                     && s.status.as_ref().map(|s| s.code) == Some(status)
                     && attr(&s.attributes,"route") == Some(if error_trace {"health"} else {"api"})
                     && s.events.len() == 1 && s.events[0].name == "checkpoint"
-                    && s.links.len() == 1 && s.links[0].trace_id == vec![0x12;16] && s.links[0].span_id == vec![0x13;8];
+                    && s.links.len() == 1 && s.links[0].trace_id == [0x12;16] && s.links[0].span_id == [0x13;8];
                 if !valid { c.trace_checks.invalid += 1; }
             }
         }
     }
     c
 }
-pub fn patch(template: &[u8], offset: usize, ids: &[usize], seq: u64) -> Bytes {
-    let mut b = BytesMut::from(super::patch_request(template, offset, seq).as_ref());
+pub fn patch(template: &[u8], _offset: usize, ids: &[usize], seq: u64) -> Bytes {
+    let mut b = BytesMut::from(template);
     // An odd multiplier permutes sequence IDs without collisions.
     let prefix = seq.wrapping_add(1).wrapping_mul(0x9e3779b97f4a7c15).to_be_bytes();
     for &i in ids { b[i..i+8].copy_from_slice(&prefix); }
@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(&a[20..36], &a[36..52]);
         assert_ne!(&a[20..36], &b[20..36]);
         assert_eq!(&a[28..36], b"abcdefgh");
-        assert_eq!(&a[..20], b"00000000000000000123");
+        assert_eq!(&a[..20], b"00000000000000000000");
     }
     #[test]
     fn partial_success_responses_share_wire_layout() {

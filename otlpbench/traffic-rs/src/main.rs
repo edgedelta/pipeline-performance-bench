@@ -174,7 +174,7 @@ impl Sink {
                     "compressed requests are not supported by this uncompressed benchmark".into(),
                 );
             }
-            let body = http_body_util::Limited::new(req.into_body(), 64 << 20)
+            let body = http_body_util::Limited::new(req.into_body(), 256 << 20)
                 .collect()
                 .await?
                 .to_bytes();
@@ -225,8 +225,8 @@ async fn serve(grpc_addr: String, http_addr: String) -> Result<(), Error> {
     let grpc = Server::builder()
         .initial_stream_window_size(8 << 20)
         .initial_connection_window_size(32 << 20)
-        .add_service(traces::TraceServiceServer::new(sink.clone()).max_decoding_message_size(64 << 20))
-        .add_service(MetricsServiceServer::new(sink.clone()).max_decoding_message_size(64 << 20))
+        .add_service(traces::TraceServiceServer::new(sink.clone()).max_decoding_message_size(256 << 20))
+        .add_service(MetricsServiceServer::new(sink.clone()).max_decoding_message_size(256 << 20))
         .serve(grpc_addr.parse()?);
     let http = async move {
         loop {

@@ -61,7 +61,7 @@ const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);
 const shortRate=n=>(n/1000).toFixed(2).replace(/\.00$/,'')+'k';
 const valid=r=>!!(r&&r.load&&r.through_delivery&&r.operation_verified&&(r.delivery_verified||r.scenario==='sample'&&r.sampling_verified)&&r.output_batch_verified!==false);
-const cpu=r=>r.through_delivery.cpu_seconds/r.input_window.elapsed_seconds;
+const cpu=r=>r.through_delivery.cpu_seconds/(data.signal==='traces'?r.load.seconds:r.input_window.elapsed_seconds);
 const lookup=(s,t,v)=>data.rows.find(r=>r.scenario===s&&r.target_rps===t&&r.vendor===v);
 function value(r){if(!valid(r))return null;const points=r.load.achieved_rps*r.batch;switch(metric){case'cpu':return cpu(r);case'memory':return r.through_delivery.rss_mb;case'rate':return r.load.achieved_rps;case'points':return points;case'memory_efficiency':return r.through_delivery.rss_mb>0?points/r.through_delivery.rss_mb:null;default:return cpu(r)>0?points/cpu(r):null}}
 const captions={efficiency:'Input points/sec per CPU core · higher is better',memory_efficiency:'Input points/sec per MB of final RSS · higher is better',cpu:'CPU seconds per input-window second · lower is better',memory:'Final resident memory, MB · lower is better',rate:'Requests/sec reached · higher is better',points:'Input points/sec reached · higher is better'};
@@ -100,8 +100,9 @@ def render(data):
     if data.get('signal') == 'traces':
         start = html.index('<p>Aggregate uses native behavior:')
         end = html.index('</p>', start) + 4
-        html = html[:start] + '<p>512 spans/request form 256 complete two-span traces. Trace IDs are unique across requests. Filter drops health traces (25%); Mask replaces the secret attribute; Sample retains approximately 50% by trace ID; Tail retains error traces (25%) after a 1-second decision window, with a 4-million-trace buffer. Sample checks retention and matching parent/child fingerprints; it does not independently prove the exact vendor-specific retained set or rule out small delivery loss. Other scenarios verify exact output counts. Enrich is excluded.</p>' + html[end:]
+        html = html[:start] + '<p>512 spans/request form 256 complete two-span traces. Trace IDs are unique across requests. Filter drops health traces (25%); Mask replaces the secret attribute; Sample retains approximately 50% by trace ID; Tail retains error traces (25%) after a 1-second decision window, with a 4-million-trace buffer. Collectors batch Tail output on a 500ms timer to match Rust’s decision-flush cadence; actual batch sizes remain native. Resource metadata is stable across requests. Sample checks retention and matching parent/child fingerprints; it does not independently prove the exact vendor-specific retained set or rule out small delivery loss. Other scenarios verify exact output counts. Enrich is excluded.</p>' + html[end:]
         html = html.replace('METRICS', 'TRACES').replace('Metrics ladder', 'Traces ladder').replace('Metric scenario', 'Trace scenario')
+        html = html.replace('normalized to the input window', 'divided by the 60-second offered-load window, including any final request and delivery drain')
         html = html.replace('Points/sec', 'Spans/sec').replace('points/sec', 'spans/sec').replace('points/request', 'spans/request')
     return html.replace('__DATA__', json.dumps(data).replace('<', '\\u003c'))
 

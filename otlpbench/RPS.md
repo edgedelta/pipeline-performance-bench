@@ -133,20 +133,25 @@ This renderer does not deploy or modify the public Pages site.
 Use the same saved Rust agent and isolated hosts with `--signal traces`, scenarios
 `pass-through,filter,mask,sample,tail`, rates `1000,2000,4000,8000`, batch `512`,
 and one 60-second trial per case. Do not pass `--series-groups`: trace IDs must
-remain unique across requests. Each request contains 256 complete two-span traces.
+remain unique across requests. Each request contains 256 complete two-span traces with stable resource metadata.
 OTLP/gRPC input and uncompressed OTLP/HTTP output are used for all three agents.
 
 Filter drops health traces (25%); Mask replaces the secret attribute; Sample uses
 native trace-ID sampling at 50%; Tail retains error traces (25%) with a 1-second
-window and a 4-million-trace buffer in each agent. No added output rebatching is
-used. Pass-Through and Mask preserve 512-span batches; Filter preserves 384-span
+window and a 4-million-trace buffer in each agent. Tail collectors batch on a 500ms timer to match Rust’s decision-flush cadence;
+other scenarios add no output rebatching. Tail batch sizes remain native and
+are recorded in the raw results. Pass-Through and Mask preserve 512-span batches; Filter preserves 384-span
 batches. Sampling output batches follow native behavior.
 
 The sink checks span payloads, parent/child counts and matching trace-ID
 fingerprints. Pass-Through, Filter, Mask and Tail also require exact output counts.
 Sample checks 45–55% retention, intact payloads and matched trace pairs, but does
 not independently prove the vendor-specific retained set or rule out small loss.
-Its report stores `sampling_verified` separately from `delivery_verified`.
+Its report stores `sampling_verified` separately from `delivery_verified`. Trace
+CPU cost includes final request/delivery drain and is divided by the configured
+60-second load window, preventing timeout drain from inflating efficiency. The
+request timeout is 30 seconds; the harness accepts up to 256MiB per export so
+native tail batches are not rejected by an artificial 64MiB sink limit.
 
 Generate the local report with `python -m otlpbench.ladder_chart RAW OUTPUT
 --signal traces --source-commit COMMIT --binary-sha256 HASH`. Metrics results and
