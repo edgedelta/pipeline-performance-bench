@@ -1,0 +1,996 @@
+{
+  "started_at": "2026-10-17T04:07:04.847128+00:00",
+  "schema": "otlp-rps-v1",
+  "signal": "metrics",
+  "scenario": "pass-through",
+  "series_groups": 64,
+  "seconds": 60,
+  "connections": 64,
+  "concurrency": 1024,
+  "generator": "Rust",
+  "sink": "Rust",
+  "topology": "separate load, agent, and sink hosts",
+  "output_batch_policy": "scenario-native reductions; no added rebatching",
+  "calibration": [
+    {
+      "target_rps": 10000,
+      "batch": 512,
+      "connections": 64,
+      "concurrency": 1024,
+      "seconds": 15,
+      "scheduled_requests": 150000,
+      "missed_requests": 10,
+      "achieved_rps": 9998.266666666666,
+      "drain_seconds": 0.002079615,
+      "input_bytes_per_request": 30630,
+      "latency_bounds_us": [
+        1000,
+        2000,
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        1000000,
+        5000000
+      ],
+      "started": 149990,
+      "completed": 149990,
+      "completed_in_window": 149974,
+      "accepted_points": 76794880,
+      "rejected_points": 0,
+      "rpc_errors": 0,
+      "error_examples": [],
+      "expired": 10,
+      "latency_buckets": [
+        122876,
+        27049,
+        65,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sink": {
+        "requests": 149990,
+        "points": 76794880,
+        "value_sum": 76794880.0,
+        "bytes": 4594193700,
+        "enriched_points": 0,
+        "host_points": 76794880,
+        "health_points": 19198720,
+        "request_points": {
+          "512": 149990
+        }
+      },
+      "sink_resources": {
+        "cpu_seconds": 35.58,
+        "elapsed_seconds": 16.20271543199999,
+        "cpu_cores": 2.1959282164352723,
+        "rss_mb": 21.703125
+      },
+      "passed": true
+    }
+  ],
+  "rows": [
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "6553707336f9f45daca4d3f64dbe0261f17192517d577805a34e28a622c26841",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 6,
+        "achieved_rps": 9999.683333333332,
+        "drain_seconds": 0.002082717,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 599994,
+        "completed": 599994,
+        "completed_in_window": 599981,
+        "accepted_points": 307196928,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 6,
+        "latency_buckets": [
+          53081,
+          538563,
+          8319,
+          31,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 599994,
+        "points": 307196928,
+        "value_sum": 307196928.0,
+        "bytes": 18480415194,
+        "enriched_points": 0,
+        "host_points": 307196928,
+        "health_points": 76799232,
+        "request_points": {
+          "512": 599994
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 291.53999999999996,
+        "elapsed_seconds": 61.440489162999995,
+        "cpu_cores": 4.745079408898455,
+        "rss_mb": 221.08984375
+      },
+      "through_delivery": {
+        "cpu_seconds": 291.53999999999996,
+        "elapsed_seconds": 62.34032112099999,
+        "cpu_cores": 4.676588037365622,
+        "rss_mb": 221.08984375
+      },
+      "sink_resources": {
+        "cpu_seconds": 105.88,
+        "elapsed_seconds": 62.31330804299999,
+        "cpu_cores": 1.6991554986446287,
+        "rss_mb": 21.87109375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.00190681,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4998,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            2592,
+            2390,
+            17,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 153974199,
+          "enriched_points": 0,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "6553707336f9f45daca4d3f64dbe0261f17192517d577805a34e28a622c26841",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 1,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.75,
+        "drain_seconds": 0.001670228,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 600000,
+        "completed": 600000,
+        "completed_in_window": 599985,
+        "accepted_points": 307200000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          51944,
+          538020,
+          9991,
+          45,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 600000,
+        "points": 307200000,
+        "value_sum": 307200000.0,
+        "bytes": 18480600000,
+        "enriched_points": 0,
+        "host_points": 307200000,
+        "health_points": 76800000,
+        "request_points": {
+          "512": 600000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 287.06999999999994,
+        "elapsed_seconds": 61.428654601000005,
+        "cpu_cores": 4.6732262307325,
+        "rss_mb": 243.33203125
+      },
+      "through_delivery": {
+        "cpu_seconds": 287.06999999999994,
+        "elapsed_seconds": 62.329948986000005,
+        "cpu_cores": 4.60565113031745,
+        "rss_mb": 243.33203125
+      },
+      "sink_resources": {
+        "cpu_seconds": 105.35000000000002,
+        "elapsed_seconds": 62.336551676,
+        "cpu_cores": 1.690019694184664,
+        "rss_mb": 22.18359375
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.001923416,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4999,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            2211,
+            2754,
+            34,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 153974199,
+          "enriched_points": 0,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.75,
+        "drain_seconds": 0.001737586,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 600000,
+        "completed": 600000,
+        "completed_in_window": 599985,
+        "accepted_points": 307200000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          161871,
+          414759,
+          23186,
+          175,
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 600000,
+        "points": 307200000,
+        "value_sum": 307200000.0,
+        "bytes": 18378000000,
+        "enriched_points": 0,
+        "host_points": 307200000,
+        "health_points": 76800000,
+        "request_points": {
+          "512": 600000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 375.49,
+        "elapsed_seconds": 61.45124918900001,
+        "cpu_cores": 6.110372123520868,
+        "rss_mb": 303.94921875
+      },
+      "through_delivery": {
+        "cpu_seconds": 375.5,
+        "elapsed_seconds": 62.348507100000006,
+        "cpu_cores": 6.022598093611771,
+        "rss_mb": 303.94921875
+      },
+      "sink_resources": {
+        "cpu_seconds": 111.28,
+        "elapsed_seconds": 62.35570626600003,
+        "cpu_cores": 1.7846001058074192,
+        "rss_mb": 22.1796875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 0,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.001002854,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 5000,
+          "completed": 5000,
+          "completed_in_window": 4999,
+          "accepted_points": 2560000,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 0,
+          "latency_buckets": [
+            1720,
+            3259,
+            21,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 5000,
+          "points": 2560000,
+          "value_sum": 2560000.0,
+          "bytes": 153150000,
+          "enriched_points": 0,
+          "host_points": 2560000,
+          "health_points": 640000,
+          "request_points": {
+            "512": 5000
+          }
+        }
+      }
+    },
+    {
+      "vendor": "otelcol",
+      "version": "otelcol-contrib version 0.162.0",
+      "binary_sha256": "2425bdf5f89042cd71f56cf5a66b41681d340cbe14c0b1899bcfe2a3a685a064",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 1,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.733333333334,
+        "drain_seconds": 0.001980688,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 600000,
+        "completed": 600000,
+        "completed_in_window": 599984,
+        "accepted_points": 307200000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          156215,
+          426029,
+          17233,
+          329,
+          190,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 600000,
+        "points": 307200000,
+        "value_sum": 307200000.0,
+        "bytes": 18378000000,
+        "enriched_points": 0,
+        "host_points": 307200000,
+        "health_points": 76800000,
+        "request_points": {
+          "512": 600000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 352.78,
+        "elapsed_seconds": 61.439687687,
+        "cpu_cores": 5.741891166459242,
+        "rss_mb": 324.46484375
+      },
+      "through_delivery": {
+        "cpu_seconds": 352.78,
+        "elapsed_seconds": 62.345416161,
+        "cpu_cores": 5.658475341458712,
+        "rss_mb": 324.46484375
+      },
+      "sink_resources": {
+        "cpu_seconds": 112.94,
+        "elapsed_seconds": 62.33494316399998,
+        "cpu_cores": 1.8118248652743736,
+        "rss_mb": 23.6171875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.8,
+          "drain_seconds": 0.001718948,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4999,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            1576,
+            3405,
+            18,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 153119370,
+          "enriched_points": 0,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.716666666667,
+        "drain_seconds": 0.001866913,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 600000,
+        "completed": 600000,
+        "completed_in_window": 599983,
+        "accepted_points": 307200000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          148612,
+          431261,
+          19828,
+          285,
+          14,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 600000,
+        "points": 307200000,
+        "value_sum": 307200000.0,
+        "bytes": 18378000000,
+        "enriched_points": 0,
+        "host_points": 307200000,
+        "health_points": 76800000,
+        "request_points": {
+          "512": 600000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 366.89,
+        "elapsed_seconds": 61.44014579099996,
+        "cpu_cores": 5.971502757302111,
+        "rss_mb": 312.390625
+      },
+      "through_delivery": {
+        "cpu_seconds": 366.89,
+        "elapsed_seconds": 62.344476791999966,
+        "cpu_cores": 5.884883776056956,
+        "rss_mb": 312.390625
+      },
+      "sink_resources": {
+        "cpu_seconds": 112.57999999999998,
+        "elapsed_seconds": 62.35699162700001,
+        "cpu_cores": 1.8054110222862942,
+        "rss_mb": 25.86328125
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.001771098,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4998,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            1960,
+            3009,
+            30,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 153119370,
+          "enriched_points": 0,
+          "host_points": 2559488,
+          "health_points": 639872,
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "bindplane",
+      "version": "observiq-otel-collector version v1.110.1\ncommit: 6303968704ab73b842028882011ac38e2347f812\nbuilt at: 2026-10-15T15:53:05Z",
+      "binary_sha256": "68b5987d05cad907da50bab64c47f9bbf97d0ba3938cf7fddf4dbeb3ca58e33b",
+      "batch": 512,
+      "target_rps": 10000,
+      "trial": 1,
+      "status": "measured",
+      "load": {
+        "target_rps": 10000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 600000,
+        "missed_requests": 0,
+        "achieved_rps": 9999.783333333333,
+        "drain_seconds": 0.001848976,
+        "input_bytes_per_request": 30630,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 600000,
+        "completed": 600000,
+        "completed_in_window": 599987,
+        "accepted_points": 307200000,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 0,
+        "latency_buckets": [
+          170625,
+          416742,
+          12102,
+          394,
+          137,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 600000,
+        "points": 307200000,
+        "value_sum": 307200000.0,
+        "bytes": 18378000000,
+        "enriched_points": 0,
+        "host_points": 307200000,
+        "health_points": 76800000,
+        "request_points": {
+          "512": 600000
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 346.51,
+        "elapsed_seconds": 61.44135063499999,
+        "cpu_cores": 5.6396872207202255,
+        "rss_mb": 336.9921875
+      },
+      "through_delivery": {
+        "cpu_seconds": 346.51,
+        "elapsed_seconds": 62.34073636199997,
+        "cpu_cores": 5.558323821969104,
+        "rss_mb": 336.9921875
+      },
+      "sink_resources": {
+        "cpu_seconds": 109.78999999999996,
+        "elapsed_seconds": 62.35344979199999,
+        "cpu_cores": 1.760768656204907,
+        "rss_mb": 26.671875
+      },
+      "delivery_verified": true,
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "pass-through",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 0,
+          "achieved_rps": 999.6,
+          "drain_seconds": 0.001843962,
+          "input_bytes_per_request": 30630,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 5000,
+          "completed": 5000,
+          "completed_in_window": 4998,
+          "accepted_points": 2560000,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 0,
+          "latency_buckets": [
+            1824,
+            3152,
+            24,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 5000,
+          "points": 2560000,
+          "value_sum": 2560000.0,
+          "bytes": 153150000,
+          "enriched_points": 0,
+          "host_points": 2560000,
+          "health_points": 640000,
+          "request_points": {
+            "512": 5000
+          }
+        }
+      }
+    }
+  ],
+  "harness_sha256": "b19b98ec47d6538f4834ff15f9bb3626d33c10f9bda014a1cd7f9e82017f0f7c",
+  "host_cpu": {
+    "agent": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n",
+    "load": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n",
+    "sink": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n"
+  }
+}
