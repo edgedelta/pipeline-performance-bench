@@ -1,0 +1,34 @@
+version: v3
+settings:
+  tag: otlp-benchmark
+nodes:
+- name: in
+  type: otlp_input
+  protocol: grpc
+  port: 4317
+- name: process
+  type: sequence
+  processors:
+  - type: tail_sample
+    data_types:
+    - trace
+    decision_interval: 1s
+    sampling_policies:
+    - name: errors
+      policy_type: status_code
+      status_codes:
+      - ERROR
+    cache:
+      batch:
+        size: 4000000
+- name: out
+  type: otlp_output
+  protocol: http
+  endpoint: 172.31.12.223
+  port: 14318
+  compression: uncompressed
+links:
+- from: in
+  to: process
+- from: process
+  to: out
