@@ -1,0 +1,47 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 18K of event 'cpu-clock'
+# Event count (approx.): 187808078930
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ .......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+12.36% [.] mi_malloc_aligned - -
+9.59% [.] mi_free - -
+8.33% [.] _RNvXs4_NtNtCsen18xdpIA5T_3red10processors16aggregate_metricNtB5_15AggregateMetricNtNtB9_4item5Stage3run - -
+5.40% [.] _RINvNvXs0_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCsc36rpYXAlPq_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueNtNtBe_5alloc6GlobalECsen18xdpIA5T_3red - -
+5.02% [.] _RNvXs3_NtNtCsc36rpYXAlPq_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs19XQYoXkPSt_18aws_smithy_runtime - -
+4.04% [.] _RNvMsz_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8IntoIterNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE10dying_nextB1w_ - -
+3.70% [.] _RNvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE6insertCsen18xdpIA5T_3red - -
+3.07% [.] _RNvMs4_NtNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE12insert_entryCsen18xdpIA5T_3red - -
+2.78% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6varint13decode_varintQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+2.67% [.] _RNvNtNtCsen18xdpIA5T_3red5input7gateway16metrics_to_items - -
+2.66% [.] 0x00000000001986a5 - -
+2.38% [.] _RNvNtNtCsen18xdpIA5T_3red4ottl4eval7eval_ro - -
+2.23% [.] _RINvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB6_8BTreeMapNtNtBc_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE6removeeECsen18xdpIA5T_3red - -
+2.19% [.] _RNvXNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB2_8BTreeMapNtNtB8_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueENtNtNtCsc36rpYXAlPq_4core3ops4drop4Drop4dropCsen18xdpIA5T_3red - -
+1.62% [.] _RNvMs1_NtCsen18xdpIA5T_3red4itemNtB5_10MetricItem6to_map - -
+1.37% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtCsbv32YzpRuyH_10serde_json5value5ValueECsen18xdpIA5T_3red - -
+1.21% [.] 0x0000000000198680 - -
+1.21% [.] 0x00000000001a1640 - -
+1.17% [.] _RNvNtNtCsen18xdpIA5T_3red4item7context8from_map - -
+1.06% [.] _RINvMs_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree6removeINtNtB7_4node6HandleINtBY_7NodeRefNtNtBY_6marker3MutNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueNtB1v_4LeafENtB1v_2KVE14remove_leaf_kvNCNvMs5_NtNtB7_3map5entryINtB3w_13OccupiedEntryB1L_B26_E9remove_kv0NtNtBb_5alloc6GlobalECsen18xdpIA5T_3red - -
+1.03% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6string5mergeQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+0.98% [.] _RNvMs6_NtCsen18xdpIA5T_3red4itemNtB5_7LogItem12resource_get - -
+0.96% [.] 0x00000000001986b7 - -
+0.80% [.] 0x000000000019869e - -
+0.73% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding7message14merge_repeatedNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic6common2v18KeyValueQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+0.65% [.] _RNvNtNtCsen18xdpIA5T_3red4ottl4eval9eval_cond - -
+0.63% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding7message14merge_repeatedNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic7metrics2v115NumberDataPointQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+0.62% [.] _RINvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB6_8BTreeMapNtNtBc_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE27bulk_build_from_sorted_iterINtNtBc_3vec3VecTB18_B1t_EEECsen18xdpIA5T_3red - -
+0.56% [.] _RNvMs_NtNtCsen18xdpIA5T_3red4ottl5valueNtB4_3Val10into_value - -
+0.51% [.] _RNvMs0_NtNtCsen18xdpIA5T_3red10processors10series_keyNtB5_9KeyHasher10finish_key - -
+0.50% [.] _RNvMs0_NtNtCsen18xdpIA5T_3red10processors10series_keyNtB5_9KeyHasher5value - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

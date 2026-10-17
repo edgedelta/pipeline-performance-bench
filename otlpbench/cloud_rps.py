@@ -42,6 +42,17 @@ def main():
         hosts=json.loads(tf('output','-json','hosts'))
         hosts_file=out/'hosts.json';hosts_file.write_text(json.dumps(hosts))
         endpoints={k:Host(v['public'],infra/'otlp-key.pem') for k,v in hosts.items()}
+        def wait_ssh(host):
+            deadline=time.monotonic()+180
+            while True:
+                try:
+                    host.argv(['true'])
+                    return
+                except subprocess.CalledProcessError:
+                    if time.monotonic()>=deadline: raise
+                    time.sleep(3)
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            list(pool.map(wait_ssh,endpoints.values()))
         with tempfile.TemporaryDirectory(prefix='otlp-rps-') as tmp:
             tmp=Path(tmp)
             archive=tmp/'source.tgz'
