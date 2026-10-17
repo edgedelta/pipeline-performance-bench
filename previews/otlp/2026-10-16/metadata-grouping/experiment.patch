@@ -1,0 +1,166 @@
+diff --git a/src/output/otlp/metric_wire.rs b/src/output/otlp/metric_wire.rs
+index d5f68ab..67afa32 100644
+--- a/src/output/otlp/metric_wire.rs
++++ b/src/output/otlp/metric_wire.rs
+@@ -48,7 +48,9 @@ fn point(m: &MetricItem, out: &mut Vec<u8>) {
+     }
+ }
+ 
+-pub(super) fn encode(items: &[Item]) -> Option<Vec<u8>> {
++pub(super) fn encode(items: &[Item]) -> Option<Vec<u8>> { encode_grouped::<true>(items) }
++
++fn encode_grouped<const FAST: bool>(items: &[Item]) -> Option<Vec<u8>> {
+     if items.is_empty() || !items.iter().all(|i| matches!(i, Item::Metric(m)
+         if !matches!(m.value, MetricValue::Histogram { .. })
+             && m.attributes.iter().all(|(k, v)| k.starts_with("__") || v.is_string()))) {
+@@ -56,16 +58,26 @@ pub(super) fn encode(items: &[Item]) -> Option<Vec<u8>> {
+     }
+     let mut groups: Vec<(&Map, BTreeMap<MetricKey<'_>, Vec<&MetricItem>>)> = Vec::new();
+     let mut keys = BTreeMap::new();
+-    let mut pointers = std::collections::HashMap::new();
+-    for item in items {
+-        let Item::Metric(m) = item else { return None };
+-        let index = *pointers.entry(Arc::as_ptr(&m.resource)).or_insert_with(|| {
+-            *keys.entry(resource_key(&m.resource)).or_insert_with(|| {
+-                groups.push((&m.resource, BTreeMap::new()));
+-                groups.len() - 1
+-            })
+-        });
+-        groups[index].1.entry(MetricKey::from(m)).or_default().push(m);
++    let Item::Metric(first) = &items[0] else { return None };
++    let first_key = MetricKey::from(first);
++    let homogeneous = FAST && items.iter().all(|item| matches!(item, Item::Metric(m)
++        if Arc::ptr_eq(&m.resource, &first.resource) && MetricKey::from(m) == first_key));
++    if homogeneous {
++        let points = items.iter().map(|item| match item { Item::Metric(m) => m, _ => unreachable!() }).collect();
++        groups.push((&first.resource, BTreeMap::from([(first_key, points)])));
++        keys.insert(resource_key(&first.resource), 0);
++    } else {
++        let mut pointers = std::collections::HashMap::new();
++        for item in items {
++            let Item::Metric(m) = item else { return None };
++            let index = *pointers.entry(Arc::as_ptr(&m.resource)).or_insert_with(|| {
++                *keys.entry(resource_key(&m.resource)).or_insert_with(|| {
++                    groups.push((&m.resource, BTreeMap::new()));
++                    groups.len() - 1
++                })
++            });
++            groups[index].1.entry(MetricKey::from(m)).or_default().push(m);
++        }
+     }
+     let scope = scope().unwrap().encode_to_vec();
+     let mut out = Vec::new();
+@@ -140,6 +152,113 @@ mod tests {
+         assert!(bytes == expected_bytes, "wire bytes differ at {:?}", bytes.iter().zip(&expected_bytes).position(|(a, b)| a != b));
+     }
+ 
++
++    fn batch(groups: usize, separate_resources: bool) -> Vec<Item> {
++        let resources: Vec<_> = (0..groups).map(|g| Arc::new(serde_json::json!({"service.name":format!("service-{g}")}).as_object().unwrap().clone())).collect();
++        (0..512).map(|i| {
++            let g = i % groups;
++            let resource = if separate_resources { Arc::new((*resources[g]).clone()) } else { Arc::clone(&resources[g]) };
++            let mut m = MetricItem::gauge(format!("metric-{g}"), i as f64,
++                serde_json::json!({"host":(i % 64).to_string(),"route":if i % 4 == 0 {"health"} else {"api"}}).as_object().unwrap().clone(), resource);
++            m.timestamp_ms = 1_000; m.unit = if g % 2 == 0 {"s"} else {"By"}.into();
++            Item::Metric(m)
++        }).collect()
++    }
++
++    #[test]
++    fn grouping_fast_path_preserves_mixed_metadata() {
++        for groups in [1, 8, 64, 512] {
++            for separate in [false, true] {
++                let items = batch(groups, separate);
++                assert_eq!(encode_grouped::<true>(&items), encode_grouped::<false>(&items), "groups={groups} separate={separate}");
++                assert_eq!(ExportMetricsServiceRequest::decode(encode(&items).unwrap().as_slice()).unwrap(), build_requests(&items).1.unwrap());
++            }
++        }
++        for field in ["name", "unit", "description", "kind", "temporality", "monotonic", "resource"] {
++            let mut items = batch(1, false);
++            for item in &mut items {
++                let Item::Metric(m) = item else { unreachable!() };
++                m.kind = MetricKind::Sum;
++                m.value = MetricValue::Sum { value: 1.0, is_monotonic: true, temporality: Temporality::Delta };
++            }
++            let Item::Metric(m) = &mut items[511] else { unreachable!() };
++            match field {
++                "name" => m.name = "other".into(),
++                "unit" => m.unit = "By".into(),
++                "description" => m.description = "other".into(),
++                "kind" => { m.kind = MetricKind::Gauge; m.value = MetricValue::Gauge(1.0); },
++                "temporality" => m.value = MetricValue::Sum { value: 1.0, is_monotonic: true, temporality: Temporality::Cumulative },
++                "monotonic" => m.value = MetricValue::Sum { value: 1.0, is_monotonic: false, temporality: Temporality::Delta },
++                "resource" => { Arc::make_mut(&mut m.resource).insert("other".into(), "value".into()); },
++                _ => unreachable!(),
++            }
++            assert_eq!(encode_grouped::<true>(&items), encode_grouped::<false>(&items), "changed {field}");
++            assert_eq!(ExportMetricsServiceRequest::decode(encode(&items).unwrap().as_slice()).unwrap(), build_requests(&items).1.unwrap(), "changed {field}");
++        }
++    }
++
++    #[test]
++    #[ignore = "manual release-mode encoder microbenchmark"]
++    fn benchmark_output_grouping() {
++        use std::{hint::black_box, time::Instant};
++        for (groups, late_mismatch) in [(1, false), (8, false), (64, false), (512, false), (1, true)] {
++            let mut items = batch(groups, false);
++            if late_mismatch {
++                let Item::Metric(m) = &mut items[511] else { unreachable!() };
++                m.name = "other".into();
++            }
++            assert_eq!(encode_grouped::<true>(&items), encode_grouped::<false>(&items));
++            let mut times = [Vec::new(), Vec::new()];
++            for round in 0..8 {
++                for mode in [round % 2, 1 - round % 2] {
++                    let start = Instant::now();
++                    for _ in 0..1000 {
++                        black_box(if mode == 0 { encode_grouped::<false>(black_box(&items)) } else { encode_grouped::<true>(black_box(&items)) });
++                    }
++                    times[mode].push(start.elapsed().as_nanos() as f64 / 512_000.0);
++                }
++            }
++            for values in &mut times { values.sort_by(f64::total_cmp); }
++            let old = (times[0][3] + times[0][4]) / 2.0;
++            let new = (times[1][3] + times[1][4]) / 2.0;
++            println!("groups={groups} late_mismatch={late_mismatch} baseline={old:.2} candidate={new:.2} ns/point reduction={:.1}%", 100.0 * (1.0 - new / old));
++        }
++    }
++
++    #[test]
++    #[ignore = "manual metadata representation prototype"]
++    fn benchmark_metadata_sharing() {
++        use std::{hint::black_box, time::Instant};
++        type Metadata = (String, String, String, String);
++        for groups in [1, 8, 64, 512] {
++            let source: Vec<Metadata> = (0..groups).map(|g| (format!("bench.requests.{g}"), "1".into(), String::new(), "sum".into())).collect();
++            let mut times = [Vec::new(), Vec::new()];
++            for round in 0..8 {
++                for mode in [round % 2, 1 - round % 2] {
++                    let start = Instant::now();
++                    for _ in 0..1000 {
++                        if mode == 0 {
++                            black_box((0..512).map(|i| black_box(&source)[i % groups].clone()).collect::<Vec<_>>());
++                        } else {
++                            let shared: Vec<_> = black_box(&source).iter().map(|m| Arc::new(m.clone())).collect();
++                            black_box((0..512).map(|i| Arc::clone(&shared[i % groups])).collect::<Vec<_>>());
++                        }
++                    }
++                    times[mode].push(start.elapsed().as_nanos() as f64 / 512_000.0);
++                }
++            }
++            let shared = Arc::new(source[0].clone());
++            let mut changed = Arc::clone(&shared);
++            Arc::make_mut(&mut changed).0 = "changed".into();
++            assert_eq!(*shared, source[0]);
++            assert_eq!(changed.0, "changed");
++            for values in &mut times { values.sort_by(f64::total_cmp); }
++            let old = (times[0][3] + times[0][4]) / 2.0;
++            let new = (times[1][3] + times[1][4]) / 2.0;
++            println!("groups={groups} owned={old:.2} shared={new:.2} ns/point reduction={:.1}%", 100.0 * (1.0 - new / old));
++        }
++    }
++
+     #[test]
+     fn other_item_shapes_use_the_general_encoder() {
+         assert!(encode(&[]).is_none());

@@ -1,0 +1,11 @@
+
+running 1 test
+test output::otlp::metric_wire::tests::benchmark_output_grouping ... groups=1 late_mismatch=false baseline=244.04 candidate=234.25 ns/point reduction=4.0%
+groups=8 late_mismatch=false baseline=252.40 candidate=252.15 ns/point reduction=0.1%
+groups=64 late_mismatch=false baseline=297.39 candidate=297.59 ns/point reduction=-0.1%
+groups=512 late_mismatch=false baseline=617.65 candidate=638.93 ns/point reduction=-3.4%
+groups=1 late_mismatch=true baseline=245.17 candidate=424.84 ns/point reduction=-73.3%
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1256 filtered out; finished in 14.36s
+

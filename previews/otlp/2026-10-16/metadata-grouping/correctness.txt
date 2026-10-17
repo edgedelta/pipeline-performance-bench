@@ -1,0 +1,10 @@
+
+running 5 tests
+test output::otlp::metric_wire::tests::benchmark_metadata_sharing ... ignored, manual metadata representation prototype
+test output::otlp::metric_wire::tests::benchmark_output_grouping ... ignored, manual release-mode encoder microbenchmark
+test output::otlp::metric_wire::tests::borrowed_encoding_matches_generated_protobuf ... ok
+test output::otlp::metric_wire::tests::grouping_fast_path_preserves_mixed_metadata ... ok
+test output::otlp::metric_wire::tests::other_item_shapes_use_the_general_encoder ... ok
+
+test result: ok. 3 passed; 0 failed; 2 ignored; 0 measured; 1252 filtered out; finished in 0.02s
+
