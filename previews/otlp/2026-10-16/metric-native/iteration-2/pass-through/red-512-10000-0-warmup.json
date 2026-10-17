@@ -1,0 +1,61 @@
+{
+  "load": {
+    "target_rps": 1000,
+    "batch": 512,
+    "connections": 64,
+    "concurrency": 1024,
+    "seconds": 5,
+    "scheduled_requests": 5000,
+    "missed_requests": 2,
+    "achieved_rps": 999.6,
+    "drain_seconds": 0.001633572,
+    "input_bytes_per_request": 30630,
+    "latency_bounds_us": [
+      1000,
+      2000,
+      5000,
+      10000,
+      25000,
+      50000,
+      100000,
+      250000,
+      500000,
+      1000000,
+      5000000
+    ],
+    "started": 4998,
+    "completed": 4998,
+    "completed_in_window": 4998,
+    "accepted_points": 2558976,
+    "rejected_points": 0,
+    "rpc_errors": 0,
+    "error_examples": [],
+    "expired": 2,
+    "latency_buckets": [
+      931,
+      3997,
+      70,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "delivered": {
+    "requests": 4998,
+    "points": 2558976,
+    "value_sum": 2558976.0,
+    "bytes": 153953394,
+    "enriched_points": 0,
+    "host_points": 2558976,
+    "health_points": 639744,
+    "request_points": {
+      "512": 4998
+    }
+  }
+}

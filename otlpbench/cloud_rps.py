@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 
 from .rps import Host
 
@@ -19,6 +20,7 @@ def main():
     ap.add_argument('--red-binary', type=Path, help='Explicit override of the pinned Linux agent binary')
     ap.add_argument('--baseline-red-binary', type=Path, help='Rerun Rust with a baseline binary on the same hosts')
     ap.add_argument('--scenarios', default='pass-through')
+    ap.add_argument('--iteration-control', type=Path, help='Local directory for subsequent benchmark jobs; stop file releases hosts')
     args, extra=ap.parse_known_args()
     if args.baseline_red_binary and not args.baseline_red_binary.is_file(): ap.error('--baseline-red-binary must exist')
     if args.red_binary and not args.red_binary.is_file(): ap.error('--red-binary must exist')
@@ -65,6 +67,27 @@ def main():
             for scenario in args.scenarios.split(','):
                 destination=out if args.scenarios=='pass-through' else out/scenario
                 subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(destination),'--scenario',scenario,*extra],cwd=root,check=True)
+            if args.iteration_control:
+                control=args.iteration_control.resolve();control.mkdir(parents=True,exist_ok=True)
+                (control/'ready.json').write_text(json.dumps({'output':str(out),'hosts':str(hosts_file)}))
+                deadline=time.monotonic()+1800
+                while not (control/'stop').exists():
+                    jobs=sorted(control.glob('job-*.json'))
+                    if not jobs:
+                        if time.monotonic()>deadline: raise TimeoutError('iteration control idle for 30 minutes')
+                        time.sleep(1);continue
+                    for job in jobs:
+                        spec=json.loads(job.read_text())
+                        binary=Path(spec['binary']).resolve()
+                        if not binary.is_file():raise ValueError('iteration binary missing')
+                        name=spec['name']
+                        if not name.replace('-','').isalnum():raise ValueError('invalid iteration name')
+                        endpoints['agent'].upload(binary,'/tmp/red-iteration')
+                        endpoints['agent'].command('sudo install -m755 /tmp/red-iteration /opt/red/red')
+                        for scenario in args.scenarios.split(','):
+                            subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(out/name/scenario),'--scenario',scenario,*extra,*spec.get('args',[])],cwd=root,check=True)
+                        job.rename(job.with_suffix('.done'))
+                        deadline=time.monotonic()+1800
             if args.baseline_red_binary:
                 endpoints['agent'].upload(args.baseline_red_binary, '/tmp/red-baseline')
                 endpoints['agent'].command('sudo install -m755 /tmp/red-baseline /opt/red/red')
