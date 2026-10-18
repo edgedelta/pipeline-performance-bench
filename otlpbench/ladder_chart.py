@@ -56,13 +56,15 @@ HTML = r'''<!doctype html>
 <script>
 const data=__DATA__;
 const names={red:'Edge Delta (Rust)',otelcol:'OpenTelemetry Collector',bindplane:'Bindplane (Dynatrace)'};
-const colors={red:'#00cc66',otelcol:'#a348ff',bindplane:'#f04444'};
+const colors={red:'#00DA63',otelcol:'#9F4FFF',bindplane:'#EF4444'};
 const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail'};
 const versions={red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
 let mode='tier',rate=Math.max(...data.rates),metric='efficiency',scenario='pass-through';
 const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);
 const shortRate=n=>n<1000?fmt(n):(n/1000).toFixed(2).replace(/\.00$/,'')+'k';
+const loadNames=['Lowest','Low','Medium','High','Highest'];
+const loadName=r=>loadNames[5-data.rates.length+data.rates.indexOf(r)]??shortRate(r);
 const valid=r=>!!(r&&r.load&&r.through_delivery&&r.operation_verified&&(r.delivery_verified||r.scenario==='sample'&&r.sampling_verified)&&r.output_batch_verified!==false);
 const cpu=r=>r.through_delivery.cpu_seconds/(data.signal==='traces'?r.load.seconds:r.input_window.elapsed_seconds);
 const lookup=(s,t,v)=>data.rows.find(r=>r.scenario===s&&r.target_rps===t&&r.vendor===v);
@@ -72,7 +74,7 @@ function render(){
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
  el('tiers').hidden=mode==='trend';el('scenarioControl').hidden=mode!=='trend';
  document.querySelectorAll('[data-rate]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.rate===rate)));
- el('subtitle').textContent=mode==='tier'?`${fmt(rate)} requests/sec × 512 points/request = ${fmt(rate*512)} points/sec offered · OTLP/gRPC input`:`${labels[scenario]} · ${data.rates.map(shortRate).join(' → ')} requests/sec · 512 points/request · OTLP/gRPC input`;
+ el('subtitle').textContent=mode==='tier'?`${loadName(rate)} load · ${fmt(rate)} requests/sec × 512 points/request = ${fmt(rate*512)} points/sec offered · OTLP/gRPC input`:`${labels[scenario]} · ${data.rates.map(shortRate).join(' → ')} requests/sec · 512 points/request · OTLP/gRPC input`;
  el('caption').textContent=captions[metric];
  const groups=mode==='tier'?data.scenarios:data.rates;
  const selected=groups.flatMap(g=>data.vendors.map(v=>lookup(mode==='tier'?g:scenario,mode==='tier'?rate:g,v)));
@@ -81,7 +83,7 @@ function render(){
  const max=Math.max(1,offered,...values)*1.18;
  let svg='<title>'+captions[metric]+'</title>';
  for(let i=0;i<=4;i++){const y=420-i*90;svg+=`<line x1="90" x2="1490" y1="${y}" y2="${y}" stroke="#393939"/><text x="76" y="${y+5}" text-anchor="end" fill="#aaa" font-size="14">${fmt(max*i/4)}</text>`}
- groups.forEach((g,i)=>{const width=1380/groups.length,base=100+i*width+(width-174)/2;data.vendors.forEach((v,j)=>{const r=lookup(mode==='tier'?g:scenario,mode==='tier'?rate:g,v),n=value(r),ok=n!==null&&Number.isFinite(n),solid=ok&&r.status==='measured',x=base+j*58,h=ok?n/max*360:0;svg+=`<g><title>${names[v]} · ${ok?fmt(n):'N/A'} · ${r?r.status.replaceAll('_',' '):'pending'}</title><rect x="${x}" y="${420-h}" width="46" height="${h}" rx="4" fill="${colors[v]}" fill-opacity="${solid?1:.25}" stroke="${colors[v]}" ${solid?'':'stroke-dasharray="5 4"'}/><text x="${x+23}" y="${405-h}" text-anchor="middle" fill="#ddd" font-size="12">${ok?fmt(n):r&&r.status==='pending'?'Pending':'N/A'}</text>${ok&&!solid?`<text x="${x+23}" y="442" text-anchor="middle" fill="#bbb" font-size="10">${shortRate(r.load.achieved_rps)} req/s</text>`:''}</g>`});svg+=`<text x="${base+81}" y="477" text-anchor="middle" fill="#ddd" font-size="17">${mode==='tier'?labels[g]:shortRate(g)+' req/s'}</text>`});
+ groups.forEach((g,i)=>{const width=1380/groups.length,base=100+i*width+(width-174)/2;data.vendors.forEach((v,j)=>{const r=lookup(mode==='tier'?g:scenario,mode==='tier'?rate:g,v),n=value(r),ok=n!==null&&Number.isFinite(n),solid=ok&&r.status==='measured',x=base+j*58,h=ok?n/max*360:0;svg+=`<g><title>${names[v]} · ${ok?fmt(n):'N/A'} · ${r?r.status.replaceAll('_',' '):'pending'}</title><rect x="${x}" y="${420-h}" width="46" height="${h}" rx="4" fill="${colors[v]}" fill-opacity="${solid?1:.25}" stroke="${colors[v]}" ${solid?'':'stroke-dasharray="5 4"'}/><text x="${x+23}" y="${405-h}" text-anchor="middle" fill="#ddd" font-size="12">${ok?fmt(n):r&&r.status==='pending'?'Pending':'N/A'}</text>${ok&&!solid?`<text x="${x+23}" y="442" text-anchor="middle" fill="#bbb" font-size="10">${shortRate(r.load.achieved_rps)} req/s</text>`:''}</g>`});svg+=`<text x="${base+81}" y="477" text-anchor="middle" fill="#ddd" font-size="17">${mode==='tier'?labels[g]:loadName(g)}</text>`});
  el('chart').innerHTML=svg;
  const completed=data.rows.filter(r=>r.status!=='pending').length,verified=data.rows.filter(valid).length,shortfalls=data.rows.filter(r=>r.status==='input_shortfall').length;
  el('status').textContent=`${completed}/${data.rows.length} cases completed · ${verified} verified · ${shortfalls} load shortfalls${completed<data.rows.length?' · Run in progress; reload for new results.':''}`;
@@ -89,7 +91,7 @@ function render(){
  el('rows').innerHTML=shown.map(r=>`<tr><td>${labels[r.scenario]}</td><td>${fmt(r.target_rps)}</td><td>${names[r.vendor]}</td><td>${r.load?fmt(r.load.achieved_rps):'—'}</td><td>${r.through_delivery?cpu(r).toFixed(3):'—'}</td><td>${r.through_delivery?fmt(r.through_delivery.rss_mb):'—'}</td><td>${valid(r)?r.scenario==='sample'?'Sampling checks':'Verified':'Not verified'}</td><td>${r.status.replaceAll('_',' ')}</td></tr>`).join('');
 }
 el('legend').innerHTML=data.vendors.map(v=>`<span><i class="dot" style="background:${colors[v]}"></i>${names[v]} <span class="version">${versions[v]}</span></span>`).join('');
-el('tiers').innerHTML=data.rates.map(r=>`<button data-rate="${r}" aria-pressed="${r===rate}">${shortRate(r)} req/s</button>`).join('');
+el('tiers').innerHTML=data.rates.map(r=>`<button data-rate="${r}" title="${shortRate(r)} requests/sec" aria-label="${loadName(r)}: ${shortRate(r)} requests/sec" aria-pressed="${r===rate}">${loadName(r)}</button>`).join('');
 el('scenario').innerHTML=data.scenarios.map(s=>`<option value="${s}">${labels[s]}</option>`).join('');
 el('provenance').textContent='512 points/request · 64 connections · c8i.8xlarge · Rust '+data.source_commit.slice(0,7)+' · OTLP/HTTP output';
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;render()});

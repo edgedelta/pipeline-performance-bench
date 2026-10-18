@@ -297,10 +297,11 @@ function App() {
   return (
     <div className="wrap">
       <div className="card">
+        <nav className="signal-nav" aria-label="Telemetry signal"><a href="logs/" aria-current="page">Logs</a><a href="metrics/">Metrics</a><a href="traces/">Traces</a></nav>
         <header className="head">
           <div className="brand">
             <div className="titles">
-              <h1>Pipeline Performance Benchmarks</h1>
+              <small className="signal-label">LOGS</small><h1>Pipeline Performance Benchmarks</h1>
               <p className="sub">
                 {lm.label + " at " + loadName(tierI, ladder.targets.length).toLowerCase() + " load (" + fmt0(target) + " logs/sec in) · " + (tierView ? "" : SCENARIOS[scenarioIdx] + " over time · ") + lm.better + " is better"}
               </p>
@@ -308,7 +309,7 @@ function App() {
           </div>
           <div className="controls">
             <div className="seg">
-              <button className={view === "tier" ? "on" : ""} onClick={() => { setView("tier"); setHover(null); }}>By tier</button>
+              <button className={view === "tier" ? "on" : ""} onClick={() => { setView("tier"); setHover(null); }}>By load</button>
               <button className={view === "trend" ? "on" : ""} onClick={() => { setView("trend"); setHover(null); }}>Trend</button>
             </div>
           </div>
@@ -316,16 +317,14 @@ function App() {
 
         <div className="subcontrols">
           <div className="seg seg-scn">
-            {ladder.targets.map((t, i) => [t, i]).reverse().map(([t, i]) => (
+            {ladder.targets.map((t, i) => [t, i]).map(([t, i]) => (
               <button key={t} className={"has-tip" + (tierI === i ? " on" : "")} onClick={() => setTierIdx(i)}
                 data-tip={`${fmt0(t)} logs/sec sent to each agent`}>{loadName(i, ladder.targets.length)}</button>
             ))}
           </div>
-          <div className="seg seg-scn">
-            {LADDER_METRICS.map((m) => (
-              <button key={m.key} className={"has-tip wrap-tip" + (effMetric === m.key ? " on" : "")} onClick={() => setEffMetric(m.key)} data-tip={m.tip}>{m.label}</button>
-            ))}
-          </div>
+          <label className="measure-label">Measure <select aria-label="Measure" value={effMetric} onChange={(e) => setEffMetric(e.target.value)}>
+            {LADDER_METRICS.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+          </select></label>
         </div>
         {view === "trend" && (
           <div className="subcontrols subrow">

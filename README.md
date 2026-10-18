@@ -168,3 +168,9 @@ Use workflow input `profile=short` (or `./run.sh --profile short`) for pass-thro
 The `bindplane` adapter runs the standalone [Bindplane distribution of OpenTelemetry](https://github.com/observIQ/bindplane-otel-collector) without a management server. Pass-through, filter and mask use the same processors as the OTel comparison; CSV lookup uses Bindplane’s lookup processor with `Unknown` miss defaults. Historical runs without Bindplane measurements display N/A; results are never backfilled from another collector. Run `./run.sh --dry-run --vendors bindplane` to inspect its four scenarios.
 
 Validate an unpacked official Bindplane release locally with `python3 tests/bindplane_smoke.py /path/to/observiq-otel-collector`. This checks production-config startup and pass-through, filter, nine-field masking, and CSV hit/miss behavior through its HTTP receiver using a local file sink.
+
+### Signal pages
+
+The static site has separate `/logs/`, `/metrics/` and `/traces/` routes with shared navigation and styling. The existing root URL continues to show logs. Five-tier ladders use Lowest, Low, Medium, High and Highest; four-tier ladders omit Lowest. Each page shows its actual input rate because named loads are relative to that signal.
+
+`tools/build_pages.sh` builds these routes. Logs use release history; metrics and traces reuse the saved reports selected in `tools/build_signal_pages.py`, with their measured versions and run dates. Updating presentation does not run benchmarks or change measurements. For a local preview, copy `site/` into an output directory, provide its existing `data/history.json`, then run `python3 tools/build_signal_pages.py <output-dir>` and serve that directory.

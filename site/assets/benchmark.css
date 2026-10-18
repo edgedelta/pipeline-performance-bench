@@ -1,0 +1,21 @@
+/* Shared presentation for logs, metrics and traces. */
+body{display:block;margin:0;padding:28px;background:#101010;color:#e7e7e7;font:16px system-ui,-apple-system,sans-serif}
+.wrap,main{width:100%;max-width:1720px;margin:auto}
+.card,main{padding:38px;background:#202020;border:1px solid #393939;border-radius:20px}
+.signal-nav{display:flex;gap:4px;width:fit-content;padding:4px;margin-bottom:28px;background:#101010;border:1px solid #404040;border-radius:12px}
+.signal-nav a{padding:10px 20px;border-radius:8px;color:#aaa;text-decoration:none;font-weight:500}
+.signal-nav a[aria-current=page]{background:#393939;color:white}
+.signal-nav a:hover{color:white}.signal-label,header small{font-size:13px;color:#aaa;letter-spacing:.05em}
+.head,header{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.titles h1,h1{font:700 32px/1.2 system-ui,-apple-system,sans-serif;letter-spacing:-.02em;margin:10px 0;color:#eee}
+.titles .sub{font-size:16px;line-height:1.5;color:#aaa;margin:16px 0}
+.head .controls{margin:0}.subcontrols{gap:18px;margin:26px 0}.seg-scn{margin-top:0}
+.seg{padding:4px;gap:3px;border-radius:12px;border-color:#404040;background:#101010}
+.seg button{font:inherit;padding:11px 16px;border-radius:8px;color:#ddd}.seg button.on{background:#393939;color:white}
+.measure-label{display:flex;align-items:center;gap:10px;color:#aaa}
+select{font:inherit;padding:11px 16px;border:1px solid #484848;border-radius:8px;color:#ddd;background:#292929}
+.legend{gap:28px;margin:25px 0}.leg{font-size:16px}.leg .sw{width:14px;height:14px}.leg .leg-ver{font-size:13px}
+.yunit{font-size:16px;margin-bottom:18px}.xlab{font-size:17px}.plot{height:440px}.bval{font-size:12px}.grid .ytick{font-size:14px}
+.foot{font-size:13px;line-height:1.6;text-transform:none;letter-spacing:normal}.foot .na-key{font:inherit;color:#aaa}
+a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid white;outline-offset:3px}
+@media(max-width:800px){body{padding:12px}.card,main{padding:20px}.head,header{align-items:flex-start;flex-direction:column}.titles h1,h1{font-size:26px}.legend{gap:15px}.signal-nav a{padding:10px 16px}.seg button{padding:10px}.subcontrols{gap:12px}}

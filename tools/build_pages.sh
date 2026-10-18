@@ -18,6 +18,7 @@ touch "$out/.nojekyll"
 # Version local asset URLs so browsers fetch the new app.jsx after each deploy.
 version=$(git -C "$root" rev-parse --short HEAD 2>/dev/null || date +%s)
 sed -i.bak -e "s|src=\"app.jsx\"|src=\"app.jsx?v=$version\"|" \
+  -e "s|href=\"assets/benchmark.css\"|href=\"assets/benchmark.css?v=$version\"|" \
   -e "s|href=\"assets/colors_and_type.css\"|href=\"assets/colors_and_type.css?v=$version\"|" "$out/index.html"
 rm "$out/index.html.bak"
 echo "[]" > "$out/data/history.json"
@@ -30,5 +31,7 @@ while read -r tag; do
     echo "skipping $tag: no data.json"
   fi
 done
+
+python3 "$root/tools/build_signal_pages.py" "$out"
 
 echo "built $out ($(du -sh "$out/data/history.json" | cut -f1) history)"
