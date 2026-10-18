@@ -1,0 +1,53 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 11K of event 'cpu-clock'
+# Event count (approx.): 115272726120
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................ ....................
+#
+10.69% [.] mi_free - -
+7.42% [.] mi_malloc_aligned - -
+6.20% [.] mi_page_thread_collect_to_local - -
+4.93% [.] <red::input::trace_decode::Server as tonic::server::service::UnaryService<red::input::trace_decode::Request>>::call::{closure#0} - -
+4.51% [.] prost::encoding::varint::decode_varint::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+3.84% [.] 0x00000000001986a5 - -
+3.26% [.] red::input::gateway::kv_into_trace_map - -
+2.34% [.] red::output::otlp::trace_wire::attrs - -
+2.13% [.] <bytes::bytes_mut::BytesMut>::split_to - -
+1.96% [.] prost::encoding::varint::encode_varint::<alloc::vec::Vec<u8>> - -
+1.95% [.] red::ottl::eval::trace_attribute_condition - -
+1.76% [.] prost::encoding::bytes::merge::<bytes::bytes::Bytes, &mut &mut tonic::codec::buffer::DecodeBuf> - -
+1.74% [.] <tonic::codec::prost::ProstDecoder<red::input::trace_decode::Request> as tonic::codec::Decoder>::decode - -
+1.69% [.] <bytes::bytes_mut::BytesMut as bytes::buf::buf_impl::Buf>::copy_to_bytes - -
+1.60% [.] bytes::bytes_mut::shared_v_drop - -
+1.50% [.] prost::encoding::string::merge::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+1.28% [.] 0x000000000019869e - -
+1.25% [.] <red::output::otlp::Pusher as red::output::delivery::Target>::send::{closure#0} - -
+1.22% [.] 0x00000000001a197f - -
+1.17% [.] <alloc::collections::btree::map::IntoIter<alloc::string::String, serde_json::value::Value>>::dying_next - -
+1.15% [.] core::str::converts::from_utf8 - -
+1.09% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value> as core::ops::drop::Drop>::drop - -
+1.03% [.] <alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry - -
+0.96% [.] core::ptr::drop_glue::<red::item::SpanData> - -
+0.96% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+0.85% [k] rep_movs_alternative - -
+0.84% [.] prost::encoding::message::merge_repeated::<opentelemetry_proto::proto::tonic::common::v1::KeyValue, &mut &mut tonic::codec::buffer::DecodeBuf> - -
+0.75% [.] red::output::otlp::trace_wire::scope_key - -
+0.72% [.] <alloc::raw_vec::RawVecInner>::finish_grow - -
+0.69% [k] kernel_init_pages - -
+0.65% [.] prost::encoding::merge_loop::<opentelemetry_proto::proto::tonic::common::v1::AnyValue, prost::encoding::message::merge<opentelemetry_proto::proto::tonic::common::v1::AnyValue, &mut &mut tonic::codec::buffer::DecodeBuf>::{closure#0}, &mut &mut tonic::codec::buffer::DecodeBuf> - -
+0.62% [k] finish_task_switch.isra.0 - -
+0.62% [.] 0x00000000001a16c4 - -
+0.59% [.] 0x00000000001a1640 - -
+0.53% [.] red::output::otlp::trace_wire::id::<8> - -
+0.53% [.] 0x00000000001a1653 - -
+0.52% [.] core::ptr::drop_glue::<red::item::SpanLink> - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

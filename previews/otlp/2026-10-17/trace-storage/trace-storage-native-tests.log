@@ -1,0 +1,69 @@
+   Compiling red v3.15.0 (/Users/yildiz/workspace/gocode/src/github.com/edgedelta/red)
+warning: method `root_of` is never used
+   --> src/input/k8s_meta.rs:565:8
+    |
+557 | impl ControllerIndex {
+    | -------------------- method in this implementation
+...
+565 |     fn root_of(&self, pod: &ObjectMeta) -> (String, String) {
+    |        ^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `red` (lib) generated 1 warning
+warning: unused variable: `self_logs`
+  --> src/main.rs:52:9
+   |
+52 |     let self_logs = red::selftel::self_logs::install(0);
+   |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_self_logs`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `red` (bin "red") generated 1 warning (run `cargo fix --bin "red" -p red` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.29s
+     Running tests/gateway_input.rs (target/debug/deps/gateway_input-cf446caeca26a0bc)
+
+running 5 tests
+test shutdown_releases_the_port ... ok
+test logs_exported_over_grpc_reach_the_pipeline ... ok
+test a_closed_pipeline_is_reported_as_unavailable ... ok
+test an_empty_export_is_accepted ... ok
+test gzip_exports_are_accepted_by_all_gateway_services ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/native_processor_types.rs (target/debug/deps/native_processor_types-7339f76eb8e3400a)
+
+running 7 tests
+test trace_routing_uses_native_fields ... ok
+test mixed_stream_rate_limit_and_quota_meter_every_type ... ok
+test histogram_payload_and_extra_roots_survive_transform_and_queue_serialization ... ok
+test extraction_and_keep_item_work_for_every_native_type ... ok
+test native_trace_tail_sampling_preserves_the_entire_span_and_late_decisions ... ok
+test lookup_and_connector_filter_execute_on_metrics_and_traces ... ok
+test native_context_processor_matrix_and_go_oracle_inputs ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/otlp_concurrency.rs (target/debug/deps/otlp_concurrency-61404a7514ef856b)
+
+running 2 tests
+test cancellation_unblocks_active_and_waiting_exports ... ok
+test direct_exports_preserve_caller_concurrency_and_drain ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests/otlp_gzip.rs (target/debug/deps/otlp_gzip-ab6823aebf7415cd)
+
+running 1 test
+test compressed_acknowledgments_succeed_for_all_signals ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/otlp_http_reuse.rs (target/debug/deps/otlp_http_reuse-747c8a4b4fb1e5a7)
+
+running 1 test
+test delayed_http_acknowledgment_is_drained_and_connection_reused ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+

@@ -1,0 +1,54 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 11K of event 'cpu-clock'
+# Event count (approx.): 115030301880
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ .......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+9.34% [.] mi_free - -
+8.17% [.] mi_malloc_aligned - -
+4.77% [.] <red::input::trace_decode::Server as tonic::server::service::UnaryService<red::input::trace_decode::Request>>::call::{closure#0} - -
+4.67% [.] mi_page_thread_collect_to_local - -
+4.45% [.] prost::encoding::varint::decode_varint::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+3.27% [.] red::input::gateway::kv_into_trace_map - -
+2.75% [.] 0x00000000001986a5 - -
+2.35% [.] <bytes::bytes_mut::BytesMut>::split_to - -
+1.89% [.] <alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry - -
+1.72% [.] <bytes::bytes_mut::BytesMut as bytes::buf::buf_impl::Buf>::copy_to_bytes - -
+1.66% [.] red::item::process_one::<red::processors::filter::OttlFilter> - -
+1.66% [.] <tonic::codec::prost::ProstDecoder<red::input::trace_decode::Request> as tonic::codec::Decoder>::decode - -
+1.62% [.] bytes::bytes_mut::shared_v_drop - -
+1.58% [.] red::ottl::funcs::sample::sample - -
+1.53% [.] red::output::otlp::trace_wire::attrs - -
+1.51% [.] prost::encoding::string::merge::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+1.46% [.] prost::encoding::bytes::merge::<bytes::bytes::Bytes, &mut &mut tonic::codec::buffer::DecodeBuf> - -
+1.41% [.] <alloc::collections::btree::map::IntoIter<alloc::string::String, serde_json::value::Value>>::dying_next - -
+1.23% [.] prost::encoding::varint::encode_varint::<alloc::vec::Vec<u8>> - -
+1.23% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value> as core::ops::drop::Drop>::drop - -
+1.16% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+1.14% [.] red::ottl::eval::eval_ro - -
+1.12% [.] 0x00000000001a197f - -
+1.11% [.] core::ptr::drop_glue::<red::item::SpanData> - -
+1.08% [k] rep_movs_alternative - -
+1.04% [.] core::str::converts::from_utf8 - -
+1.01% [.] red::processors::sample::xxh64 - -
+0.90% [.] red::item::trace_id::render - -
+0.82% [.] 0x000000000019869e - -
+0.78% [.] <red::output::otlp::Pusher as red::output::delivery::Target>::send::{closure#0} - -
+0.75% [.] prost::encoding::message::merge_repeated::<opentelemetry_proto::proto::tonic::common::v1::KeyValue, &mut &mut tonic::codec::buffer::DecodeBuf> - -
+0.71% [.] <alloc::raw_vec::RawVecInner>::finish_grow - -
+0.61% [.] red::ottl::eval::eval_cond - -
+0.60% [.] _mi_theap_realloc_zero - -
+0.60% [.] 0x00000000001a1640 - -
+0.56% [.] red::output::otlp::trace_wire::scope_key - -
+0.55% [k] finish_task_switch.isra.0 - -
+0.50% [.] 0x00000000001a1653 - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

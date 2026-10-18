@@ -1,0 +1,9 @@
+{
+  "baseline_commit": "2e709b3199c2c5936515a151ef853a26d8e3d560",
+  "candidate_commit": "8c2931842674c8188ddec825d3b99ea9a4c0d3fc",
+  "candidate_sha256": "fb650ef18bb944fa1868be767cd0f9c2549e3b85ca4a1d62990713a735a0bc70",
+  "harness_commit": "497ef8ecd681acf192945f1eeee855ee01b42a44",
+  "build": "cargo build --bin red --release --locked --target x86_64-unknown-linux-gnu -j1; strip debug only",
+  "micro_allocator": "system",
+  "agent_allocator": "mimalloc"
+}
