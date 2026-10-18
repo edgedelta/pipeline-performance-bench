@@ -1,0 +1,71 @@
+{
+  "load": {
+    "target_rps": 500,
+    "batch": 512,
+    "connections": 64,
+    "concurrency": 1024,
+    "seconds": 5,
+    "scheduled_requests": 2500,
+    "missed_requests": 0,
+    "achieved_rps": 499.8,
+    "drain_seconds": 0.001749941,
+    "input_bytes_per_request": 90327,
+    "latency_bounds_us": [
+      1000,
+      2000,
+      5000,
+      10000,
+      25000,
+      50000,
+      100000,
+      250000,
+      500000,
+      1000000,
+      5000000
+    ],
+    "started": 2500,
+    "completed": 2500,
+    "completed_in_window": 2499,
+    "accepted_points": 1280000,
+    "rejected_points": 0,
+    "rpc_errors": 0,
+    "error_examples": [],
+    "expired": 0,
+    "latency_buckets": [
+      0,
+      2136,
+      364,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "delivered": {
+    "requests": 2500,
+    "points": 1280000,
+    "value_sum": 1280000.0,
+    "bytes": 211737500,
+    "enriched_points": 0,
+    "host_points": 0,
+    "health_points": 320000,
+    "trace_checks": {
+      "roots": 640000,
+      "children": 640000,
+      "root_ids": 3011251026520243694,
+      "child_ids": 3011251026520243694,
+      "error_trace_spans": 320000,
+      "masked": 1280000,
+      "private": 0,
+      "invalid": 0
+    },
+    "request_points": {
+      "512": 2500
+    }
+  }
+}
