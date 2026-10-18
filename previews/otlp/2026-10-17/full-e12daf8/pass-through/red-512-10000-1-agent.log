@@ -1,7 +1,0 @@
-[2m2026-10-17T04:08:41.249889Z[0m [32m INFO[0m red starting [3mversion[0m[2m=[0m"3.15.0" [3mconfig[0m[2m=[0m/home/ubuntu/agent.yaml [3mpoll[0m[2m=[0m0ns
-[2m2026-10-17T04:08:41.252607Z[0m [33m WARN[0m ED_DISABLE_LIVE_CAPTURE is deprecated in favor of settings.live_tail_settings
-[2m2026-10-17T04:08:41.252621Z[0m [32m INFO[0m live capture disabled by ED_DISABLE_LIVE_CAPTURE
-[2m2026-10-17T04:08:41.255369Z[0m [32m INFO[0m sequence built [3mnode[0m[2m=[0mprocess [3mstages[0m[2m=[0m0
-[2m2026-10-17T04:08:41.255430Z[0m [32m INFO[0m no usable ed_output node; skipping the heartbeat, so this agent will not appear in the fleet UI
-[2m2026-10-17T04:08:41.255434Z[0m [32m INFO[0m pipeline running [3mgeneration[0m[2m=[0m1
-[2m2026-10-17T04:08:41.255630Z[0m [32m INFO[0m ed_gateway_input listening [3mnode[0m[2m=[0min [3maddr[0m[2m=[0m0.0.0.0:4317 [3mprotocol[0m[2m=[0mgrpc [3mmax_connection_age[0m[2m=[0mnever

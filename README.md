@@ -174,3 +174,5 @@ Validate an unpacked official Bindplane release locally with `python3 tests/bind
 The static site has separate `/logs/`, `/metrics/` and `/traces/` routes with shared navigation and styling. The existing root URL continues to show logs. Five-tier ladders use Lowest, Low, Medium, High and Highest; four-tier ladders omit Lowest. Each page shows its actual input rate because named loads are relative to that signal.
 
 `tools/build_pages.sh` builds these routes. Logs use release history; metrics and traces reuse the saved reports selected in `tools/build_signal_pages.py`, with their measured versions and run dates. Updating presentation does not run benchmarks or change measurements. For a local preview, copy `site/` into an output directory, provide its existing `data/history.json`, then run `python3 tools/build_signal_pages.py <output-dir>` and serve that directory.
+
+Saved OTLP datasets and provenance live in [`data/otlp`](data/otlp/README.md). Historical configs, logs, profiles and generated previews are retained in the linked downloadable evidence archive.

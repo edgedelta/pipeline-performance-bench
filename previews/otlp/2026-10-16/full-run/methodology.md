@@ -1,7 +1,0 @@
-The visual report measures fixed-load processing cost. Input is OTLP/gRPC, batches of 512, four persistent clients, and no compression. Each tier runs for 30 seconds after warm-up on a separate c8i.2xlarge for each vendor. The five input rates are 1,000, 10,000, 25,000, 50,000, and 125,000 points or spans per second.
-
-Performance gating checks the requested operation: forwarding counts and values, trace identities and parent relationships, filtering, enrichment, masking, complete-trace sampling, grouped metric sums, and generated span metrics. Resource metadata, scope names, native span-kind mappings, and sub-millisecond timestamp precision do not suppress measurements. Raw output captures retain those differences.
-
-Aggregate sums over host labels. Rollup combines points using each agent's native 60-second interval behavior; event-time and flush-time implementations may create different output point counts. Combined applies both. Grouped sums must survive, and removing a label without reducing points is not counted as aggregation. The chart compares resource costs for these native operations, not identical event-time alignment semantics.
-
-Solid bars indicate the offered rate and expected delivery were sustained. Dashed bars show load or delivery issues. N/A means no comparable measurement for the tested configuration; it is not a vendor capability claim. Hover for a short explanation. No missing measurements are imputed.

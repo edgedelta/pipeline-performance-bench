@@ -10,8 +10,8 @@ sys.path.insert(0, str(ROOT))
 from otlpbench.ladder_chart import render
 
 REPORTS = {
-    'metrics': ROOT / 'previews/otlp/2026-10-17/metrics-ladder',
-    'traces': ROOT / 'previews/otlp/2026-10-18/traces-low',
+    'metrics': ROOT / 'data/otlp/2026-10-17/metrics-ladder',
+    'traces': ROOT / 'data/otlp/2026-10-18/traces-low',
 }
 
 

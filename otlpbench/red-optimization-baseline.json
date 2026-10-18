@@ -4,7 +4,7 @@
   "sha256": "494e18fbac7780843a4fe29be9addd242e52d0a6eb1ef084e288133364b4d199",
   "pr": "https://github.com/edgedelta/red/pull/21",
   "status": "unmerged measured baseline",
-  "report": "previews/otlp/2026-10-16/metric-native/results.json",
+  "report": "data/otlp/2026-10-16/metric-native/results.json",
   "workload": {
     "requests_per_second": 10000,
     "points_per_request": 512,
