@@ -137,7 +137,7 @@ as complete suites; measured capacity limits remain visible without claiming tar
 To switch to Mondays, change `.github/workflows/benchmark.yml` from
 `17 9 * * *` to `17 9 * * 1`. GitHub schedules use UTC and may start late.
 
-Every run installs fresh agents without fixed agent version numbers:
+Each logs run installs fresh agents using these channels:
 
 | Agent | Current installation channel |
 |---|---|
@@ -184,3 +184,5 @@ The daily and manual `Pipeline performance bench` workflow runs all three signal
 A manual full run on a PR branch runs the same workloads and saves review artifacts without publishing releases or Pages. The short profile reduces logs to their validation cases and OTLP to the lowest tier with ten-second trials. On main, full runs publish log results and a checksum-verified OTLP pair with raw evidence. Pages loads the latest published OTLP pair, falling back to the saved datasets only until the first daily pair exists. Invalid/missing cases prevent OTLP publication; measured capacity shortfalls remain visible.
 
 Each cloud job refreshes AWS credentials and destroys its own resources even after failure. Trigger before merge with `gh workflow run benchmark.yml --ref <branch> -f profile=full`, then inspect all log shards, both OTLP jobs, the combined reports and cleanup before merging.
+
+The OTLP comparison currently holds OTel Collector at 0.162.0 and Bindplane at 1.110.1 for continuity with the saved ladders. Their actual versions are recorded in every run. Rust follows the qualified candidate channel shared by all three signals.

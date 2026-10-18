@@ -82,7 +82,12 @@ class GeneratorBundleTest(unittest.TestCase):
         self.assertFalse(any('setup-go' in s.get('uses','') for job in jobs.values() for s in job['steps']))
         build = jobs['build-generators']
         artifact = next(s for s in build['steps'] if 'upload-artifact' in s.get('uses',''))['with']['path'].splitlines()
-        self.assertEqual(set(artifact), {'.loadgen-build/loadgen-rust','.loadgen-build/rust-provenance.json','.loadgen-build/generators.json'})
+        self.assertEqual(set(artifact), {'.loadgen-build/loadgen-rust','.loadgen-build/rust-provenance.json','.loadgen-build/generators.json', '.loadgen-build/otlp-traffic', '.loadgen-build/red', '.loadgen-build/release.json', '.loadgen-build/release-manifest.json'})
+        self.assertEqual(jobs['otlp']['needs'], 'build-generators')
+        self.assertEqual(jobs['otlp']['strategy']['matrix']['signal'], ['metrics', 'traces'])
+        self.assertEqual(jobs['otlp']['strategy']['max-parallel'], 2)
+        cleanup = next(s for s in jobs['otlp']['steps'] if s.get('name') == "Destroy this signal's isolated hosts")
+        self.assertEqual(cleanup['if'], 'always()')
         self.assertNotIn('build_loadgen.sh', (ROOT/'tools/build_generators.sh').read_text())
         self.assertNotIn('source      = "../.loadgen-build/loadgen"', (ROOT/'aws_resources/main.tf').read_text())
 

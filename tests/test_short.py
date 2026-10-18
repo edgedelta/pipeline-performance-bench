@@ -62,7 +62,7 @@ class ShortTest(unittest.TestCase):
         step=next(s for s in jobs['benchmark']['steps'] if s.get('name')=='Run isolated agent benchmark')
         self.assertIn('inputs.profile',step['env']['BENCHMARK_PROFILE'])
         steps=jobs['report']['steps'];publish=next(s for s in steps if s.get('name')=='Publish dated release for the full suite')
-        self.assertEqual(publish['if'], "inputs.profile != 'short'")
+        self.assertEqual(publish['if'], "inputs.profile != 'short' && github.ref == 'refs/heads/main'")
         self.assertIn('BENCHMARK_PROFILE=${BENCHMARK_PROFILE:-full}', (ROOT/'functions.sh').read_text())
         result=subprocess.run([str(ROOT/'run.sh'),'--profile','bogus','--dry-run'],capture_output=True)
         self.assertNotEqual(result.returncode,0)
