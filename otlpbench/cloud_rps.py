@@ -15,6 +15,8 @@ from .rps import Host
 
 def main():
     ap=argparse.ArgumentParser()
+    ap.add_argument('--traffic-binary', type=Path, help='Prebuilt Linux Rust generator/sink')
+    ap.add_argument('--external-cleanup', action='store_true', help='CI owns cleanup with refreshed credentials')
     ap.add_argument('--output', default='otlp-rps-results')
     ap.add_argument('--instance-type', default='c8i.8xlarge')
     ap.add_argument('--red-binary', type=Path, help='Explicit override of the pinned Linux agent binary')
@@ -22,6 +24,7 @@ def main():
     ap.add_argument('--scenarios', default='pass-through')
     ap.add_argument('--iteration-control', type=Path, help='Local directory for subsequent benchmark jobs; stop file releases hosts')
     args, extra=ap.parse_known_args()
+    if args.traffic_binary and not args.traffic_binary.is_file(): ap.error('--traffic-binary must exist')
     if args.baseline_red_binary and not args.baseline_red_binary.is_file(): ap.error('--baseline-red-binary must exist')
     if args.red_binary and not args.red_binary.is_file(): ap.error('--red-binary must exist')
     root=Path(__file__).resolve().parents[1]
@@ -63,7 +66,14 @@ def main():
             (tmp/'red').mkdir()
             shutil.copy2(args.red_binary, tmp/'red/red')
             def build():
-                s=endpoints['sink'];s.upload(archive,'/tmp/source.tgz')
+                s=endpoints['sink']
+                if args.traffic_binary:
+                    s.command('sudo cloud-init status --wait && sudo apt-get update -qq && sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq python3-psutil')
+                    for role in ['sink', 'load']:
+                        endpoints[role].upload(args.traffic_binary, '/home/ubuntu/otlp-traffic')
+                        endpoints[role].argv(['chmod', '+x', '/home/ubuntu/otlp-traffic'])
+                    return
+                s.upload(archive,'/tmp/source.tgz')
                 s.command('sudo cloud-init status --wait && sudo apt-get update -qq && sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq build-essential python3-psutil && tar -xzf /tmp/source.tgz && curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh && sh /tmp/rustup.sh -y --profile minimal --default-toolchain 1.98.0 && .cargo/bin/cargo build --release --locked --manifest-path traffic-rs/Cargo.toml && cp traffic-rs/target/release/otlp-traffic /home/ubuntu/otlp-traffic')
                 binary=tmp/'otlp-traffic'
                 subprocess.run(['scp',*s.opts,'ubuntu@'+s.address+':/home/ubuntu/otlp-traffic',str(binary)],check=True)
@@ -104,7 +114,7 @@ def main():
                 endpoints['agent'].command('sudo install -m755 /tmp/red-baseline /opt/red/red')
                 subprocess.run([sys.executable,'-m','otlpbench.rps','--hosts',str(hosts_file),'--key',str(infra/'otlp-key.pem'),'--output',str(out/'baseline'),*extra,'--vendors','red'],cwd=root,check=True)
     finally:
-        if (infra/'terraform.tfstate').exists():print(tf('destroy','-auto-approve','-var=instance_type='+args.instance_type),flush=True)
+        if not args.external_cleanup and (infra/'terraform.tfstate').exists():print(tf('destroy','-auto-approve','-var=instance_type='+args.instance_type),flush=True)
 
 
 if __name__=='__main__':main()
