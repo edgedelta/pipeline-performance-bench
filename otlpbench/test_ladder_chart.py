@@ -8,12 +8,12 @@ from .ladder_chart import SCENARIOS, RATES, VENDORS, collect
 
 
 class LadderReportTest(unittest.TestCase):
-    def populate(self, root):
+    def populate(self, root, rates=RATES):
         for scenario in SCENARIOS:
             path = root / scenario
             path.mkdir()
             rows = [dict(vendor=v, target_rps=r, batch=512, trial=0, status='measured',
-                         binary_sha256='measured-binary') for r in RATES for v in VENDORS]
+                         binary_sha256='measured-binary') for r in rates for v in VENDORS]
             (path / 'results.json').write_text(json.dumps(dict(rows=rows, calibration=[])))
 
     def test_loads_remain_distinct_and_enrich_is_excluded(self):
@@ -27,6 +27,27 @@ class LadderReportTest(unittest.TestCase):
                 for vendor in VENDORS:
                     self.assertEqual([r['target_rps'] for r in report['rows']
                                       if r['scenario'] == scenario and r['vendor'] == vendor], RATES)
+
+    def test_custom_ladder_preserves_every_vendor_and_missing_case(self):
+        rates = [100, 200, 300, 500]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.populate(root, rates)
+            report = collect(root, 'source', 'measured-binary', rates=rates)
+            self.assertEqual(report['rates'], rates)
+            self.assertEqual(len(report['rows']), 60)
+            self.assertEqual({r['target_rps'] for r in report['rows']}, set(rates))
+            path = root / 'rollup/results.json'
+            raw = json.loads(path.read_text())
+            raw['rows'].pop()
+            path.write_text(json.dumps(raw))
+            with self.assertRaisesRegex(ValueError, 'missing case: rollup/500/bindplane'):
+                collect(root, 'source', 'measured-binary', rates=rates)
+
+    def test_invalid_ladders_are_rejected(self):
+        for rates in [[], [0], [-1], [200, 100], [100, 100]]:
+            with self.subTest(rates=rates), self.assertRaisesRegex(ValueError, 'rates must be'):
+                collect(Path('/unused'), 'source', 'measured-binary', rates=rates)
 
     def test_missing_measurements_are_pending_only_in_partial_reports(self):
         with tempfile.TemporaryDirectory() as tmp:

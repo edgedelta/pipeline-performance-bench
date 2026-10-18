@@ -9,7 +9,10 @@ RATES = [1000, 2000, 4000, 8000]
 VENDORS = ['red', 'otelcol', 'bindplane']
 
 
-def collect(root, source_commit, binary_sha256, allow_partial=False, signal="metrics"):
+def collect(root, source_commit, binary_sha256, allow_partial=False, signal="metrics", rates=None):
+    rates = list(RATES if rates is None else rates)
+    if not rates or any(not isinstance(r, int) or r <= 0 for r in rates) or rates != sorted(set(rates)):
+        raise ValueError('rates must be positive, unique and increasing')
     rows, calibrations = [], []
     scenarios = TRACE_SCENARIOS if signal == "traces" else SCENARIOS
     for scenario in scenarios:
@@ -17,7 +20,7 @@ def collect(root, source_commit, binary_sha256, allow_partial=False, signal="met
         raw = json.loads(path.read_text()) if path.exists() else {'rows': [], 'calibration': []}
         if raw.get('signal', signal) != signal: raise ValueError('result signal differs from report')
         calibrations.extend(dict(c, scenario=scenario) for c in raw['calibration'])
-        for rate in RATES:
+        for rate in rates:
             for vendor in VENDORS:
                 matches = [r for r in raw['rows'] if r['vendor'] == vendor and r['target_rps'] == rate and r['batch'] == 512]
                 if len(matches) > 1:
@@ -32,7 +35,7 @@ def collect(root, source_commit, binary_sha256, allow_partial=False, signal="met
                         raise ValueError('Rust binary does not match report provenance')
                 row['scenario'] = scenario
                 rows.append(row)
-    return dict(schema=signal+'-request-ladder-v1', signal=signal, scenarios=scenarios, rates=RATES,
+    return dict(schema=signal+'-request-ladder-v1', signal=signal, scenarios=scenarios, rates=rates,
                 vendors=VENDORS, batch=512, seconds=60, trials=1, source_commit=source_commit,
                 binary_sha256=binary_sha256, rows=rows, calibration=calibrations)
 
@@ -56,10 +59,10 @@ const names={red:'Edge Delta (Rust)',otelcol:'OpenTelemetry Collector',bindplane
 const colors={red:'#00cc66',otelcol:'#a348ff',bindplane:'#f04444'};
 const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail'};
 const versions={red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
-let mode='tier',rate=8000,metric='efficiency',scenario='pass-through';
+let mode='tier',rate=Math.max(...data.rates),metric='efficiency',scenario='pass-through';
 const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);
-const shortRate=n=>(n/1000).toFixed(2).replace(/\.00$/,'')+'k';
+const shortRate=n=>n<1000?fmt(n):(n/1000).toFixed(2).replace(/\.00$/,'')+'k';
 const valid=r=>!!(r&&r.load&&r.through_delivery&&r.operation_verified&&(r.delivery_verified||r.scenario==='sample'&&r.sampling_verified)&&r.output_batch_verified!==false);
 const cpu=r=>r.through_delivery.cpu_seconds/(data.signal==='traces'?r.load.seconds:r.input_window.elapsed_seconds);
 const lookup=(s,t,v)=>data.rows.find(r=>r.scenario===s&&r.target_rps===t&&r.vendor===v);
@@ -69,12 +72,12 @@ function render(){
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
  el('tiers').hidden=mode==='trend';el('scenarioControl').hidden=mode!=='trend';
  document.querySelectorAll('[data-rate]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.rate===rate)));
- el('subtitle').textContent=mode==='tier'?`${fmt(rate)} requests/sec × 512 points/request = ${fmt(rate*512)} points/sec offered · OTLP/gRPC input`:`${labels[scenario]} · 1k → 2k → 4k → 8k requests/sec · 512 points/request · OTLP/gRPC input`;
+ el('subtitle').textContent=mode==='tier'?`${fmt(rate)} requests/sec × 512 points/request = ${fmt(rate*512)} points/sec offered · OTLP/gRPC input`:`${labels[scenario]} · ${data.rates.map(shortRate).join(' → ')} requests/sec · 512 points/request · OTLP/gRPC input`;
  el('caption').textContent=captions[metric];
  const groups=mode==='tier'?data.scenarios:data.rates;
  const selected=groups.flatMap(g=>data.vendors.map(v=>lookup(mode==='tier'?g:scenario,mode==='tier'?rate:g,v)));
  const values=selected.map(value).filter(n=>n!==null&&Number.isFinite(n));
- const offered=metric==='rate'?(mode==='tier'?rate:8000):metric==='points'?(mode==='tier'?rate:8000)*512:0;
+ const offered=metric==='rate'?(mode==='tier'?rate:Math.max(...data.rates)):metric==='points'?(mode==='tier'?rate:Math.max(...data.rates))*512:0;
  const max=Math.max(1,offered,...values)*1.18;
  let svg='<title>'+captions[metric]+'</title>';
  for(let i=0;i<=4;i++){const y=420-i*90;svg+=`<line x1="90" x2="1490" y1="${y}" y2="${y}" stroke="#393939"/><text x="76" y="${y+5}" text-anchor="end" fill="#aaa" font-size="14">${fmt(max*i/4)}</text>`}
@@ -100,9 +103,10 @@ def render(data):
     if data.get('signal') == 'traces':
         start = html.index('<p>Aggregate uses native behavior:')
         end = html.index('</p>', start) + 4
-        html = html[:start] + '<p>512 spans/request form 256 complete two-span traces. Trace IDs are unique across requests. Filter drops health traces (25%); Mask replaces the secret attribute; Sample retains approximately 50% by trace ID; Tail retains error traces (25%) after a 1-second decision window, with a 4-million-trace buffer. Collectors batch Tail output on a 500ms timer to match Rust’s decision-flush cadence; actual batch sizes remain native. Resource metadata is stable across requests. Sample checks retention and matching parent/child fingerprints; it does not independently prove the exact vendor-specific retained set or rule out small delivery loss. Other scenarios verify exact output counts. Enrich is excluded.</p>' + html[end:]
+        html = html[:start] + '<p>512 spans/request form 256 complete two-span traces. Trace IDs are unique across requests. Filter drops health traces (25%); Mask replaces the secret attribute; Sample retains approximately 50% by trace ID; Tail retains error traces (25%) after a 1-second decision window, with a 4-million-trace buffer. Collectors batch Tail output on a 500ms timer; Rust uses native decision flushing, including ingestion-assisted decisions in the latest build. Actual Tail batch sizes remain native. Resource metadata is stable across requests. Sample checks retention and matching parent/child fingerprints; it does not independently prove the exact vendor-specific retained set or rule out small delivery loss. Other scenarios verify exact output counts. Enrich is excluded.</p>' + html[end:]
         html = html.replace('METRICS', 'TRACES').replace('Metrics ladder', 'Traces ladder').replace('Metric scenario', 'Trace scenario')
         html = html.replace('normalized to the input window', 'divided by the 60-second offered-load window, including any final request and delivery drain')
+        html = html.replace('CPU seconds per input-window second', 'CPU seconds per offered-load second')
         html = html.replace('Points/sec', 'Spans/sec').replace('points/sec', 'spans/sec').replace('points/request', 'spans/request')
     return html.replace('__DATA__', json.dumps(data).replace('<', '\\u003c'))
 
@@ -114,9 +118,10 @@ def main():
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--binary-sha256', required=True)
     parser.add_argument('--signal', choices=['metrics','traces'], default='metrics')
+    parser.add_argument('--rates', help='Comma-separated positive request rates, in increasing order')
     parser.add_argument('--allow-partial', action='store_true')
     args = parser.parse_args()
-    data = collect(args.results, args.source_commit, args.binary_sha256, args.allow_partial, args.signal)
+    data = collect(args.results, args.source_commit, args.binary_sha256, args.allow_partial, args.signal, None if args.rates is None else [int(r) for r in args.rates.split(',')])
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / 'results.json').write_text(json.dumps(data, indent=2) + '\n')
     (args.output / 'index.html').write_text(render(data))
