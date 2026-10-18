@@ -11,20 +11,20 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from otlpbench.ladder_chart import collect, render, SCENARIOS, TRACE_SCENARIOS
+from otlpbench.ladder_chart import collect, render, SCENARIOS, TRACE_SCENARIOS, VENDORS
 
 RATES = {'metrics': [1000, 2000, 4000, 8000], 'traces': [100, 200, 300, 500]}
 
 
-def report(root, output, signal, release, profile='full'):
+def report(root, output, signal, release, profile='full', vendor=None):
     rates = RATES[signal] if profile == 'full' else RATES[signal][:1]
-    data = collect(root, release['source_commit'], release['binary_sha256'], signal=signal, rates=rates)
+    data = collect(root, release['source_commit'], release['binary_sha256'], signal=signal, rates=rates, vendors=[vendor] if vendor else None)
     data.update(seconds=60 if profile == 'full' else 10, profile=profile,
                 measured_at=datetime.now(timezone.utc).isoformat(),
                 benchmark_commit=os.environ.get('GITHUB_SHA', ''),
                 run_url=os.environ.get('BENCHMARK_RUN_URL', ''), rust_release=release)
     data['versions'] = {'red': release['version'] + ' · ' + release['source_commit'][:7]}
-    for vendor in ['otelcol', 'bindplane']:
+    for vendor in set(data['vendors']) - {'red'}:
         versions = {r.get('version') for r in data['rows'] if r['vendor'] == vendor and r.get('version')}
         if len(versions) != 1:
             raise ValueError(f'{vendor}: missing or inconsistent versions')
@@ -46,6 +46,7 @@ def report(root, output, signal, release, profile='full'):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--signal', choices=RATES, required=True)
+    p.add_argument('--vendor', choices=VENDORS)
     p.add_argument('--profile', choices=['full', 'short'], default='full')
     p.add_argument('--binaries', type=Path, default=Path('.loadgen-build'))
     p.add_argument('--output', type=Path, default=Path('otlp-daily-results'))
@@ -58,12 +59,12 @@ def main():
     command = [sys.executable, '-u', '-m', 'otlpbench.cloud_rps', '--external-cleanup',
                '--red-binary', str(a.binaries / 'red'), '--traffic-binary', str(a.binaries / 'otlp-traffic'),
                '--output', str(raw), '--signal', a.signal, '--scenarios', ','.join(scenarios),
-               '--vendors', 'red,otelcol,bindplane', '--seconds', '60' if a.profile == 'full' else '10',
+               '--vendors', a.vendor or ','.join(VENDORS), '--seconds', '60' if a.profile == 'full' else '10',
                '--rates', ','.join(map(str, RATES[a.signal] if a.profile == 'full' else RATES[a.signal][:1])),
                '--batches', '512', '--series-groups', '64' if a.signal == 'metrics' else '0',
                '--connections', '64', '--concurrency', '1024', '--trials', '1']
     subprocess.run(command, cwd=ROOT, check=True)
-    data = report(raw, a.output, a.signal, release, a.profile)
+    data = report(raw, a.output, a.signal, release, a.profile, a.vendor)
     summary = f"{a.signal.title()}: {len(data['rows'])} verified cases, {sum(r['status']=='input_shortfall' for r in data['rows'])} load shortfalls. Rust {release['version']} ({release['source_commit'][:7]}).\n"
     print(summary)
     if os.environ.get('GITHUB_STEP_SUMMARY'):

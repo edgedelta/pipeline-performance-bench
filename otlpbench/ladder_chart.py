@@ -9,7 +9,10 @@ RATES = [1000, 2000, 4000, 8000]
 VENDORS = ['red', 'otelcol', 'bindplane']
 
 
-def collect(root, source_commit, binary_sha256, allow_partial=False, signal="metrics", rates=None):
+def collect(root, source_commit, binary_sha256, allow_partial=False, signal="metrics", rates=None, vendors=None):
+    vendors = list(VENDORS if vendors is None else vendors)
+    if not vendors or len(set(vendors)) != len(vendors) or set(vendors) - set(VENDORS):
+        raise ValueError("invalid vendors")
     rates = list(RATES if rates is None else rates)
     if not rates or any(not isinstance(r, int) or r <= 0 for r in rates) or rates != sorted(set(rates)):
         raise ValueError('rates must be positive, unique and increasing')
@@ -21,7 +24,7 @@ def collect(root, source_commit, binary_sha256, allow_partial=False, signal="met
         if raw.get('signal', signal) != signal: raise ValueError('result signal differs from report')
         calibrations.extend(dict(c, scenario=scenario) for c in raw['calibration'])
         for rate in rates:
-            for vendor in VENDORS:
+            for vendor in vendors:
                 matches = [r for r in raw['rows'] if r['vendor'] == vendor and r['target_rps'] == rate and r['batch'] == 512]
                 if len(matches) > 1:
                     raise ValueError(f'duplicate case: {scenario}/{rate}/{vendor}')
@@ -36,7 +39,7 @@ def collect(root, source_commit, binary_sha256, allow_partial=False, signal="met
                 row['scenario'] = scenario
                 rows.append(row)
     return dict(schema=signal+'-request-ladder-v1', signal=signal, scenarios=scenarios, rates=rates,
-                vendors=VENDORS, batch=512, seconds=60, trials=1, source_commit=source_commit,
+                vendors=vendors, batch=512, seconds=60, trials=1, source_commit=source_commit,
                 binary_sha256=binary_sha256, rows=rows, calibration=calibrations)
 
 

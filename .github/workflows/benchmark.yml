@@ -190,13 +190,14 @@ jobs:
         run: python3 tools/publish_release.py "benchmark_results/$TIMESTAMP" --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
   otlp:
-    name: OTLP / ${{ matrix.signal }}
+    name: OTLP / ${{ matrix.signal }} / ${{ matrix.vendor }}
     needs: build-generators
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 6
       matrix:
         signal: [metrics, traces]
+        vendor: [red, otelcol, bindplane]
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
@@ -224,9 +225,10 @@ jobs:
       - name: Run isolated signal ladder
         env:
           SIGNAL: ${{ matrix.signal }}
+          VENDOR: ${{ matrix.vendor }}
           PROFILE: ${{ inputs.profile || 'full' }}
           BENCHMARK_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: timeout --signal=TERM --kill-after=5m 150m python3 -u tools/otlp_daily.py --signal "$SIGNAL" --profile "$PROFILE"
+        run: timeout --signal=TERM --kill-after=5m 150m python3 -u tools/otlp_daily.py --signal "$SIGNAL" --vendor "$VENDOR" --profile "$PROFILE"
       - name: Refresh credentials for cleanup
         if: always()
         uses: aws-actions/configure-aws-credentials@v6
@@ -244,7 +246,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: otlp-daily-${{ github.run_id }}-${{ matrix.signal }}
+          name: otlp-daily-${{ github.run_id }}-${{ matrix.signal }}-${{ matrix.vendor }}
           path: otlp-daily-results/
           if-no-files-found: warn
   otlp-report:
@@ -258,15 +260,15 @@ jobs:
         with:
           pattern: otlp-daily-${{ github.run_id }}-*
           path: otlp-shards
-      - name: Package and publish full OTLP evidence
-        if: inputs.profile != 'short'
+      - name: Validate vendor shards and publish full OTLP evidence
         env:
           GH_TOKEN: ${{ github.token }}
           TIMESTAMP: ${{ needs.plan.outputs.timestamp }}
+          PROFILE: ${{ inputs.profile || 'full' }}
         run: |
           publish=()
           if [[ "$GITHUB_REF" == refs/heads/main ]]; then publish=(--publish); fi
-          python3 tools/publish_otlp.py otlp-shards otlp-release --commit "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" --tag "otlp-${TIMESTAMP//_/-}" "${publish[@]}"
+          python3 tools/publish_otlp.py otlp-shards otlp-release --profile "$PROFILE" --commit "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" --tag "otlp-${TIMESTAMP//_/-}" "${publish[@]}"
       - uses: actions/upload-artifact@v7
         if: inputs.profile != 'short'
         with:

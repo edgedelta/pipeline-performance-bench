@@ -74,3 +74,51 @@ class DailyEvidenceTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class VendorShardTest(unittest.TestCase):
+    def shards(self, root, profile='full'):
+        import otlp_daily
+        paths = []
+        for vendor in ['red', 'otelcol', 'bindplane']:
+            rates = otlp_daily.RATES['metrics'] if profile == 'full' else [1000]
+            scenarios = otlp_daily.SCENARIOS
+            data = dict(schema='metrics-request-ladder-v1', signal='metrics', profile=profile,
+                        benchmark_commit='a'*40, source_commit='b'*40, binary_sha256='c'*64,
+                        rust_release={'version':'test'}, seconds=60 if profile=='full' else 10,
+                        batch=512, trials=1, run_url='run', vendors=[vendor], rates=rates,
+                        scenarios=scenarios, measured_at='2026-10-18', versions={vendor:'1.0.0'})
+            data['rows'] = [dict(vendor=vendor, scenario=s, target_rps=r, batch=512, trial=0,
+                                 status='measured', operation_verified=True, delivery_verified=True,
+                                 binary_sha256='c'*64) for s in scenarios for r in rates]
+            data['calibration'] = [dict(scenario=s, target_rps=r, passed=True) for s in scenarios for r in rates]
+            path = root / (vendor+'.json'); path.write_text(json.dumps(data)); paths.append(path)
+        return paths
+
+    def test_merge_complete_and_reject_corrupt_shards(self):
+        for mutation in ['none', 'missing', 'duplicate_vendor', 'missing_row', 'duplicate_row', 'wrong_vendor', 'wrong_binary', 'wrong_commit', 'failed_delivery', 'failed_calibration', 'duplicate_calibration']:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                paths = self.shards(Path(tmp))
+                data = json.loads(paths[-1].read_text())
+                if mutation == 'missing': paths.pop()
+                if mutation == 'duplicate_vendor': data['vendors']=['red']
+                if mutation == 'missing_row': data['rows'].pop()
+                if mutation == 'duplicate_row': data['rows'][-1]=data['rows'][0]
+                if mutation == 'wrong_vendor': data['rows'][0]['vendor']='red'
+                if mutation == 'wrong_binary': data['binary_sha256']='d'*64
+                if mutation == 'wrong_commit': data['benchmark_commit']='d'*40
+                if mutation == 'failed_delivery': data['rows'][0]['delivery_verified']=False
+                if mutation == 'failed_calibration': data['calibration'][0]['passed']=False
+                if mutation == 'duplicate_calibration': data['calibration'][-1]=data['calibration'][0]
+                if mutation != 'missing': paths[-1].write_text(json.dumps(data))
+                if mutation == 'none':
+                    result=publish_otlp.merge_signal(paths, 'metrics', 'a'*40)
+                    self.assertEqual(len(result['rows']),60)
+                    self.assertEqual(len(result['calibration']),60)
+                    self.assertEqual(result['vendors'],['red','otelcol','bindplane'])
+                else:
+                    with self.assertRaises(ValueError): publish_otlp.merge_signal(paths,'metrics','a'*40)
+
+    def test_short_shards(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result=publish_otlp.merge_signal(self.shards(Path(tmp),'short'),'metrics','a'*40,'short')
+            self.assertEqual(len(result['rows']),15)
