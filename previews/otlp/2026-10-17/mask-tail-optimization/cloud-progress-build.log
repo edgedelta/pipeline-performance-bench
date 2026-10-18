@@ -1,0 +1,23 @@
+   Compiling red v3.15.0 (/home/ubuntu/red-build)
+warning: method `root_of` is never used
+   --> src/input/k8s_meta.rs:565:8
+    |
+557 | impl ControllerIndex {
+    | -------------------- method in this implementation
+...
+565 |     fn root_of(&self, pod: &ObjectMeta) -> (String, String) {
+    |        ^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `red` (lib) generated 1 warning
+warning: unused variable: `self_logs`
+  --> src/main.rs:52:9
+   |
+52 |     let self_logs = red::selftel::self_logs::install(0);
+   |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_self_logs`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `red` (bin "red") generated 1 warning (run `cargo fix --bin "red" -p red` to apply 1 suggestion)
+    Finished `release` profile [optimized + debuginfo] target(s) in 4m 22s

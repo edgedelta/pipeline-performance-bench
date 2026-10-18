@@ -1,0 +1,33 @@
+   Compiling red v3.15.0 (/Users/yildiz/workspace/gocode/src/github.com/edgedelta/red)
+warning: unused import: `AsyncReadExt`
+   --> src/input/port.rs:321:21
+    |
+321 |     use tokio::io::{AsyncReadExt as _, AsyncWriteExt};
+    |                     ^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `red` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.40s
+     Running unittests src/lib.rs (target/debug/deps/red-45f78f8bfa52f0ad)
+
+running 1 test
+test processors::tail_sample::tests::timer_cannot_split_spans_in_one_input_batch ... FAILED
+
+failures:
+
+---- processors::tail_sample::tests::timer_cannot_split_spans_in_one_input_batch stdout ----
+
+thread 'processors::tail_sample::tests::timer_cannot_split_spans_in_one_input_batch' (20700081) panicked at src/processors/tail_sample.rs:731:9:
+assertion `left == right` failed: a timer decision must see the whole input batch
+  left: 24354
+ right: 25600
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    processors::tail_sample::tests::timer_cannot_split_spans_in_one_input_batch
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1273 filtered out; finished in 0.30s
+
+error: test failed, to rerun pass `--lib`

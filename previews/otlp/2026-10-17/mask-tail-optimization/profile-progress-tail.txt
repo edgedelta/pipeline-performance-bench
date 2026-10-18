@@ -1,0 +1,54 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 5K of event 'cpu-clock'
+# Event count (approx.): 55888888330
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+11.80% [.] _mi_page_malloc_zero - -
+8.60% [.] mi_free - -
+5.96% [.] _RNvMs0_NtNtCs1MLlsSgmOTf_3red10processors11tail_sampleNtB5_10TailSample14decide_limited - -
+3.71% [.] _RNvMs0_NtNtCs1MLlsSgmOTf_3red10processors11tail_sampleNtB5_10TailSample13accept_locked - -
+3.33% [.] _mi_page_free_collect - -
+3.05% [.] _RNvXNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB2_8BTreeMapNtNtB8_6string6StringNtNtCsjT1PyfWoefi_10serde_json5value5ValueENtNtNtCsc36rpYXAlPq_4core3ops4drop4Drop4dropCs1MLlsSgmOTf_3red - -
+3.04% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtCs1MLlsSgmOTf_3red4item8SpanDataEBF_ - -
+2.98% [.] _RNCNvXNtNtCs1MLlsSgmOTf_3red5input12trace_decodeNtB4_6ServerINtNtNtCs4ovaCPk6c6u_5tonic6server7service12UnaryServiceNtB4_7RequestE4call0B8_ - -
+2.58% [.] _RNvNtNtCs1MLlsSgmOTf_3red5input7gateway17kv_into_trace_map - -
+2.37% [.] _RINvNtNtCs3lCNYDJRbYH_5prost8encoding6varint13decode_varintQQNtNtNtCs4ovaCPk6c6u_5tonic5codec6buffer9DecodeBufECsljNxrFZPGsd_3red - -
+2.20% [.] _RNvMsz_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8IntoIterNtNtBb_6string6StringNtNtCsjT1PyfWoefi_10serde_json5value5ValueE10dying_nextB1w_ - -
+2.17% [.] 0x000000000019869e - -
+2.06% [.] mi_free_try_collect_mt - -
+1.77% [.] _mi_theap_malloc_zero - -
+1.61% [k] kernel_init_pages - -
+1.41% [.] _RNvCshUvlGKYtwP6_8foldhash15hash_bytes_long - -
+1.39% [.] 0x00000000001a1774 - -
+1.36% [.] _RNvMs_NtCsgT0bWcb2UhW_5bytes9bytes_mutNtB4_8BytesMut8split_to - -
+1.32% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtCs1MLlsSgmOTf_3red4item8SpanLinkEBF_ - -
+1.14% [.] _RNvNtNtNtCs1MLlsSgmOTf_3red6output4otlp10trace_wire5attrs - -
+1.03% [.] 0x00000000001a197f - -
+0.96% [.] _RNvXs1_NtCsgT0bWcb2UhW_5bytes9bytes_mutNtB5_8BytesMutNtNtNtB7_3buf8buf_impl3Buf13copy_to_bytes - -
+0.92% [.] 0x00000000001986a5 - -
+0.90% [.] _RNvXs5_NtNtCs4ovaCPk6c6u_5tonic5codec5prostINtB5_12ProstDecoderNtNtNtCs1MLlsSgmOTf_3red5input12trace_decode7RequestENtB7_7Decoder6decodeCsljNxrFZPGsd_3red - -
+0.85% [.] 0x00000000001a1653 - -
+0.81% [.] mi_theap_malloc_aligned - -
+0.74% [.] _RINvNtNtCs3lCNYDJRbYH_5prost8encoding5bytes5mergeNtNtCsgT0bWcb2UhW_5bytes5bytes5BytesQQNtNtNtCs4ovaCPk6c6u_5tonic5codec6buffer9DecodeBufECsljNxrFZPGsd_3red - -
+0.74% [.] _mi_page_free_collect_partly - -
+0.72% [.] _RNvNtCsgT0bWcb2UhW_5bytes9bytes_mut13shared_v_drop - -
+0.72% [.] _RNvNtNtNtCs1MLlsSgmOTf_3red6output4otlp10trace_wire9scope_key - -
+0.72% [k] rep_movs_alternative - -
+0.69% [.] mi_abandoned_page_try_reclaim - -
+0.65% [.] _RINvNtNtCs3lCNYDJRbYH_5prost8encoding6string5mergeQQNtNtNtCs4ovaCPk6c6u_5tonic5codec6buffer9DecodeBufECsljNxrFZPGsd_3red - -
+0.65% [.] _RNvMs0_NtNtNtNtCs6ZjlLoI6YmX_3std3sys4sync4once5futexNtB5_4Once4call - -
+0.58% [.] 0x00000000001a16c4 - -
+0.54% [k] finish_task_switch.isra.0 - -
+0.51% [.] _RNvMs5_NtCscHgRw1M2fX5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsljNxrFZPGsd_3red - -
+0.51% [.] _RNvNtNtCsc36rpYXAlPq_4core3str8converts9from_utf8 - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

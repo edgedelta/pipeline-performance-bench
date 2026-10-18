@@ -1,0 +1,522 @@
+{
+  "started_at": "2026-10-18T04:29:40.399754+00:00",
+  "schema": "otlp-rps-v1",
+  "signal": "traces",
+  "scenario": "mask",
+  "series_groups": 0,
+  "seconds": 60,
+  "connections": 64,
+  "concurrency": 1024,
+  "generator": "Rust",
+  "sink": "Rust",
+  "topology": "separate load, agent, and sink hosts",
+  "output_batch_policy": "scenario-native reductions; no added rebatching",
+  "calibration": [
+    {
+      "target_rps": 1000,
+      "batch": 512,
+      "connections": 64,
+      "concurrency": 1024,
+      "seconds": 15,
+      "scheduled_requests": 15000,
+      "missed_requests": 0,
+      "achieved_rps": 999.9333333333333,
+      "drain_seconds": 0.001894659,
+      "input_bytes_per_request": 90327,
+      "latency_bounds_us": [
+        1000,
+        2000,
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        1000000,
+        5000000
+      ],
+      "started": 15000,
+      "completed": 15000,
+      "completed_in_window": 14999,
+      "accepted_points": 7680000,
+      "rejected_points": 0,
+      "rpc_errors": 0,
+      "error_examples": [],
+      "expired": 0,
+      "latency_buckets": [
+        10965,
+        4027,
+        8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sink": {
+        "requests": 15000,
+        "points": 7680000,
+        "value_sum": 7680000.0,
+        "bytes": 1354905000,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 1920000,
+        "trace_checks": {
+          "roots": 3840000,
+          "children": 3840000,
+          "root_ids": 16049895625497890244,
+          "child_ids": 16049895625497890244,
+          "error_trace_spans": 1920000,
+          "masked": 0,
+          "private": 7680000,
+          "invalid": 0
+        },
+        "request_points": {
+          "512": 15000
+        }
+      },
+      "sink_resources": {
+        "cpu_seconds": 7.6499999999999995,
+        "elapsed_seconds": 16.302725158,
+        "cpu_cores": 0.4692467011410068,
+        "rss_mb": 13.8828125
+      },
+      "passed": true
+    },
+    {
+      "target_rps": 8000,
+      "batch": 512,
+      "connections": 64,
+      "concurrency": 1024,
+      "seconds": 15,
+      "scheduled_requests": 120000,
+      "missed_requests": 0,
+      "achieved_rps": 7999.466666666666,
+      "drain_seconds": 0.002178005,
+      "input_bytes_per_request": 90327,
+      "latency_bounds_us": [
+        1000,
+        2000,
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000,
+        1000000,
+        5000000
+      ],
+      "started": 120000,
+      "completed": 120000,
+      "completed_in_window": 119992,
+      "accepted_points": 61440000,
+      "rejected_points": 0,
+      "rpc_errors": 0,
+      "error_examples": [],
+      "expired": 0,
+      "latency_buckets": [
+        56465,
+        63181,
+        354,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sink": {
+        "requests": 120000,
+        "points": 61440000,
+        "value_sum": 61440000.0,
+        "bytes": 10839240000,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 15360000,
+        "trace_checks": {
+          "roots": 30720000,
+          "children": 30720000,
+          "root_ids": 5369628623915590026,
+          "child_ids": 5369628623915590026,
+          "error_trace_spans": 15360000,
+          "masked": 0,
+          "private": 61440000,
+          "invalid": 0
+        },
+        "request_points": {
+          "512": 120000
+        }
+      },
+      "sink_resources": {
+        "cpu_seconds": 67.07,
+        "elapsed_seconds": 16.489557716000007,
+        "cpu_cores": 4.067422617097923,
+        "rss_mb": 37.203125
+      },
+      "passed": true
+    }
+  ],
+  "rows": [
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "fb650ef18bb944fa1868be767cd0f9c2549e3b85ca4a1d62990713a735a0bc70",
+      "batch": 512,
+      "target_rps": 1000,
+      "trial": 0,
+      "status": "measured",
+      "load": {
+        "target_rps": 1000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 60000,
+        "missed_requests": 1,
+        "achieved_rps": 999.8833333333333,
+        "drain_seconds": 0.005237725,
+        "input_bytes_per_request": 90327,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 59999,
+        "completed": 59999,
+        "completed_in_window": 59993,
+        "accepted_points": 30719488,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 1,
+        "latency_buckets": [
+          0,
+          0,
+          72,
+          59919,
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 59999,
+        "points": 30719488,
+        "value_sum": 30719488.0,
+        "bytes": 6995823401,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 7679872,
+        "trace_checks": {
+          "roots": 15359744,
+          "children": 15359744,
+          "root_ids": 977410705175118325,
+          "child_ids": 977410705175118325,
+          "error_trace_spans": 7679872,
+          "masked": 30719488,
+          "private": 0,
+          "invalid": 0
+        },
+        "request_points": {
+          "512": 59999
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 285.58000000000004,
+        "elapsed_seconds": 61.506438582,
+        "cpu_cores": 4.643091139462848,
+        "rss_mb": 133.421875
+      },
+      "through_delivery": {
+        "cpu_seconds": 285.58000000000004,
+        "elapsed_seconds": 62.49045039400001,
+        "cpu_cores": 4.569978263869577,
+        "rss_mb": 139.5234375
+      },
+      "sink_resources": {
+        "cpu_seconds": 32.910000000000004,
+        "elapsed_seconds": 62.489387827000016,
+        "cpu_cores": 0.5266494223164795,
+        "rss_mb": 19.80859375
+      },
+      "sampling_verified": null,
+      "delivery_verified": true,
+      "delivery_check": "exact output count",
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "mask",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 998.6,
+          "drain_seconds": 0.006169135,
+          "input_bytes_per_request": 90327,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4993,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            0,
+            0,
+            4,
+            4986,
+            9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 582878401,
+          "enriched_points": 0,
+          "host_points": 0,
+          "health_points": 639872,
+          "trace_checks": {
+            "roots": 1279744,
+            "children": 1279744,
+            "root_ids": 273073275003719543,
+            "child_ids": 273073275003719543,
+            "error_trace_spans": 639872,
+            "masked": 2559488,
+            "private": 0,
+            "invalid": 0
+          },
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    },
+    {
+      "vendor": "red",
+      "version": "red 3.15.0",
+      "binary_sha256": "fb650ef18bb944fa1868be767cd0f9c2549e3b85ca4a1d62990713a735a0bc70",
+      "batch": 512,
+      "target_rps": 8000,
+      "trial": 0,
+      "status": "input_shortfall",
+      "load": {
+        "target_rps": 8000,
+        "batch": 512,
+        "connections": 64,
+        "concurrency": 1024,
+        "seconds": 60,
+        "scheduled_requests": 480000,
+        "missed_requests": 252426,
+        "achieved_rps": 3775.883333333333,
+        "drain_seconds": 0.163207431,
+        "input_bytes_per_request": 90327,
+        "latency_bounds_us": [
+          1000,
+          2000,
+          5000,
+          10000,
+          25000,
+          50000,
+          100000,
+          250000,
+          500000,
+          1000000,
+          5000000
+        ],
+        "started": 227574,
+        "completed": 227574,
+        "completed_in_window": 226553,
+        "accepted_points": 116517888,
+        "rejected_points": 0,
+        "rpc_errors": 0,
+        "error_examples": [],
+        "expired": 803,
+        "latency_buckets": [
+          0,
+          0,
+          0,
+          0,
+          45,
+          559,
+          7286,
+          103602,
+          106992,
+          8930,
+          160,
+          0
+        ]
+      },
+      "delivered": {
+        "requests": 227574,
+        "points": 116517888,
+        "value_sum": 116517888.0,
+        "bytes": 26534900826,
+        "enriched_points": 0,
+        "host_points": 0,
+        "health_points": 29129472,
+        "trace_checks": {
+          "roots": 58258944,
+          "children": 58258944,
+          "root_ids": 17199822006153657310,
+          "child_ids": 17199822006153657310,
+          "error_trace_spans": 29129472,
+          "masked": 116517888,
+          "private": 0,
+          "invalid": 0
+        },
+        "request_points": {
+          "512": 227574
+        }
+      },
+      "input_window": {
+        "cpu_seconds": 1924.06,
+        "elapsed_seconds": 61.734690933000024,
+        "cpu_cores": 31.166593222085794,
+        "rss_mb": 981.0703125
+      },
+      "through_delivery": {
+        "cpu_seconds": 1924.06,
+        "elapsed_seconds": 62.76638051100002,
+        "cpu_cores": 30.654308633629142,
+        "rss_mb": 981.0703125
+      },
+      "sink_resources": {
+        "cpu_seconds": 127.57000000000001,
+        "elapsed_seconds": 62.797963065000005,
+        "cpu_cores": 2.031435316906007,
+        "rss_mb": 157.52734375
+      },
+      "sampling_verified": null,
+      "delivery_verified": true,
+      "delivery_check": "exact output count",
+      "output_batch_verified": true,
+      "operation_verified": true,
+      "scenario": "mask",
+      "warmup": {
+        "load": {
+          "target_rps": 1000,
+          "batch": 512,
+          "connections": 64,
+          "concurrency": 1024,
+          "seconds": 5,
+          "scheduled_requests": 5000,
+          "missed_requests": 1,
+          "achieved_rps": 998.8,
+          "drain_seconds": 0.004796438,
+          "input_bytes_per_request": 90327,
+          "latency_bounds_us": [
+            1000,
+            2000,
+            5000,
+            10000,
+            25000,
+            50000,
+            100000,
+            250000,
+            500000,
+            1000000,
+            5000000
+          ],
+          "started": 4999,
+          "completed": 4999,
+          "completed_in_window": 4994,
+          "accepted_points": 2559488,
+          "rejected_points": 0,
+          "rpc_errors": 0,
+          "error_examples": [],
+          "expired": 1,
+          "latency_buckets": [
+            0,
+            0,
+            10,
+            4983,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "delivered": {
+          "requests": 4999,
+          "points": 2559488,
+          "value_sum": 2559488.0,
+          "bytes": 582878401,
+          "enriched_points": 0,
+          "host_points": 0,
+          "health_points": 639872,
+          "trace_checks": {
+            "roots": 1279744,
+            "children": 1279744,
+            "root_ids": 273073275003719543,
+            "child_ids": 273073275003719543,
+            "error_trace_spans": 639872,
+            "masked": 2559488,
+            "private": 0,
+            "invalid": 0
+          },
+          "request_points": {
+            "512": 4999
+          }
+        }
+      }
+    }
+  ],
+  "harness_sha256": "bd9e145c7e624ba3b060e0df8cdf839c37ffad2bdf68c5c5bc0542f4ea7f8804",
+  "host_cpu": {
+    "agent": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n",
+    "load": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n",
+    "sink": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"GenuineIntel\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"Intel(R) Xeon(R) 6975P-C\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"6\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"173\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"5400.00\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\"\n      },{\n         \"field\": \"Hypervisor vendor:\",\n         \"data\": \"KVM\"\n      },{\n         \"field\": \"Virtualization type:\",\n         \"data\": \"full\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"768 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"1 MiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"32 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"480 MiB (1 instance)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Not affected\"\n      }\n   ]\n}\n"
+  }
+}

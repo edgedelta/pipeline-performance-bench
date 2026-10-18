@@ -1,0 +1,59 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 2K of event 'cpu-clock'
+# Event count (approx.): 25393939140
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ .................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................. ....................
+#
+9.43% [.] mi_malloc_aligned - -
+7.00% [.] mi_free - -
+5.01% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value>>::insert - -
+3.98% [.] red::item::context::trace_map - -
+3.66% [k] kernel_init_pages - -
+3.62% [.] <alloc::collections::btree::map::BTreeMap<_, _, _> as core::clone::Clone>::clone::clone_subtree::<alloc::string::String, serde_json::value::Value, alloc::alloc::Global> - -
+3.42% [.] <alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry - -
+3.26% [.] <red::processors::tail_sample::Lru<red::processors::tail_sample::Group>>::promote - -
+2.90% [.] <alloc::collections::btree::map::IntoIter<alloc::string::String, serde_json::value::Value>>::dying_next - -
+2.82% [k] finish_task_switch.isra.0 - -
+2.43% [.] 0x00000000001986a5 - -
+2.03% [.] <core::hash::sip::Hasher<core::hash::sip::Sip13Rounds> as core::hash::Hasher>::write - -
+1.99% [.] <red::processors::tail_sample::TailSample>::run_at - -
+1.95% [.] <red::input::trace_decode::Server as tonic::server::service::UnaryService<red::input::trace_decode::Request>>::call::{closure#0} - -
+1.87% [.] <alloc::collections::btree::map::BTreeMap<u64, alloc::string::String>>::insert - -
+1.71% [.] 0x00000000001a16f7 - -
+1.59% [.] <serde_json::value::ser::Serializer as serde_core::ser::Serializer>::collect_seq::<&alloc::vec::Vec<red::item::SpanEvent>> - -
+1.43% [.] <std::sys::sync::once::futex::Once>::call - -
+1.15% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value> as core::ops::drop::Drop>::drop - -
+1.07% [.] 0x0000000000198680 - -
+1.07% [.] 0x000000000019869e - -
+0.99% [.] <red::processors::tail_sample::TailSample>::decide - -
+0.99% [.] red::input::gateway::kv_into_trace_map - -
+0.95% [.] prost::encoding::varint::decode_varint::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+0.88% [.] 0x00000000001a16c4 - -
+0.80% [.] <serde_json::value::ser::SerializeMap as serde_core::ser::SerializeStruct>::serialize_field::<red::item::trace_id::TraceIdentifier> - -
+0.80% [.] <bytes::bytes_mut::BytesMut>::split_to - -
+0.80% [.] 0x00000000001a1640 - -
+0.76% [k] _raw_spin_unlock_irqrestore - -
+0.76% [k] do_user_addr_fault - -
+0.76% [.] 0x00000000001986b7 - -
+0.72% [.] core::ptr::drop_glue::<serde_json::value::Value> - -
+0.72% [.] red::output::otlp::trace_wire::attrs - -
+0.72% [.] 0x00000000001a197f - -
+0.68% [.] red::item::trace_id::render - -
+0.68% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+0.64% [.] <std::sys::sync::mutex::futex::Mutex>::lock_contended - -
+0.64% [.] _mi_malloc_generic - -
+0.60% [.] mi_free_try_collect_mt - -
+0.56% [.] prost::encoding::string::merge::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+0.56% [.] mi_page_thread_collect_to_local - -
+0.52% [.] bytes::bytes_mut::shared_v_drop - -
+0.52% [.] <tonic::codec::prost::ProstDecoder<red::input::trace_decode::Request> as tonic::codec::Decoder>::decode - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

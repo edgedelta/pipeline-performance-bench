@@ -1,0 +1,65 @@
+
+running 1 test
+test item::context::trace_mutation_tests::benchmark_trace_mask_mutation ... mask native=false ns/span=5957.6
+mask native=true ns/span=596.7
+mask native=false ns/span=5941.5
+mask native=true ns/span=597.7
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.66s
+
+
+
+running 1 test
+test processors::tail_sample::tests::benchmark_tail_status_policy ... tail status native=false ns/trace=2028.1
+tail status native=true ns/trace=22.9
+tail status native=false ns/trace=2027.2
+tail status native=true ns/trace=22.8
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.21s
+
+
+
+running 1 test
+test item::context::trace_mutation_tests::benchmark_trace_mask_mutation ... mask native=false ns/span=6010.6
+mask native=true ns/span=593.8
+mask native=false ns/span=6013.2
+mask native=true ns/span=593.9
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.66s
+
+
+
+running 1 test
+test processors::tail_sample::tests::benchmark_tail_status_policy ... tail status native=false ns/trace=2024.7
+tail status native=true ns/trace=23.0
+tail status native=false ns/trace=2018.3
+tail status native=true ns/trace=22.9
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.21s
+
+
+
+running 1 test
+test item::context::trace_mutation_tests::benchmark_trace_mask_mutation ... mask native=false ns/span=5840.4
+mask native=true ns/span=590.3
+mask native=false ns/span=5837.4
+mask native=true ns/span=590.9
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.64s
+
+
+
+running 1 test
+test processors::tail_sample::tests::benchmark_tail_status_policy ... tail status native=false ns/trace=2022.0
+tail status native=true ns/trace=23.2
+tail status native=false ns/trace=2019.0
+tail status native=true ns/trace=22.8
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1277 filtered out; finished in 0.20s
+
