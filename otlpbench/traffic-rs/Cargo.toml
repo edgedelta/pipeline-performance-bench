@@ -1,0 +1,21 @@
+[package]
+name = "otlp-traffic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bytes = "1"
+clap = { version = "4", features = ["derive"] }
+http-body-util = "0.1"
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+opentelemetry-proto = { version = "0.27", default-features = false, features = ["gen-tonic", "metrics", "trace"] }
+prost = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tonic = { version = "0.12", default-features = false, features = ["codegen", "transport", "prost"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

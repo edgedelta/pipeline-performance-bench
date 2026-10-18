@@ -63,3 +63,10 @@ __pycache__/
 .loadgen-build/
 
 /loadgen-rust/target/
+
+/otlp-results/
+/.otlp-venv/
+
+/otlpbench/traffic-rs/target/
+/otlpbench/infra-rps/*.pem
+/otlp-rps-results/

@@ -1,0 +1,6 @@
+{
+  "rust_source_commit": "e12daf870e445062ea1e5d08eb19089070b7ab05",
+  "rust_binary_sha256": "6553707336f9f45daca4d3f64dbe0261f17192517d577805a34e28a622c26841",
+  "harness_base_commit": "a03ac69",
+  "command": "python -m otlpbench.cloud_rps --red-binary ../red/dist/benchmarks/red-e12daf8 --scenarios pass-through,filter,aggregate,rollup,combined --vendors red,otelcol,bindplane --seconds 60 --rates 1000,2000,4000,8000 --batches 512 --series-groups 64 --connections 64 --concurrency 1024 --trials 1"
+}

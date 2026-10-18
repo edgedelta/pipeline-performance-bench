@@ -1,0 +1,26 @@
+{
+  "rust_source_commit": "b200868dcfaf88c6660c5eba0a894aa24f1bcdb7",
+  "rust_binary_sha256": "1c1f12db67cae173a7c15d5798962a2054179a40701e02aa10052caadc03c769",
+  "harness_source_commit": "811e7e02aa52ef5d42287e1e23279eeec975aa5b",
+  "report_source_commit": "072931e",
+  "seconds": 60,
+  "trials": 1,
+  "rates": [
+    100,
+    200,
+    300,
+    500
+  ],
+  "batch": 512,
+  "signal": "traces",
+  "scenarios": [
+    "pass-through",
+    "filter",
+    "mask",
+    "sample",
+    "tail"
+  ],
+  "connections": 64,
+  "concurrency": 1024,
+  "build": "Rust 1.98.0 native Linux release profile, fat LTO, one codegen unit, mimalloc; debug info stripped"
+}

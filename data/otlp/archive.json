@@ -1,0 +1,9 @@
+{
+  "release_url": "https://github.com/edgedelta/pipeline-performance-bench/releases/tag/untagged-7559f9a28ba799f80881",
+  "release_tag": "otlp-pr29-evidence-20261018",
+  "draft": true,
+  "asset": "otlp-pr29-evidence-20261018.tar.gz",
+  "sha256": "8fbf95577ad879a20250b072d9bc7fe78e7a21bc70f1d7dcde0f4500e79428b1",
+  "source_commit": "3efd3f6c749f2309a877632d40ab5c1792a85cef",
+  "file_count": 1574
+}

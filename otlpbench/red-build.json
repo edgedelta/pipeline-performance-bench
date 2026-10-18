@@ -1,0 +1,7 @@
+{
+  "binary": "../red/dist/benchmarks/red-c7197c7",
+  "source_commit": "c7197c7e329f396698f2fec671d94f5c7dd9fada",
+  "sha256": "5db0535d19c88a8481d2910cd170be7dde0ac9a556dfd2b09fa7d952422f0b41",
+  "merged_pr": "https://github.com/edgedelta/red/pull/20",
+  "merge_commit": "827c832b4b8c382ea24f5e20017cf88d22ae5d70"
+}
