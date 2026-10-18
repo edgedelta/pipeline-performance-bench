@@ -1,0 +1,53 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 47K of event 'cpu-clock'
+# Event count (approx.): 484535348690
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+15.69% [.] mi_malloc_aligned - -
+11.31% [.] mi_free - -
+4.47% [.] <alloc::collections::btree::map::BTreeMap<_, _, _> as core::clone::Clone>::clone::clone_subtree::<alloc::string::String, serde_json::value::Value, alloc::alloc::Global> - -
+4.13% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value>>::insert - -
+3.94% [.] mi_page_thread_collect_to_local - -
+3.66% [.] <alloc::collections::btree::map::IntoIter<alloc::string::String, serde_json::value::Value>>::dying_next - -
+3.65% [.] 0x00000000001986a5 - -
+2.28% [.] red::input::gateway::traces_to_items - -
+2.18% [.] 0x00000000001a16f7 - -
+1.93% [.] <alloc::collections::btree::map::entry::VacantEntry<alloc::string::String, serde_json::value::Value>>::insert_entry - -
+1.87% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value> as core::ops::drop::Drop>::drop - -
+1.68% [.] red::output::otlp::build_requests - -
+1.55% [.] red::item::context::trace_map - -
+1.54% [.] core::fmt::write - -
+1.44% [.] red::output::otlp::span_hex_to_bytes - -
+1.34% [.] 0x000000000019869e - -
+1.30% [.] <core::fmt::Formatter>::pad_integral - -
+1.22% [.] <alloc::collections::btree::map::BTreeMap<alloc::string::String, serde_json::value::Value>>::remove::<str> - -
+1.14% [.] 0x00000000001a1640 - -
+1.07% [.] 0x0000000000198680 - -
+1.06% [.] red::item::context::apply_trace - -
+1.03% [.] prost::encoding::varint::decode_varint::<&mut &mut tonic::codec::buffer::DecodeBuf> - -
+1.02% [.] <&u8 as core::fmt::LowerHex>::fmt - -
+0.96% [.] 0x00000000001a16c4 - -
+0.94% [.] core::ptr::drop_glue::<serde_json::value::Value> - -
+0.79% [.] 0x00000000001986b7 - -
+0.77% [.] core::ptr::drop_glue::<opentelemetry_proto::proto::tonic::trace::v1::Span> - -
+0.77% [.] <alloc::collections::btree::node::Handle<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Mut, alloc::string::String, serde_json::value::Value, alloc::collections::btree::node::marker::Leaf>, alloc::collections::btree::node::marker::KV>>::remove_leaf_kv::<<alloc::collections::btree::map::entry::OccupiedEntry<alloc::string::String, serde_json::value::Value>>::remove_kv::{closure#0}, alloc::alloc::Global> - -
+0.76% [.] mi_free_try_collect_mt - -
+0.75% [.] _mi_theap_realloc_zero - -
+0.72% [.] core::str::converts::from_utf8 - -
+0.69% [.] <alloc::string::String as core::fmt::Write>::write_str (.13218) - -
+0.68% [.] <opentelemetry_proto::proto::tonic::trace::v1::Span as prost::message::Message>::encoded_len - -
+0.65% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+0.60% [.] _mi_malloc_generic - -
+0.51% [.] <alloc::collections::btree::map::entry::OccupiedEntry<alloc::string::String, serde_json::value::Value>>::remove_kv - -
+0.51% [.] <core::fmt::Formatter>::pad_integral::write_prefix - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

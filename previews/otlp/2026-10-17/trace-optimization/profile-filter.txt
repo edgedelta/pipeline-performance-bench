@@ -1,0 +1,53 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 47K of event 'cpu-clock'
+# Event count (approx.): 484535348690
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+15.69% [.] mi_malloc_aligned - -
+11.31% [.] mi_free - -
+4.47% [.] _RINvNvXs0_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCsc36rpYXAlPq_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueNtNtBe_5alloc6GlobalECsen18xdpIA5T_3red - -
+4.13% [.] _RNvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE6insertCsen18xdpIA5T_3red - -
+3.94% [.] mi_page_thread_collect_to_local - -
+3.66% [.] _RNvMsz_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8IntoIterNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE10dying_nextB1w_ - -
+3.65% [.] 0x00000000001986a5 - -
+2.28% [.] _RNvNtNtCsen18xdpIA5T_3red5input7gateway15traces_to_items - -
+2.18% [.] 0x00000000001a16f7 - -
+1.93% [.] _RNvMs4_NtNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE12insert_entryCsen18xdpIA5T_3red - -
+1.87% [.] _RNvXNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB2_8BTreeMapNtNtB8_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueENtNtNtCsc36rpYXAlPq_4core3ops4drop4Drop4dropCsen18xdpIA5T_3red - -
+1.68% [.] _RNvNtNtCsen18xdpIA5T_3red6output4otlp14build_requests - -
+1.55% [.] _RNvNtNtCsen18xdpIA5T_3red4item7context9trace_map - -
+1.54% [.] _RNvNtCsc36rpYXAlPq_4core3fmt5write - -
+1.44% [.] _RNvNtNtCsen18xdpIA5T_3red6output4otlp17span_hex_to_bytes - -
+1.34% [.] 0x000000000019869e - -
+1.30% [.] _RNvMsa_NtCsc36rpYXAlPq_4core3fmtNtB5_9Formatter12pad_integral - -
+1.22% [.] _RINvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB6_8BTreeMapNtNtBc_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE6removeeECsen18xdpIA5T_3red - -
+1.14% [.] 0x00000000001a1640 - -
+1.07% [.] 0x0000000000198680 - -
+1.06% [.] _RNvNtNtCsen18xdpIA5T_3red4item7context11apply_trace - -
+1.03% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6varint13decode_varintQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+1.02% [.] _RNvXs1o_NtCsc36rpYXAlPq_4core3fmtRhNtB6_8LowerHex3fmtCs1LPe6JINLr_22aws_smithy_http_client - -
+0.96% [.] 0x00000000001a16c4 - -
+0.94% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtCsbv32YzpRuyH_10serde_json5value5ValueECsen18xdpIA5T_3red - -
+0.79% [.] 0x00000000001986b7 - -
+0.77% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic5trace2v14SpanECsen18xdpIA5T_3red - -
+0.77% [.] _RINvMs_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree6removeINtNtB7_4node6HandleINtBY_7NodeRefNtNtBY_6marker3MutNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueNtB1v_4LeafENtB1v_2KVE14remove_leaf_kvNCNvMs5_NtNtB7_3map5entryINtB3w_13OccupiedEntryB1L_B26_E9remove_kv0NtNtBb_5alloc6GlobalECsen18xdpIA5T_3red - -
+0.76% [.] mi_free_try_collect_mt - -
+0.75% [.] _mi_theap_realloc_zero - -
+0.72% [.] _RNvNtNtCsc36rpYXAlPq_4core3str8converts9from_utf8 - -
+0.69% [.] _RNvXsZ_NtCscHgRw1M2fX5_5alloc6stringNtB5_6StringNtNtCsc36rpYXAlPq_4core3fmt5Write9write_str.13218 - -
+0.68% [.] _RNvXsk_NtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic5trace2v1NtB5_4SpanNtNtCsaz2gvrZ0IKx_5prost7message7Message11encoded_len - -
+0.65% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+0.60% [.] _mi_malloc_generic - -
+0.51% [.] _RNvMs5_NtNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3map5entryINtB5_13OccupiedEntryNtNtBd_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE9remove_kvCsen18xdpIA5T_3red - -
+0.51% [.] _RNvNvMsa_NtCsc36rpYXAlPq_4core3fmtNtB7_9Formatter12pad_integral12write_prefix - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

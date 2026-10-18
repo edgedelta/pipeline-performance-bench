@@ -1,0 +1,65 @@
+Previous candidate input trial 0
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1117.6
+formatted=true ns/id=125.5
+formatted=false ns/id=22.8
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1268 filtered out; finished in 0.59s
+
+
+trial 0
+
+running 4 tests
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1019.6
+formatted=true ns/id=126.2
+formatted=false ns/id=22.7
+ok
+test output::otlp::trace_wire::tests::benchmark_trace_encoding ... borrowed=false ns/span=1858.5
+borrowed=true ns/span=355.3
+ok
+test processors::filter::trace_tests::benchmark_trace_batch ... in_place=false ns/span=282.4
+in_place=true ns/span=171.8
+ok
+test processors::filter::trace_tests::benchmark_trace_filter_context ... condition=attributes["route"] == "health" native=false ns/span=5312.5
+condition=attributes["route"] == "health" native=true ns/span=203.5
+condition=EDXSample(50, trace.id) native=false ns/span=2315.7
+condition=EDXSample(50, trace.id) native=true ns/span=329.3
+ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1266 filtered out; finished in 3.76s
+
+
+Previous candidate input trial 1
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1110.1
+formatted=true ns/id=130.8
+formatted=false ns/id=22.7
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1268 filtered out; finished in 0.59s
+
+
+trial 1
+
+running 4 tests
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1019.5
+formatted=true ns/id=125.0
+formatted=false ns/id=22.7
+ok
+test output::otlp::trace_wire::tests::benchmark_trace_encoding ... borrowed=false ns/span=1850.4
+borrowed=true ns/span=358.9
+ok
+test processors::filter::trace_tests::benchmark_trace_batch ... in_place=false ns/span=285.0
+in_place=true ns/span=171.2
+ok
+test processors::filter::trace_tests::benchmark_trace_filter_context ... condition=attributes["route"] == "health" native=false ns/span=5316.5
+condition=attributes["route"] == "health" native=true ns/span=204.6
+condition=EDXSample(50, trace.id) native=false ns/span=2318.9
+condition=EDXSample(50, trace.id) native=true ns/span=329.3
+ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1266 filtered out; finished in 3.77s
+

@@ -1,0 +1,52 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 13K of event 'cpu-clock'
+# Event count (approx.): 133101008770
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................ ....................
+#
+11.16% [.] mi_free - -
+9.92% [.] mi_malloc_aligned - -
+7.69% [.] mi_page_thread_collect_to_local - -
+6.15% [.] _RNvNtNtCsen18xdpIA5T_3red5input7gateway15traces_to_items - -
+3.85% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6varint13decode_varintQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+3.47% [.] 0x00000000001986a5 - -
+3.38% [.] _RNCNvXs_NtNtCsen18xdpIA5T_3red6output7targetsNtNtB8_4otlp6PusherNtNtB8_8delivery6Target4send0Ba_ - -
+2.22% [.] _RNvMs_NtCs6VAHAFBDDXk_5bytes9bytes_mutNtB4_8BytesMut8split_to - -
+1.56% [.] _RNvNtNtCsen18xdpIA5T_3red5input7gateway11kv_into_map - -
+1.43% [.] _RNvXNtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB2_8BTreeMapNtNtB8_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueENtNtNtCsc36rpYXAlPq_4core3ops4drop4Drop4dropCsen18xdpIA5T_3red - -
+1.42% [.] 0x00000000001a197f - -
+1.40% [.] _RNvXs5_NtNtCs2swDnIJiDa9_5tonic5codec5prostINtB5_12ProstDecoderNtNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic9collector5trace2v125ExportTraceServiceRequestENtB7_7Decoder6decodeCshgpm6kkhV9o_3red - -
+1.39% [.] _RNvNtCs6VAHAFBDDXk_5bytes9bytes_mut13shared_v_drop - -
+1.36% [.] _RNvNtNtNtCsen18xdpIA5T_3red4ottl5funcs6sample6sample - -
+1.30% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6string5mergeQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+1.29% [.] _RNvMsz_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB5_8IntoIterNtNtBb_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE10dying_nextB1w_ - -
+1.27% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding5bytes5mergeINtNtCscHgRw1M2fX5_5alloc3vec3VechEQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+1.27% [.] _RNvNtNtNtCsen18xdpIA5T_3red6output4otlp10trace_wire5attrs - -
+1.21% [.] _RNvNtNtCsen18xdpIA5T_3red10processors6sample5xxh64 - -
+1.18% [.] _RNvMs5_NtCscHgRw1M2fX5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCshgpm6kkhV9o_3red - -
+1.04% [.] mi_theap_malloc_zero_aligned_at_overalloc - -
+1.02% [.] _RINvMsi_NtNtNtCscHgRw1M2fX5_5alloc11collections5btree3mapINtB6_8BTreeMapNtNtBc_6string6StringNtNtCsbv32YzpRuyH_10serde_json5value5ValueE27bulk_build_from_sorted_iterINtNtBc_3vec3VecTB18_B1t_EEECsen18xdpIA5T_3red - -
+1.01% [.] _RNvNtNtCsc36rpYXAlPq_4core3str8converts9from_utf8 - -
+0.98% [.] _RNvXsa_NtCsen18xdpIA5T_3red4itemNtNtNtB7_10processors6filter10OttlFilterNtB5_5Stage3runB7_ - -
+0.94% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding6varint13encode_varintINtNtCscHgRw1M2fX5_5alloc3vec3VechEECsen18xdpIA5T_3red - -
+0.91% [.] _RNvNtNtCsen18xdpIA5T_3red4ottl4eval7eval_ro - -
+0.79% [.] 0x00000000001a175d - -
+0.78% [.] _mi_theap_realloc_zero - -
+0.77% [.] _RINvNtCsc36rpYXAlPq_4core3ptr9drop_glueNtNtCsen18xdpIA5T_3red4item8SpanDataEBF_ - -
+0.77% [.] _RINvNtNtCsaz2gvrZ0IKx_5prost8encoding7message14merge_repeatedNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic6common2v18KeyValueQQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufECshgpm6kkhV9o_3red - -
+0.74% [k] rep_movs_alternative - -
+0.72% [.] _RINvNvMs2_NtCscHgRw1M2fX5_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECshgpm6kkhV9o_3red - -
+0.71% [.] 0x000000000019869e - -
+0.61% [.] 0x00000000001a1640 - -
+0.55% [.] _RNvNtNtCsen18xdpIA5T_3red4ottl4eval9eval_cond - -
+0.53% [.] _RINvNtCsaz2gvrZ0IKx_5prost8encoding10merge_loopNtNtNtNtNtCs6WE9ay9V1B7_19opentelemetry_proto5proto5tonic6common2v18AnyValueNCINvNtB2_7message5mergeBJ_QQNtNtNtCs2swDnIJiDa9_5tonic5codec6buffer9DecodeBufE0B2o_ECshgpm6kkhV9o_3red - -
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

@@ -1,0 +1,43 @@
+batch trial 0
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1180.3
+formatted=true ns/id=123.8
+formatted=false ns/id=23.3
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1265 filtered out; finished in 0.62s
+
+
+id trial 0
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1119.8
+formatted=true ns/id=129.9
+formatted=false ns/id=22.7
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1268 filtered out; finished in 0.59s
+
+
+batch trial 1
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1177.7
+formatted=true ns/id=121.9
+formatted=false ns/id=23.4
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1265 filtered out; finished in 0.62s
+
+
+id trial 1
+
+running 1 test
+test input::gateway::trace_perf_tests::benchmark_trace_input ... decode+convert ns/span=1117.2
+formatted=true ns/id=120.9
+formatted=false ns/id=22.7
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1268 filtered out; finished in 0.59s
+
