@@ -23,18 +23,21 @@ def build(output):
     for signal, report in REPORTS.items():
         destination = output / signal
         destination.mkdir(parents=True, exist_ok=True)
-        data = json.loads((report / 'results.json').read_text())
+        latest = output / 'data/otlp' / f'{signal}.json'
+        source = latest if latest.exists() else report / 'results.json'
+        data = json.loads(source.read_text())
+        date = data.get('measured_at', report.parent.name)[:10]
         html = render(data)
         nav = '<nav class="signal-nav" aria-label="Telemetry signal">' + ''.join(
             f'<a href="../{name}/"' + (' aria-current="page"' if name == signal else '') + f'>{name.title()}</a>'
             for name in ['logs', 'metrics', 'traces']) + '</nav>'
         html = html.replace('<main><header>', '<link rel="stylesheet" href="../assets/benchmark.css"><main>' + nav + '<header>')
-        html = html.replace('LOCAL PREVIEW · ' + signal.upper() + ' · RUST GENERATOR', signal.upper() + ' · SAVED RUN')
-        html = html.replace('<footer>', f'<p>Saved run: {report.parent.name}. Load names are relative to this signal’s ladder; compare the actual input rates shown above.</p><footer>')
+        html = html.replace('LOCAL PREVIEW · ' + signal.upper() + ' · RUST GENERATOR', signal.upper() + ' · BENCHMARK RESULTS')
+        html = html.replace('<footer>', f'<p>Measured: {date}. Load names are relative to this signal’s ladder; compare the actual input rates shown above.</p><footer>')
         if signal == 'traces':
             html = html.replace('<details>', '<p>This lower ladder was selected before the run to leave headroom below the slowest prior Tail result (~700 requests/sec). It compares fixed-load efficiency, not maximum capacity. All five scenarios and all three agents are included.</p><details>')
         (destination / 'index.html').write_text(html)
-        shutil.copy2(report / 'results.json', destination / 'results.json')
+        shutil.copy2(source, destination / 'results.json')
 
 
 if __name__ == '__main__':

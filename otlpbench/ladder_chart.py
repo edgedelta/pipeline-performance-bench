@@ -58,7 +58,7 @@ const data=__DATA__;
 const names={red:'Edge Delta (Rust)',otelcol:'OpenTelemetry Collector',bindplane:'Bindplane (Dynatrace)'};
 const colors={red:'#00DA63',otelcol:'#9F4FFF',bindplane:'#EF4444'};
 const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail'};
-const versions={red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
+const versions=data.versions??{red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
 let mode='tier',rate=Math.max(...data.rates),metric='efficiency',scenario='pass-through';
 const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);
@@ -110,6 +110,7 @@ def render(data):
         html = html.replace('normalized to the input window', 'divided by the 60-second offered-load window, including any final request and delivery drain')
         html = html.replace('CPU seconds per input-window second', 'CPU seconds per offered-load second')
         html = html.replace('Points/sec', 'Spans/sec').replace('points/sec', 'spans/sec').replace('points/request', 'spans/request')
+    html = html.replace('One 60-second trial', f"One {data.get('seconds', 60)}-second trial").replace('the 60-second offered-load window', f"the {data.get('seconds', 60)}-second offered-load window")
     return html.replace('__DATA__', json.dumps(data).replace('<', '\\u003c'))
 
 

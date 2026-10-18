@@ -137,12 +137,12 @@ as complete suites; measured capacity limits remain visible without claiming tar
 To switch to Mondays, change `.github/workflows/benchmark.yml` from
 `17 9 * * *` to `17 9 * * 1`. GitHub schedules use UTC and may start late.
 
-Every run installs fresh agents without fixed agent version numbers:
+Each logs run installs fresh agents using these channels:
 
 | Agent | Current installation channel |
 |---|---|
 | Edge Delta Go | Latest candidate installer (the existing Go benchmark channel) |
-| Edge Delta Rust | Latest stable released binary, checksum verified |
+| Edge Delta Rust | Latest qualified candidate, resolved once and checksum verified for all three signals |
 | Vector (Datadog) | Latest stable GitHub release |
 | Bindplane (Dynatrace) | Latest stable Bindplane collector GitHub release, checksum verified |
 | Fluent Bit | Latest package in the vendor's Ubuntu repository |
@@ -176,3 +176,13 @@ The static site has separate `/logs/`, `/metrics/` and `/traces/` routes with sh
 `tools/build_pages.sh` builds these routes. Logs use release history; metrics and traces reuse the saved reports selected in `tools/build_signal_pages.py`, with their measured versions and run dates. Updating presentation does not run benchmarks or change measurements. For a local preview, copy `site/` into an output directory, provide its existing `data/history.json`, then run `python3 tools/build_signal_pages.py <output-dir>` and serve that directory.
 
 Saved OTLP datasets and provenance live in [`data/otlp`](data/otlp/README.md). Historical configs, logs, profiles and generated previews are retained in the linked downloadable evidence archive.
+
+### Daily logs, metrics and traces
+
+The daily and manual `Pipeline performance bench` workflow runs all three signals in parallel after building the Rust generators and resolving one qualified Rust candidate. Logs retain eight isolated vendor jobs. Metrics and traces each use their own agent, generator and sink hosts; vendors/scenarios remain sequential within each signal to avoid CPU contention. Metrics use 1k/2k/4k/8k requests/sec and traces use 100/200/300/500, both with 512 items/request and one 60-second trial per case.
+
+A manual full run on a PR branch runs the same workloads and saves review artifacts without publishing releases or Pages. The short profile reduces logs to their validation cases and OTLP to the lowest tier with ten-second trials. On main, full runs publish log results and a checksum-verified OTLP pair with raw evidence. Pages loads the latest published OTLP pair, falling back to the saved datasets only until the first daily pair exists. Invalid/missing cases prevent OTLP publication; measured capacity shortfalls remain visible.
+
+Each cloud job refreshes AWS credentials and destroys its own resources even after failure. Trigger before merge with `gh workflow run benchmark.yml --ref <branch> -f profile=full`, then inspect all log shards, both OTLP jobs, the combined reports and cleanup before merging.
+
+The OTLP comparison currently holds OTel Collector at 0.162.0 and Bindplane at 1.110.1 for continuity with the saved ladders. Their actual versions are recorded in every run. Rust follows the qualified candidate channel shared by all three signals.
