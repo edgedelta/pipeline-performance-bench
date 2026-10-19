@@ -186,3 +186,5 @@ A manual full run on a PR branch runs the same workloads and saves review artifa
 Each cloud job refreshes AWS credentials and destroys its own resources even after failure. Trigger before merge with `gh workflow run benchmark.yml --ref <branch> -f profile=full`, then inspect all log shards, both OTLP jobs, the combined reports and cleanup before merging.
 
 The OTLP comparison currently holds OTel Collector at 0.162.0 and Bindplane at 1.110.1 for continuity with the saved ladders. Their actual versions are recorded in every run. Rust follows the qualified candidate channel shared by all three signals.
+
+The [Ladder page](https://edgedelta.github.io/pipeline-performance-bench/ladder/) shows one load-ladder chart per scenario for logs, metrics and traces. It uses the same published datasets as the signal pages, with vendor markers, load-shortfall indicators and light/dark themes. Pages builds refresh it automatically; no additional benchmark run is needed.
