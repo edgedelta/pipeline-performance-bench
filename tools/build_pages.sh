@@ -34,5 +34,6 @@ done
 
 python3 "$root/tools/fetch_otlp_reports.py" "$repo" "$out/data/otlp"
 python3 "$root/tools/build_signal_pages.py" "$out"
+python3 "$root/tools/build_ladder_page.py" "$out"
 
 echo "built $out ($(du -sh "$out/data/history.json" | cut -f1) history)"

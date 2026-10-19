@@ -297,7 +297,7 @@ function App() {
   return (
     <div className="wrap">
       <div className="card">
-        <nav className="signal-nav" aria-label="Telemetry signal"><a href="logs/" aria-current="page">Logs</a><a href="metrics/">Metrics</a><a href="traces/">Traces</a></nav>
+        <nav className="signal-nav" aria-label="Telemetry signal"><a href="logs/" aria-current="page">Logs</a><a href="metrics/">Metrics</a><a href="traces/">Traces</a><a href="ladder/">Ladder</a></nav>
         <header className="head">
           <div className="brand">
             <div className="titles">
