@@ -72,6 +72,47 @@ class DailyEvidenceTest(unittest.TestCase):
                         publish_otlp.package(root, output, base['benchmark_commit'])
 
 
+    def test_publish_verifies_draft_release_by_id_not_tag(self):
+        tag = 'otlp-20261105-092151'
+        for mutation in ['none', 'mismatch']:
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp) / 'otlp-release'
+                output.mkdir()
+                for name in ['metrics.json', 'traces.json', 'otlp-evidence.tar.gz', 'SHA256SUMS']:
+                    (output / name).write_bytes(name.encode())
+                assets = sorted(p for p in output.iterdir())
+                remote = [{'name': p.name, 'digest': 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest()} for p in assets]
+                if mutation == 'mismatch':
+                    remote[0]['digest'] = 'sha256:' + '0' * 64
+                calls = []
+                def gh(*args):
+                    calls.append(args)
+                    self.assertNotIn(f'repos/owner/repo/releases/tags/{tag}', args)
+                    if args[0] == 'api' and args[-1] == 'repos/owner/repo/releases':
+                        return json.dumps([[{'id': 7, 'tag_name': 'other', 'draft': False}], [{'id': 9, 'tag_name': tag, 'draft': True}]])
+                    if args[0] == 'api' and args[-1].startswith('repos/owner/repo/releases/9/assets'):
+                        return json.dumps([remote])
+                    return ''
+                with patch.object(publish_otlp, 'gh', side_effect=gh):
+                    if mutation == 'none':
+                        publish_otlp.publish(output, 'owner/repo', 'a' * 40, tag)
+                    else:
+                        with self.assertRaises(ValueError):
+                            publish_otlp.publish(output, 'owner/repo', 'a' * 40, tag)
+                created = next(c for c in calls if c[:2] == ('release', 'create'))
+                self.assertIn('--draft', created)
+                upload = next(c for c in calls if c[:2] == ('release', 'upload'))
+                self.assertEqual(sorted(upload[5:]), [str(p) for p in assets])
+                patches = [c for c in calls if 'PATCH' in c]
+                if mutation == 'none':
+                    self.assertEqual(len(patches), 1)
+                    self.assertEqual(patches[0][3], 'repos/owner/repo/releases/9')
+                    self.assertIn('draft=false', patches[0])
+                    self.assertIn('make_latest=false', patches[0])
+                else:
+                    self.assertEqual(patches, [])
+
+
 if __name__ == '__main__':
     unittest.main()
 

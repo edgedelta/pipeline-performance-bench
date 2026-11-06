@@ -4,7 +4,7 @@ version=$(curl -fLsS --retry 3 'https://api.github.com/repos/vectordotdev/vector
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-curl -fLsS --retry 3 "https://packages.timber.io/vector/$version/vector-$version-x86_64-unknown-linux-gnu.tar.gz" -o "$work/vector.tgz"
+curl -fLsS --retry 3 "https://github.com/vectordotdev/vector/releases/download/v$version/vector-$version-x86_64-unknown-linux-gnu.tar.gz" -o "$work/vector.tgz"
 tar -xzf "$work/vector.tgz" -C "$work"
 binary=$(find "$work" -type f -path '*/bin/vector' -print -quit)
 [[ -n "$binary" ]]
