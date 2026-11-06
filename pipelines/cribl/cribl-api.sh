@@ -21,6 +21,10 @@ set -euo pipefail
 # Configuration
 ###############################################################################
 
+# Retry transient failures (timeouts, connection refused, 408/429/5xx) before giving up.
+# A 4xx other than 408/429 is a bad request and is never retried.
+CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused)
+
 : "${CRIBL_WORKSPACE:?Set CRIBL_WORKSPACE (e.g. myws)}"
 : "${CRIBL_ORG:?Set CRIBL_ORG (e.g. abc123)}"
 : "${CRIBL_WORKER_GROUP:?Set CRIBL_WORKER_GROUP (e.g. default)}"
@@ -55,7 +59,7 @@ get_cribl_token() {
   fi
 
   local resp
-  resp=$(curl --fail --silent --show-error \
+  resp=$(curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request POST \
     --url "https://login.cribl.cloud/oauth/token" \
     --header "Content-Type: application/json" \
@@ -88,7 +92,7 @@ auth_header() {
 ###############################################################################
 
 agent_install_command() {
-  command=$(curl --fail --silent --show-error --retry 3 "https://${CRIBL_WORKSPACE}-${CRIBL_ORG}.cribl.cloud/init/install-edge.sh?group=${CRIBL_WORKER_GROUP}&token=${CRIBL_LEADER_TOKEN}&user=cribl&user_group=cribl&install_dir=%2Fopt%2Fcribl")
+  command=$(curl --fail --silent --show-error "${CURL_RETRY[@]}" "https://${CRIBL_WORKSPACE}-${CRIBL_ORG}.cribl.cloud/init/install-edge.sh?group=${CRIBL_WORKER_GROUP}&token=${CRIBL_LEADER_TOKEN}&user=cribl&user_group=cribl&install_dir=%2Fopt%2Fcribl")
 
   printf '%s' "$command"
 }
@@ -101,7 +105,7 @@ agent_install_command() {
 create_http_input() {
   echo "Creating HTTP input '${CRIBL_HTTP_INPUT_ID}' on port ${CRIBL_HTTP_INPUT_PORT}..."
 
-  curl --fail --silent --show-error \
+  curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request POST \
     --url "${CRIBL_BASE_URL}/system/inputs" \
     --header "$(auth_header)" \
@@ -152,7 +156,7 @@ create_pipeline() {
   echo "Creating pipeline '${CRIBL_PIPELINE_ID}'..."
 
   # Base pipeline from doc.md: keeps eventSource and eventID, drops all others.
-  curl --fail --silent --show-error \
+  curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request POST \
     --url "${CRIBL_BASE_URL}/pipelines" \
     --header "$(auth_header)" \
@@ -183,7 +187,7 @@ EOF
 create_route() {
   echo "Creating route '${CRIBL_ROUTE_ID}' from '${CRIBL_HTTP_INPUT_ID}' to '${CRIBL_S3_OUTPUT_ID}' via pipeline '${CRIBL_PIPELINE_ID}'..."
   echo "Saving original route configuration to cribl-route-original.json"
-  curl --fail --silent --show-error \
+  curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request GET \
     --url "${CRIBL_BASE_URL}/routes/default" \
     --header "$(auth_header)" \
@@ -224,7 +228,7 @@ EOF
 
 commit_config() {
   local commit_response commit_id
-  commit_response=$(curl --fail --silent --show-error \
+  commit_response=$(curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request POST \
     --url "${CRIBL_COMMIT_URL}" \
     --header "$(auth_header)" \
@@ -264,7 +268,7 @@ deploy_config() {
   # First commit, then deploy as per Cribl's commit-and-deploy workflow.
   commit_id=$(commit_config)
   echo "Commit ID: $commit_id"
-  curl --fail --silent --show-error \
+  curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request PATCH \
     --url "${CRIBL_DEPLOY_URL}" \
     --header "$(auth_header)" \
@@ -294,7 +298,7 @@ update_pipeline_from_file() {
 
   echo "Updating pipeline '${CRIBL_PIPELINE_ID}' from ${file}..."
 
-  curl --fail --silent --show-error \
+  curl --fail --silent --show-error "${CURL_RETRY[@]}" \
     --request PATCH \
     --url "${CRIBL_BASE_URL}/pipelines/${CRIBL_PIPELINE_ID}" \
     --header "$(auth_header)" \

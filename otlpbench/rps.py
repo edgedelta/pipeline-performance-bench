@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 from .configs import config
 from .model import fixture
+from .readiness import run_attempts, wait_reachable
 
 
 def run(argv, **kwargs):
@@ -167,6 +168,8 @@ def main():
             try: snapshot(); break
             except subprocess.CalledProcessError: time.sleep(.2)
         else: raise RuntimeError('sink did not become ready')
+        report['sink_readiness'] = wait_reachable(load, hosts['sink']['private'], 14317)
+        if not report['sink_readiness']['ready']: raise RuntimeError('sink not reachable from the load host: '+json.dumps(report['sink_readiness']))
         for batch in map(int, args.batches.split(',')):
             f = fixture(args.signal, batch)
             if args.signal == 'metrics':
@@ -197,52 +200,54 @@ def main():
                         argv=[binaries[vendor],'--config','/home/ubuntu/agent.yaml']
                         if vendor=='bindplane': argv+=['--logging','/opt/observiq-otel-collector/logging.yaml']
                         env=['env','ED_API_KEY=benchmark-local','ED_SKIP_CONF_DOWNLOAD=1','ED_BACKEND_DISABLED=1','ED_DISABLE_CONF_RELOAD=1','ED_COORDINATOR_CLIENT_DISABLED=1','ED_DISABLE_LIVE_CAPTURE=1']
-                        pid=int(agent.argv(['sudo', '-n', 'sh', '-c', 'nohup '+shlex.join(env+argv)+' > /home/ubuntu/agent.log 2>&1 < /dev/null & echo $!']).strip())
-                        try:
-                            time.sleep(2)
-                            version=agent.argv([binaries[vendor],'--version']).strip()
-                            digest=agent.argv(['sha256sum',binaries[vendor]]).split()[0]
-                            endpoint='http://'+hosts['agent']['private']+':4317'
-                            sink_call('reset',True)
-                            warmup = {'skipped': 'fresh process for stateful windows'}
-                            if not reducing:
-                                warm=generate(endpoint,remote_fixture,min(rate,1000),5,10**15)
-                                warm_delivery=drain(warm['accepted_points'] * fraction, by_value=True)
-                                warmup={'load':warm,'delivered':warm_delivery}
-                                (out/f'{vendor}-{batch}-{rate}-{trial}-warmup.json').write_text(json.dumps(warmup,indent=2)+'\n')
-                                if not scenario_verified(args.scenario,warm_delivery,warm['accepted_points'],batch,args.signal):
-                                    report['rows'].append({'vendor':vendor,'batch':batch,'target_rps':rate,'trial':trial,'status':'warmup_failed','warmup':warmup})
-                                    save(); continue
-                                if not native_batch and not output_batch_matches(warm_delivery, batch*3//4 if args.scenario=='filter' else batch):
-                                    report['rows'].append({'vendor':vendor,'batch':batch,'target_rps':rate,'trial':trial,'status':'batch_mismatch','output_batch_verified':False,'delivered':warm_delivery})
-                                    save(); continue
-                            sink_call('reset',True)
-                            before=agent.stats(pid); sink_before=sink.stats(sink_pid)
-                            m=generate(endpoint,remote_fixture,rate,args.seconds,10**16)
-                            input_end=agent.stats(pid)
-                            delivered=drain(m['accepted_points'] * fraction, timeout=75 if reducing else 10, by_value=True)
-                            final=agent.stats(pid);sink_final=sink.stats(sink_pid)
-                            verified=scenario_verified(args.scenario,delivered,m['accepted_points'],batch,args.signal)
-                            status='measured'
-                            if m['achieved_rps']<rate*.95 or m['rpc_errors'] or m['rejected_points']:status='input_shortfall'
-                            if not verified:status='operation_mismatch'
-                            batch_verified=True if native_batch else output_batch_matches(delivered,batch*3//4 if args.scenario=='filter' else batch)
-                            if not batch_verified:status='batch_mismatch'
-                            row={'vendor':vendor,'version':version,'binary_sha256':digest,'batch':batch,'target_rps':rate,'trial':trial,'status':status,'load':m,'delivered':delivered,'input_window':cpu(before,input_end),'through_delivery':cpu(before,final),'sink_resources':cpu(sink_before,sink_final),'sampling_verified':verified if args.scenario=='sample' else None,'delivery_verified':(None if args.scenario=='sample' else delivered['value_sum']==m['accepted_points']*fraction),'delivery_check':'statistical retention and paired trace fingerprints' if args.scenario=='sample' else 'exact output count','output_batch_verified':None if native_batch else batch_verified,'operation_verified':verified,'scenario':args.scenario,'warmup':warmup}
-                            report['rows'].append(row);save();print(json.dumps({'vendor':vendor,'batch':batch,'rps':rate,'achieved':m['achieved_rps'],'cpu':row['through_delivery']['cpu_cores'],'status':status}),flush=True)
-                        except subprocess.CalledProcessError as error:
-                            report['rows'].append({'vendor':vendor,'batch':batch,'target_rps':rate,'trial':trial,'scenario':args.scenario,'status':'execution_failed','error':str(error)})
-                            save()
-                        finally:
-                            (out/f'{vendor}-{batch}-{rate}-{trial}-agent.log').write_text(agent.argv(['tail','-c','262144','/home/ubuntu/agent.log']))
-                            agent.command('sudo -n kill -TERM '+str(pid)+' 2>/dev/null || true')
-                            for _ in range(50):
-                                alive = agent.argv(['python3','-c','import psutil,sys; p=psutil.Process(int(sys.argv[1])) if psutil.pid_exists(int(sys.argv[1])) else None; print(bool(p and p.status()!=psutil.STATUS_ZOMBIE))',str(pid)]).strip()
-                                if alive == 'False': break
-                                time.sleep(.1)
-                            else:
-                                agent.command('sudo -n kill -KILL '+str(pid)+' 2>/dev/null || true')
-                            time.sleep(1)
+                        def measure():
+                            pid=int(agent.argv(['sudo', '-n', 'sh', '-c', 'nohup '+shlex.join(env+argv)+' > /home/ubuntu/agent.log 2>&1 < /dev/null & echo $!']).strip())
+                            base={'vendor':vendor,'batch':batch,'target_rps':rate,'trial':trial,'scenario':args.scenario}
+                            try:
+                                time.sleep(2)
+                                version=agent.argv([binaries[vendor],'--version']).strip()
+                                digest=agent.argv(['sha256sum',binaries[vendor]]).split()[0]
+                                endpoint='http://'+hosts['agent']['private']+':4317'
+                                readiness=wait_reachable(load, hosts['agent']['private'], 4317)
+                                if not readiness['ready']:
+                                    return dict(base,status='agent_unreachable',readiness=readiness,version=version,binary_sha256=digest)
+                                sink_call('reset',True)
+                                warmup = {'skipped': 'fresh process for stateful windows'}
+                                if not reducing:
+                                    warm=generate(endpoint,remote_fixture,min(rate,1000),5,10**15)
+                                    warm_delivery=drain(warm['accepted_points'] * fraction, by_value=True)
+                                    warmup={'load':warm,'delivered':warm_delivery}
+                                    (out/f'{vendor}-{batch}-{rate}-{trial}-warmup.json').write_text(json.dumps(warmup,indent=2)+'\n')
+                                    if not scenario_verified(args.scenario,warm_delivery,warm['accepted_points'],batch,args.signal):
+                                        return dict(base,status='warmup_failed',warmup=warmup,readiness=readiness)
+                                    if not native_batch and not output_batch_matches(warm_delivery, batch*3//4 if args.scenario=='filter' else batch):
+                                        return dict(base,status='batch_mismatch',output_batch_verified=False,delivered=warm_delivery,readiness=readiness)
+                                sink_call('reset',True)
+                                before=agent.stats(pid); sink_before=sink.stats(sink_pid)
+                                m=generate(endpoint,remote_fixture,rate,args.seconds,10**16)
+                                input_end=agent.stats(pid)
+                                delivered=drain(m['accepted_points'] * fraction, timeout=75 if reducing else 10, by_value=True)
+                                final=agent.stats(pid);sink_final=sink.stats(sink_pid)
+                                verified=scenario_verified(args.scenario,delivered,m['accepted_points'],batch,args.signal)
+                                status='measured'
+                                if m['achieved_rps']<rate*.95 or m['rpc_errors'] or m['rejected_points']:status='input_shortfall'
+                                if not verified:status='operation_mismatch'
+                                batch_verified=True if native_batch else output_batch_matches(delivered,batch*3//4 if args.scenario=='filter' else batch)
+                                if not batch_verified:status='batch_mismatch'
+                                return dict(base,version=version,binary_sha256=digest,status=status,load=m,delivered=delivered,input_window=cpu(before,input_end),through_delivery=cpu(before,final),sink_resources=cpu(sink_before,sink_final),sampling_verified=verified if args.scenario=='sample' else None,delivery_verified=(None if args.scenario=='sample' else delivered['value_sum']==m['accepted_points']*fraction),delivery_check='statistical retention and paired trace fingerprints' if args.scenario=='sample' else 'exact output count',output_batch_verified=None if native_batch else batch_verified,operation_verified=verified,warmup=warmup,readiness=readiness)
+                            except subprocess.CalledProcessError as error:
+                                return dict(base,status='execution_failed',error=str(error))
+                            finally:
+                                (out/f'{vendor}-{batch}-{rate}-{trial}-agent.log').write_text(agent.argv(['tail','-c','262144','/home/ubuntu/agent.log']))
+                                agent.command('sudo -n kill -TERM '+str(pid)+' 2>/dev/null || true')
+                                for _ in range(50):
+                                    alive = agent.argv(['python3','-c','import psutil,sys; p=psutil.Process(int(sys.argv[1])) if psutil.pid_exists(int(sys.argv[1])) else None; print(bool(p and p.status()!=psutil.STATUS_ZOMBIE))',str(pid)]).strip()
+                                    if alive == 'False': break
+                                    time.sleep(.1)
+                                else:
+                                    agent.command('sudo -n kill -KILL '+str(pid)+' 2>/dev/null || true')
+                                time.sleep(1)
+                        run_attempts(measure, out/f'{vendor}-{batch}-{rate}-{trial}', report, save)
     finally:
         sink.argv(['kill','-TERM',str(sink_pid)]);save()
 
