@@ -19,6 +19,10 @@ set -eo pipefail
 CONFIG_FILE=$2
 API_BASE="https://api.edgedelta.com"
 
+# Retry transient failures (timeouts, connection refused, 408/429/5xx) before giving up.
+# A 4xx other than 408/429 is a bad request and is never retried.
+CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused)
+
 # ed_token prints the token to use for this request.
 ed_token() {
   if [[ -n "${ED_API_TOKEN_CMD:-}" ]]; then
@@ -55,7 +59,7 @@ fi
 # -----------------------------------------------------------------------------
 create_base_pipeline() {
   echo "Creating base pipeline..."
-  PIPELINE_ID=$(curl -fsS -X POST \
+  PIPELINE_ID=$(curl -fsS "${CURL_RETRY[@]}" -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/base" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -77,7 +81,7 @@ create_base_pipeline() {
 # -----------------------------------------------------------------------------
 validate_config() {
   echo "Validating configuration..."
-  VALID=$(curl -fsS -X POST \
+  VALID=$(curl -fsS "${CURL_RETRY[@]}" -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/validate" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -85,7 +89,7 @@ validate_config() {
   echo "Validation result: $VALID"
   if [[ "$VALID" != "true" ]]; then
     echo "Validation failed. Errors:"
-    curl -fsS -X POST \
+    curl -fsS "${CURL_RETRY[@]}" -X POST \
       "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/validate" \
       -H "$(auth_header)" \
       -H "Content-Type: application/json" \
@@ -104,7 +108,7 @@ update_pipeline() {
     exit 1
   fi
   echo "Saving pipeline ${PIPELINE_ID} with content from edgedelta.yaml..."
-  curl -fsS -X POST \
+  curl -fsS "${CURL_RETRY[@]}" -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/save" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" \
@@ -120,7 +124,7 @@ get_history() {
     echo "PIPELINE_ID is not set."
     exit 1
   fi
-  curl -fsS -X GET \
+  curl -fsS "${CURL_RETRY[@]}" -X GET \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/history" \
     -H "$(auth_header)" | jq .
   # Use .[0].timestamp as VERSION_ID for deploy.
@@ -137,7 +141,7 @@ deploy_version() {
     exit 1
   fi
   echo "Deploying version ${version_id}..."
-  curl -fsS -X POST \
+  curl -fsS "${CURL_RETRY[@]}" -X POST \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/deploy/${version_id}" \
     -H "$(auth_header)" \
     -H "Content-Type: application/json" | jq .
@@ -150,7 +154,7 @@ validate_save_deploy() {
   validate_config
   update_pipeline
   echo "Fetching history for deploy..."
-  version_id=$(curl -fsS -X GET \
+  version_id=$(curl -fsS "${CURL_RETRY[@]}" -X GET \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/pipelines/${PIPELINE_ID}/history?only_latest=true" \
     -H "$(auth_header)" | jq -r '.[0].timestamp')
   if [[ -z "$version_id" || "$version_id" == "null" ]]; then
@@ -166,7 +170,7 @@ delete_pipeline() {
     exit 1
   fi
   echo "Deleting pipeline ${PIPELINE_ID}..."
-  curl -fsS -X DELETE \
+  curl -fsS "${CURL_RETRY[@]}" -X DELETE \
     "${API_BASE}/v1/orgs/${ED_ORG_ID}/confs/${PIPELINE_ID}" \
     -H "$(auth_header)" | jq .
 }
