@@ -23,6 +23,13 @@ def listening_server():
     return server, server.getsockname()[1]
 
 
+def free_port():
+    """A port nothing listens on: bound and released without ever listening, so no thread holds it open."""
+    with socket.socket() as probe:
+        probe.bind(('127.0.0.1', 0))
+        return probe.getsockname()[1]
+
+
 class LocalHost:
     """Runs the probe locally instead of over ssh; records the argv it was given."""
     def __init__(self): self.calls = []
@@ -44,7 +51,7 @@ class ReadinessProbeTest(unittest.TestCase):
         self.assertGreaterEqual(out['seconds'], 1)
 
     def test_probe_reports_not_ready_when_nothing_listens(self):
-        server, port = listening_server(); server.close()
+        port = free_port()
         out = json.loads(subprocess.check_output([sys.executable, '-c', readiness.PROBE, '127.0.0.1', str(port), '2', '2'], text=True))
         self.assertFalse(out['ready'])
         self.assertEqual(out['successes'], 0)
