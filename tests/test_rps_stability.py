@@ -7,7 +7,7 @@ import threading
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from otlpbench import rps
+from otlpbench import readiness
 
 
 def listening_server():
@@ -35,7 +35,7 @@ class ReadinessProbeTest(unittest.TestCase):
     def test_probe_reports_ready_once_port_accepts_for_stability_window(self):
         server, port = listening_server()
         try:
-            out = json.loads(subprocess.check_output([sys.executable, '-c', rps.PROBE, '127.0.0.1', str(port), '2', '10'], text=True))
+            out = json.loads(subprocess.check_output([sys.executable, '-c', readiness.PROBE, '127.0.0.1', str(port), '2', '10'], text=True))
         finally:
             server.close()
         self.assertTrue(out['ready'])
@@ -45,7 +45,7 @@ class ReadinessProbeTest(unittest.TestCase):
 
     def test_probe_reports_not_ready_when_nothing_listens(self):
         server, port = listening_server(); server.close()
-        out = json.loads(subprocess.check_output([sys.executable, '-c', rps.PROBE, '127.0.0.1', str(port), '2', '2'], text=True))
+        out = json.loads(subprocess.check_output([sys.executable, '-c', readiness.PROBE, '127.0.0.1', str(port), '2', '2'], text=True))
         self.assertFalse(out['ready'])
         self.assertEqual(out['successes'], 0)
         self.assertGreaterEqual(out['failures'], 1)
@@ -54,22 +54,22 @@ class ReadinessProbeTest(unittest.TestCase):
         server, port = listening_server()
         host = LocalHost()
         try:
-            out = rps.wait_reachable(host, '127.0.0.1', port, stable=2, timeout=10)
+            out = readiness.wait_reachable(host, '127.0.0.1', port, stable=2, timeout=10)
         finally:
             server.close()
         self.assertTrue(out['ready'])
         self.assertEqual(len(host.calls), 1)
-        self.assertEqual(host.calls[0][:3], ['python3', '-c', rps.PROBE])
+        self.assertEqual(host.calls[0][:3], ['python3', '-c', readiness.PROBE])
         self.assertEqual(host.calls[0][3:], ['127.0.0.1', str(port), '2', '10'])
 
 
 class RetryPolicyTest(unittest.TestCase):
     def test_only_infrastructure_failures_retry_and_only_once(self):
         for status in ['execution_failed', 'agent_unreachable']:
-            self.assertTrue(rps.should_retry(status, attempt=0), status)
-            self.assertFalse(rps.should_retry(status, attempt=1), status)
+            self.assertTrue(readiness.should_retry(status, attempt=0), status)
+            self.assertFalse(readiness.should_retry(status, attempt=1), status)
         for status in ['measured', 'input_shortfall', 'operation_mismatch', 'batch_mismatch', 'warmup_failed', 'harness_limited']:
-            self.assertFalse(rps.should_retry(status, attempt=0), status)
+            self.assertFalse(readiness.should_retry(status, attempt=0), status)
 
 
 class RetryOrchestrationTest(unittest.TestCase):
@@ -83,7 +83,7 @@ class RetryOrchestrationTest(unittest.TestCase):
             return {'vendor': 'otelcol', 'status': status}
         self.tmp = tempfile.TemporaryDirectory(); self.out = Path(self.tmp.name)
         report, saves = {'rows': []}, []
-        rps.run_attempts(measure, self.out / 'otelcol-512-2000-0', report, lambda: saves.append(len(report['rows'])))
+        readiness.run_attempts(measure, self.out / 'otelcol-512-2000-0', report, lambda: saves.append(len(report['rows'])))
         return calls, report, saves
 
     def test_measured_row_is_recorded_once_with_attempt_count(self):
