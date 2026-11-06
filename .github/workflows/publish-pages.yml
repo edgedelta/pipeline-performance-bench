@@ -2,7 +2,8 @@ name: Publish benchmark page
 
 on:
   # Releases created with github.token by the benchmark workflow do not trigger
-  # `release` events, so follow the benchmark workflow itself.
+  # `release` events, so follow the benchmark workflow itself. Releases published
+  # by hand do; the github-pages environment allows the otlp-* and 2* tags.
   workflow_run:
     workflows: ['Pipeline performance bench']
     types: [completed]
@@ -21,7 +22,10 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    # Rebuild after every benchmark run on main, even a partly failed one: the
+    # build only reads published releases, and a vendor job can fail after the
+    # report release was already published.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
