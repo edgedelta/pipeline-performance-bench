@@ -8,6 +8,11 @@ version=$(curl -fLsS --retry 3 https://api.github.com/repos/fluent/fluent-packag
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 major=${version%%.*}
 curl -fsSL --retry 3 "https://fluentd.cdn.cncf.io/sh/install-ubuntu-noble-fluent-package${major}-lts.sh" | sh
+
+# fluentd >= 1.20 depends on a json gem newer than the one bundled with the
+# package, and that gem ships a C extension, so the host needs a compiler.
+sudo apt-get update -qq
+sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=600 install -y -qq build-essential
 sudo /opt/fluent/bin/fluent-gem install fluentd --no-document
 
 # S3 output plugin is not bundled with fluent-package; install it into the

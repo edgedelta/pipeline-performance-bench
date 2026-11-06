@@ -84,6 +84,26 @@ def package(root, output, commit):
     (output / 'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in assets))
 
 
+def publish(output, repo, commit, tag):
+    notes = output / 'NOTES.md'
+    notes.write_text('Daily metrics and trace ladders. Both signals use isolated agent/load/sink hosts and the same verified Rust candidate. Measured load shortfalls remain in the data. The archive includes all configs, raw results and agent logs.\n')
+    gh('release', 'create', tag, '--repo', repo, '--target', commit, '--draft', '--title', f'OTLP Benchmark Report - {tag}', '--notes-file', str(notes))
+    assets = sorted(p for p in output.iterdir() if p.name != 'NOTES.md')
+    gh('release', 'upload', tag, '--repo', repo, *(str(p) for p in assets))
+    # The by-tag release endpoint never returns drafts (a draft has no tag ref
+    # yet), so find the draft in the release listing and verify it by id.
+    pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
+    release = next((r for page in pages for r in page if r['tag_name'] == tag), None)
+    if release is None:
+        raise ValueError('Draft release not found after upload')
+    asset_pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases/{release["id"]}/assets?per_page=100'))
+    remote = {a['name']: a.get('digest') for page in asset_pages for a in page}
+    expected = {p.name: 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest() for p in assets}
+    if remote != expected:
+        raise ValueError('Uploaded evidence checksum mismatch; draft retained')
+    gh('api', '--method', 'PATCH', f'repos/{repo}/releases/{release["id"]}', '-F', 'draft=false', '-f', 'make_latest=false')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('root', type=Path)
@@ -100,18 +120,8 @@ def main():
         print('All six short-run vendor shards verified')
         return
     package(a.root, a.output, a.commit)
-    if not a.publish:
-        return
-    notes = a.output / 'NOTES.md'
-    notes.write_text('Daily metrics and trace ladders. Both signals use isolated agent/load/sink hosts and the same verified Rust candidate. Measured load shortfalls remain in the data. The archive includes all configs, raw results and agent logs.\n')
-    gh('release', 'create', a.tag, '--repo', a.repo, '--target', a.commit, '--draft', '--title', f'OTLP Benchmark Report - {a.tag}', '--notes-file', str(notes))
-    assets = [p for p in a.output.iterdir() if p.name != 'NOTES.md']
-    gh('release', 'upload', a.tag, '--repo', a.repo, *(str(p) for p in assets))
-    release = json.loads(gh('api', f'repos/{a.repo}/releases/tags/{a.tag}'))
-    expected = {p.name: 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest() for p in assets}
-    if {asset['name']: asset.get('digest') for asset in release['assets']} != expected:
-        raise ValueError('Uploaded evidence checksum mismatch; draft retained')
-    gh('release', 'edit', a.tag, '--repo', a.repo, '--draft=false', '--latest=false')
+    if a.publish:
+        publish(a.output, a.repo, a.commit, a.tag)
 
 
 if __name__ == '__main__':
