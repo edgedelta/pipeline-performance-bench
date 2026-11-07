@@ -5,8 +5,9 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import subprocess
 import tempfile
+
+import gh_release
 
 from check_results import validate
 from report_disclosure import disclosure
@@ -45,7 +46,7 @@ def release_notes(report, run_url, data=None):
 
 
 def gh(*args):
-    return subprocess.check_output(['gh', *args], text=True)
+    return gh_release.run(*args)
 
 
 def publish(directory, repo, commit, run_url):
@@ -65,32 +66,26 @@ def publish(directory, repo, commit, run_url):
         raise ValueError('Expected UTC run timestamp YYYYMMDD_HHMMSS')
     tag = directory.name.replace('_', '-')
     title = f'Benchmark Report - {tag}'
-    releases = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
-    existing = next((r for page in releases for r in page if r['tag_name'] == tag), None)
+    existing = gh_release.find_release(gh, repo, tag)
     if existing and not existing['draft']:
         print(f'Release already published: {existing["html_url"]}')
         return
+    if existing:
+        # A draft left by an interrupted publication: drafts own no tag ref, so
+        # replacing it is safe and re-verifies every asset from scratch.
+        gh_release.delete_release(gh, repo, existing['id'])
     with tempfile.TemporaryDirectory() as temp:
         notes = Path(temp) / 'notes.md'
         notes.write_text(release_notes((directory / 'report.md').read_text(), run_url, data))
-        if not existing:
-            gh('release', 'create', tag, '--repo', repo, '--target', commit,
-               '--title', title, '--notes-file', str(notes), '--draft')
-        else:
-            gh('release', 'edit', tag, '--repo', repo, '--title', title, '--notes-file', str(notes))
+        release = gh_release.create_draft(gh, repo, tag, commit, title, notes)
         assets = [directory / line.split('  ', 1)[1] for line in (directory / 'SHA256SUMS').read_text().splitlines()]
         assets.append(directory / 'SHA256SUMS')
-        for offset in range(0, len(assets), 20):
-            gh('release', 'upload', tag, '--repo', repo, '--clobber', *(str(p) for p in assets[offset:offset+20]))
-        pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
-        release = next(r for page in pages for r in page if r['tag_name'] == tag)
-        asset_pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases/{release["id"]}/assets?per_page=100'))
-        remote = {a['name']: a.get('digest') for page in asset_pages for a in page}
+        gh_release.upload_assets(gh, repo, release['id'], assets)
+        remote = gh_release.remote_digests(gh, repo, release['id'])
         expected = {p.name: 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest() for p in assets}
         if remote != expected:
             raise ValueError('Uploaded assets differ from validated local assets; leaving draft unpublished')
-        gh('api', '--method', 'PATCH', f'repos/{repo}/releases/{release["id"]}',
-           '-F', 'draft=false', '-f', 'make_latest=true')
+        gh_release.mark_published(gh, repo, release['id'], make_latest=True)
         print(release['html_url'])
 
 

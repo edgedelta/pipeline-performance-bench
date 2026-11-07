@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -6,6 +7,24 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import publish_release as publisher
+
+
+def graphql(release):
+    return json.dumps({'data': {'repository': {'release': release}}})
+
+
+def fake_gh(calls, existing=None, created_id=1, assets=None):
+    """Answer the by-id publication flow: GraphQL lookup, POST create, asset listing."""
+    def gh(*args):
+        calls.append(args)
+        if args[:2] == ('api', 'graphql'):
+            return graphql(existing)
+        if args[:3] == ('api', '--method', 'POST') and args[3].endswith('/releases'):
+            return json.dumps({'id': created_id, 'html_url': 'https://example.invalid/release'})
+        if args[0] == 'api' and '/assets?' in args[-1]:
+            return json.dumps(assets or [[]])
+        return ''
+    return gh
 
 
 class PublicationTest(unittest.TestCase):
@@ -28,11 +47,12 @@ class PublicationTest(unittest.TestCase):
             (path / 'SHA256SUMS').write_text('unused  report.md\n')
             (path / 'report.md').write_text('performance')
             data = {'scenarios': {'red/filter': {'status': 'ok'}}, 'provenance': {'benchmark_commit': 'a' * 40}}
-            responses = [json.dumps([[]]), '', '', json.dumps([[{'id': 1, 'tag_name': '20260915-091700', 'assets': [], 'html_url': 'url'}]]), json.dumps([[]])]
-            with patch.object(publisher, 'validate', return_value=data), patch.object(publisher, 'gh', side_effect=responses) as gh:
+            calls = []
+            gh = fake_gh(calls, assets=[[{'name': 'report.md', 'digest': 'sha256:' + '0' * 64}]])
+            with patch.object(publisher, 'validate', return_value=data), patch.object(publisher, 'gh', side_effect=gh):
                 with self.assertRaisesRegex(ValueError, 'assets differ'):
                     publisher.publish(path, 'owner/repo', 'a' * 40, 'https://example.com/run')
-                self.assertFalse(any('PATCH' in c.args for c in gh.call_args_list))
+            self.assertFalse(any('PATCH' in c for c in calls))
 
     def test_release_notes_preserve_performance(self):
         report = ('## Benchmark Scenario: Filter\n\n### Performance Comparison\n\n81,399 logs/sec\n\n'
@@ -46,8 +66,7 @@ class PublicationTest(unittest.TestCase):
         self.assertTrue(notes.startswith('> **Impartial analysis and transparency:**'))
         self.assertIn('/blob/main/docs/report-prompt.md', notes)
 
-    def test_large_asset_set_is_paginated_and_verified_before_publish(self):
-        import hashlib
+    def test_large_asset_set_is_uploaded_and_verified_by_id_without_listing_releases(self):
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'20260915_091700';path.mkdir()
             for i in range(170):(path/f'asset-{i}.json').write_text('{}')
@@ -56,24 +75,39 @@ class PublicationTest(unittest.TestCase):
             (path/'SHA256SUMS').write_text(''.join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in assets))
             assets.append(path/'SHA256SUMS')
             remote=[{'name':p.name,'digest':'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()} for p in assets]
-            release={'id':1,'tag_name':'20260915-091700','html_url':'https://example.invalid/release','draft':True,'assets':remote[:30]}
-            calls=[];listing=0
-            def gh(*args):
-                nonlocal listing
-                calls.append(args)
-                if args[0]=='api' and args[-1]=='repos/owner/repo/releases':
-                    listing+=1
-                    return json.dumps([[]] if listing==1 else [[release]])
-                if args[0]=='api' and '/assets?' in args[-1]:return json.dumps([remote[:100],remote[100:]])
-                return ''
+            calls=[]
+            gh=fake_gh(calls, created_id=1, assets=[remote[:100],remote[100:]])
             data={'scenarios':{'red/filter':{'status':'ok'},'fluentd/filter':{'status':'errors','workers':[{'errors':27850}]}},'provenance':{'benchmark_commit':'a'*40}}
             with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',side_effect=gh):publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
-            uploads=[c for c in calls if c[:2]==('release','upload')]
-            self.assertEqual(len(uploads),9)
-            created = next(c for c in calls if c[:2] == ('release', 'create'))
-            self.assertEqual(created[created.index('--title')+1], 'Benchmark Report - 20260915-091700')
-            self.assertTrue(any('/assets?per_page=100' in c[-1] for c in calls))
+            # Never list every release: that response embeds every asset of every release.
+            self.assertFalse(any(c[-1].endswith('repos/owner/repo/releases') and '--paginate' in c for c in calls))
+            self.assertFalse(any(c[0]=='release' for c in calls))
+            uploads=[c for c in calls if 'https://uploads.github.com/repos/owner/repo/releases/1/assets?name=' in ' '.join(c)]
+            self.assertEqual(len(uploads),171)
+            created = next(c for c in calls if c[:3] == ('api', '--method', 'POST') and c[3].endswith('/releases'))
+            self.assertIn('name=Benchmark Report - 20260915-091700', created)
+            self.assertIn('draft=true', created)
+            self.assertTrue(any('/releases/1/assets?per_page=100' in c[-1] for c in calls))
             self.assertIn('PATCH',calls[-1])
+            self.assertIn('repos/owner/repo/releases/1', calls[-1])
+            self.assertIn('make_latest=true', calls[-1])
+
+    def test_leftover_draft_is_replaced_on_rerun(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'20260915_091700';path.mkdir()
+            (path/'report.md').write_text('performance')
+            (path/'SHA256SUMS').write_text(f"{hashlib.sha256(b'performance').hexdigest()}  report.md\n")
+            remote=[{'name':n,'digest':'sha256:'+hashlib.sha256((path/n).read_bytes()).hexdigest()} for n in ['report.md','SHA256SUMS']]
+            calls=[]
+            stale={'databaseId':77,'isDraft':True,'url':'https://example.invalid/stale'}
+            gh=fake_gh(calls, existing=stale, created_id=78, assets=[remote])
+            data={'scenarios':{'red/filter':{'status':'ok'}},'provenance':{'benchmark_commit':'a'*40}}
+            with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',side_effect=gh):publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
+            deleted=[c for c in calls if c[:3]==('api','--method','DELETE')]
+            self.assertEqual(len(deleted),1)
+            self.assertIn('repos/owner/repo/releases/77', deleted[0])
+            self.assertIn('repos/owner/repo/releases/78', calls[-1])
+            self.assertIn('PATCH', calls[-1])
 
     def test_error_outcomes_are_explicit_in_release_intro(self):
         data={'scenarios':{'fluentd/filter':{'status':'errors','workers':[{'errors':0},{'errors':0},{'errors':27850}]}}}
@@ -86,6 +120,6 @@ class PublicationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'20260915_091700';path.mkdir();(path/'SHA256SUMS').touch()
             data={'scenarios':{'red/filter':{'status':'ok'}},'provenance':{'benchmark_commit':'a'*40}}
-            existing={'tag_name':'20260915-091700','draft':False,'html_url':'https://example.invalid/release'}
-            with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',return_value=json.dumps([[existing]])) as gh:publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
+            existing={'databaseId':3,'isDraft':False,'url':'https://example.invalid/release'}
+            with patch.object(publisher,'validate',return_value=data),patch.object(publisher,'gh',return_value=graphql(existing)) as gh:publisher.publish(path,'owner/repo','a'*40,'https://example.invalid/run')
             self.assertEqual(gh.call_count,1)
