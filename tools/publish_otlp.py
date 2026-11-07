@@ -3,12 +3,13 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 import tarfile
+
+import gh_release
 
 
 def gh(*args):
-    return subprocess.check_output(['gh', *args], text=True)
+    return gh_release.run(*args)
 
 
 def merge_signal(paths, signal, commit, profile='full'):
@@ -87,21 +88,19 @@ def package(root, output, commit):
 def publish(output, repo, commit, tag):
     notes = output / 'NOTES.md'
     notes.write_text('Daily metrics and trace ladders. Both signals use isolated agent/load/sink hosts and the same verified Rust candidate. Measured load shortfalls remain in the data. The archive includes all configs, raw results and agent logs.\n')
-    gh('release', 'create', tag, '--repo', repo, '--target', commit, '--draft', '--title', f'OTLP Benchmark Report - {tag}', '--notes-file', str(notes))
+    existing = gh_release.find_release(gh, repo, tag)
+    if existing and not existing['draft']:
+        raise ValueError(f'OTLP release {tag} already published; evidence is immutable')
+    if existing:
+        gh_release.delete_release(gh, repo, existing['id'])
+    release = gh_release.create_draft(gh, repo, tag, commit, f'OTLP Benchmark Report - {tag}', notes)
     assets = sorted(p for p in output.iterdir() if p.name != 'NOTES.md')
-    gh('release', 'upload', tag, '--repo', repo, *(str(p) for p in assets))
-    # The by-tag release endpoint never returns drafts (a draft has no tag ref
-    # yet), so find the draft in the release listing and verify it by id.
-    pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
-    release = next((r for page in pages for r in page if r['tag_name'] == tag), None)
-    if release is None:
-        raise ValueError('Draft release not found after upload')
-    asset_pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases/{release["id"]}/assets?per_page=100'))
-    remote = {a['name']: a.get('digest') for page in asset_pages for a in page}
+    gh_release.upload_assets(gh, repo, release['id'], assets)
+    remote = gh_release.remote_digests(gh, repo, release['id'])
     expected = {p.name: 'sha256:' + hashlib.sha256(p.read_bytes()).hexdigest() for p in assets}
     if remote != expected:
         raise ValueError('Uploaded evidence checksum mismatch; draft retained')
-    gh('api', '--method', 'PATCH', f'repos/{repo}/releases/{release["id"]}', '-F', 'draft=false', '-f', 'make_latest=false')
+    gh_release.mark_published(gh, repo, release['id'], make_latest=False)
 
 
 def main():

@@ -72,7 +72,7 @@ class DailyEvidenceTest(unittest.TestCase):
                         publish_otlp.package(root, output, base['benchmark_commit'])
 
 
-    def test_publish_verifies_draft_release_by_id_not_tag(self):
+    def test_publish_creates_uploads_verifies_and_publishes_by_id(self):
         tag = 'otlp-20261105-092151'
         for mutation in ['none', 'mismatch']:
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as tmp:
@@ -87,9 +87,15 @@ class DailyEvidenceTest(unittest.TestCase):
                 calls = []
                 def gh(*args):
                     calls.append(args)
+                    # Neither the by-tag REST endpoint (hides drafts) nor the full
+                    # listing (embeds every asset of every release) may be used.
                     self.assertNotIn(f'repos/owner/repo/releases/tags/{tag}', args)
-                    if args[0] == 'api' and args[-1] == 'repos/owner/repo/releases':
-                        return json.dumps([[{'id': 7, 'tag_name': 'other', 'draft': False}], [{'id': 9, 'tag_name': tag, 'draft': True}]])
+                    self.assertFalse(args[-1].endswith('repos/owner/repo/releases') and '--paginate' in args)
+                    self.assertNotEqual(args[0], 'release')
+                    if args[:2] == ('api', 'graphql'):
+                        return json.dumps({'data': {'repository': {'release': None}}})
+                    if args[:3] == ('api', '--method', 'POST') and args[3].endswith('/releases'):
+                        return json.dumps({'id': 9, 'html_url': 'https://example.invalid/9'})
                     if args[0] == 'api' and args[-1].startswith('repos/owner/repo/releases/9/assets'):
                         return json.dumps([remote])
                     return ''
@@ -99,19 +105,31 @@ class DailyEvidenceTest(unittest.TestCase):
                     else:
                         with self.assertRaises(ValueError):
                             publish_otlp.publish(output, 'owner/repo', 'a' * 40, tag)
-                created = next(c for c in calls if c[:2] == ('release', 'create'))
-                self.assertIn('--draft', created)
-                upload = next(c for c in calls if c[:2] == ('release', 'upload'))
-                self.assertEqual(sorted(upload[5:]), [str(p) for p in assets])
+                created = next(c for c in calls if c[:3] == ('api', '--method', 'POST') and c[3].endswith('/releases'))
+                self.assertIn('draft=true', created)
+                self.assertIn(f'tag_name={tag}', created)
+                uploads = [c for c in calls if 'uploads.github.com/repos/owner/repo/releases/9/assets?name=' in ' '.join(c)]
+                self.assertEqual(sorted(c[-1] for c in uploads), [str(p) for p in assets])
+                self.assertNotIn(str(output / 'NOTES.md'), [c[-1] for c in uploads])
                 patches = [c for c in calls if 'PATCH' in c]
                 if mutation == 'none':
                     self.assertEqual(len(patches), 1)
-                    self.assertEqual(patches[0][3], 'repos/owner/repo/releases/9')
+                    self.assertIn('repos/owner/repo/releases/9', patches[0])
                     self.assertIn('draft=false', patches[0])
                     self.assertIn('make_latest=false', patches[0])
                 else:
                     self.assertEqual(patches, [])
 
+    def test_publish_refuses_to_touch_an_already_published_tag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'otlp-release'
+            output.mkdir()
+            (output / 'SHA256SUMS').write_bytes(b'x')
+            published = {'databaseId': 4, 'isDraft': False, 'url': 'https://example.invalid/4'}
+            with patch.object(publish_otlp, 'gh', return_value=json.dumps({'data': {'repository': {'release': published}}})) as gh:
+                with self.assertRaisesRegex(ValueError, 'already published'):
+                    publish_otlp.publish(output, 'owner/repo', 'a' * 40, 'otlp-20261105-092151')
+            self.assertEqual(gh.call_count, 1)
 
 if __name__ == '__main__':
     unittest.main()
