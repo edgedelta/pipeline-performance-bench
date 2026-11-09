@@ -81,7 +81,7 @@ def main():
                 endpoints['load'].argv(['chmod','+x','/home/ubuntu/otlp-traffic'])
             def agents():
                 a=endpoints['agent'];a.upload(install,'/tmp/install.tgz');a.upload(tmp/'red/red','/tmp/red')
-                a.command("sudo cloud-init status --wait && mkdir -p bench && cd bench && tar -xzf /tmp/install.tgz && sed -i '/^version=/c\\version=v1.110.1' scripts/install_agent_bindplane.sh && bash otlpbench/install.sh red && bash otlpbench/install.sh otelcol && bash otlpbench/install.sh bindplane && sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq python3-psutil")
+                a.command("sudo cloud-init status --wait && mkdir -p bench && cd bench && tar -xzf /tmp/install.tgz && bash otlpbench/install.sh red && bash otlpbench/install.sh otelcol && BINDPLANE_VERSION=v1.110.1 bash otlpbench/install.sh bindplane && sudo apt-get -o DPkg::Lock::Timeout=180 install -y -qq python3-psutil")
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 jobs=[pool.submit(build),pool.submit(agents)]
                 for job in jobs:job.result()
