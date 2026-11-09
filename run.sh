@@ -357,7 +357,7 @@ function run_cribl_benchmark() {
 function run_otelcol_benchmark() {
   echo "Running OpenTelemetry Collector benchmark..."
   echo "Installing OpenTelemetry Collector agent..."
-  run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_otelcol.sh"
+  AGENT_ENV=$(resolve_agent_version otelcol) run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_otelcol.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/otelcol"
   # No lookup scenario: OTel contrib has no shipped CSV lookup processor
   # (lookup is excluded automatically by cases_for).
@@ -370,7 +370,7 @@ function run_otelcol_benchmark() {
 }
 
 function run_bindplane_benchmark() {
-  run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_bindplane.sh"
+  AGENT_ENV=$(resolve_agent_version bindplane) run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_bindplane.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/bindplane"
   for type in $(cases_for bindplane); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/bindplane/$type.yaml /opt/observiq-otel-collector/config.yaml"
@@ -383,7 +383,7 @@ function run_bindplane_benchmark() {
 function run_fluentd_benchmark() {
   echo "Running Fluentd benchmark..."
   echo "Installing Fluentd agent..."
-  run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_fluentd.sh"
+  AGENT_ENV=$(resolve_agent_version fluentd) run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_fluentd.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/fluentd"
   for type in $(cases_for fluentd); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/fluentd/$type.conf /etc/fluent/fluentd.conf"
@@ -395,7 +395,7 @@ function run_fluentd_benchmark() {
 
 
 function run_vector_benchmark() {
-  run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_vector.sh"
+  AGENT_ENV=$(resolve_agent_version vector) run_scripts_on_ec2_instance "$runtime_dir/scripts/install_agent_vector.sh"
   upload_folder_to_ec2_instance "$runtime_dir/pipelines/vector"
   for type in $(cases_for vector); do
     run_command_on_ec2_instance "sudo cp /home/ubuntu/vector/$type.yaml /etc/vector/vector.yaml; sudo /usr/local/bin/vector validate --skip-healthchecks /etc/vector/vector.yaml"

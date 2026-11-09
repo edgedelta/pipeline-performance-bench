@@ -56,7 +56,15 @@ run_scripts_on_ec2_instance() {
     set_instance_ip
   fi
   echo "Running script $script on EC2 instance at $INSTANCE_IP"
-  ssh -t -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "bash -se" < "$script"
+  # AGENT_ENV carries NAME=value assignments (see resolve_agent_version) to the host.
+  ssh -t -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no -i "$git_root/aws_resources/ec2-benchmark-key.pem" ubuntu@"$INSTANCE_IP" "${AGENT_ENV:+$AGENT_ENV }bash -se" < "$script"
+}
+
+# Resolve an agent's latest version here, where gh is authenticated, instead of
+# on the host via the unauthenticated API that GitHub incidents time out. Prints
+# NAME=value for AGENT_ENV, or nothing: the install script then asks GitHub itself.
+resolve_agent_version() {
+  python3 "$git_root/tools/agent_versions.py" "$1" || echo "Warning: could not resolve the $1 version on the runner; the host will ask api.github.com" >&2
 }
 
 get_s3_bucket_name() {
