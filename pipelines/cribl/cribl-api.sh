@@ -21,9 +21,12 @@ set -euo pipefail
 # Configuration
 ###############################################################################
 
-# Retry transient failures (timeouts, connection refused, 408/429/5xx) before giving up.
-# A 4xx other than 408/429 is a bad request and is never retried.
-CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused)
+# Retry failed calls a few times before giving up.
+# --retry-all-errors: curl otherwise retries only transient HTTP codes and timeouts.
+# A 57 s deploy on 10 Nov 2026 ended in curl exit 92, an HTTP/2 stream reset after
+# the body had arrived, and was never retried. The calls here are safe to repeat:
+# the same version deploys the same way.
+CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused --retry-all-errors)
 
 : "${CRIBL_WORKSPACE:?Set CRIBL_WORKSPACE (e.g. myws)}"
 : "${CRIBL_ORG:?Set CRIBL_ORG (e.g. abc123)}"

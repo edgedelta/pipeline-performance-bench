@@ -132,7 +132,9 @@ class SetupApiRetryTest(unittest.TestCase):
             for call in calls:
                 head = call.split('\\\n')[0] if '\\\n' in call else call.split('\n')[0]
                 self.assertIn('${CURL_RETRY[@]}', head, f'{script}: {head.strip()[:60]}')
-            self.assertIn('CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused)', text, script)
+            # curl exit 92 (HTTP/2 stream reset after a 57 s deploy) killed the 10 Nov edgedelta
+            # job: retry every error, not only transient HTTP codes.
+            self.assertIn('CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused --retry-all-errors)', text, script)
 
 
 if __name__ == '__main__':
