@@ -20,11 +20,11 @@ CONFIG_FILE=$2
 API_BASE="https://api.edgedelta.com"
 
 # Retry failed calls a few times before giving up.
-# --http1.1: a 57 s deploy on 10 Nov 2026 ended in curl exit 92, an HTTP/2 stream
-# reset, after the body had arrived. --retry-all-errors: curl otherwise retries
-# only transient HTTP codes and timeouts, so that reset was never retried. The
-# calls here are safe to repeat: the same version deploys the same way.
-CURL_RETRY=(--http1.1 --retry 3 --retry-delay 5 --retry-connrefused --retry-all-errors)
+# --retry-all-errors: curl otherwise retries only transient HTTP codes and timeouts.
+# A 57 s deploy on 10 Nov 2026 ended in curl exit 92, an HTTP/2 stream reset after
+# the body had arrived, and was never retried. The calls here are safe to repeat:
+# the same version deploys the same way.
+CURL_RETRY=(--retry 3 --retry-delay 5 --retry-connrefused --retry-all-errors)
 
 # ed_token prints the token to use for this request.
 ed_token() {
