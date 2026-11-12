@@ -4,7 +4,7 @@
 Please include a summary of the change and which issue is fixed. Please provide the motivation for why this change is necessary at this stage of the product development cycle.
 -->
 
-Fixes # <!-- (provide jira link which is addressed with this change) -->
+Fixes # <!-- (link the issue addressed by this change) -->
 Documents # <!-- (provide links to document if any) -->
 
 

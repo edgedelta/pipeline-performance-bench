@@ -54,7 +54,7 @@ otlpbench/traffic-rs/target/release/otlp-traffic load \
 
 The controller writes binary fixture files. `--sequence-offset` supports disjoint request IDs when manually distributing multiple generators; aggregate their counters and calibrate the combined load. Standalone commands bind loopback by default; expose them only on an isolated benchmark network. The sink accepts uncompressed OTLP protobuf over gRPC and HTTP, with 64 MiB message limits. It exposes local `/stats` and POST `/reset` controls; reset only after previous traffic has drained.
 
-## Testing an unreleased Rust exporter
+## Testing a custom Rust build
 
 Pass `--red-binary /absolute/path/to/linux/red` to `otlpbench.cloud_rps` to install an optimized Linux build instead of the published release. Binary hashes remain in every measured row. Record its source commit alongside the report; the binary's release version alone does not identify a development build.
 
@@ -63,12 +63,12 @@ OTLP concurrency in the development agent follows incoming requests; no exporter
 ## Default Rust build
 
 `cloud_rps` defaults to the measured automatic-concurrency build recorded in
-[red-build.json](red-build.json), from Rust PR #20 (now merged). It checks the
+[red-build.json](red-build.json), identified by its source commit. It checks the
 local Linux binary's SHA-256 before provisioning cloud hosts and never silently
 falls back to release 3.15.0. The default path assumes sibling `red` and
 `pipeline-performance-bench` checkouts.
 
-The pin identifies the tested PR source, not a stable release or the exact merged
+The pin identifies the tested source commit, not a stable release or the exact merged
 main tree, which also contains other changes. Preserve this measured binary for
 repeat comparisons. On another machine, supply a Linux x86_64 release binary
 explicitly with `--red-binary /path/to/red`; rebuilding can produce a different

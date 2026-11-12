@@ -121,7 +121,7 @@ Docker smoke tests validate all Vector/Fluent Bit production configs without AWS
 
 `validate.yml` runs local checks and Docker smoke tests. `benchmark.yml` runs daily and supports manual dispatch. Full successful suites publish dated GitHub releases; all runs upload available artifacts. It does not update Pages or the website.
 
-Configure the original secret names in the new repository (or grant it access to the existing organization secrets): `AWS_BEDROCK_ROLE`, the selected vendor credentials above, for the selected agents. Released RED binaries require no private checkout credentials. GitHub does not expose existing repository secret values for copying. AWS OIDC trust must explicitly permit the new repository, and the workflow uses two-hour sessions and refreshes AWS credentials before infrastructure cleanup. The initial release used [a temporary workflow in the existing benchmark repository](https://github.com/edgedelta/benchmark/actions/runs/34809968062), reusing its secrets and OIDC trust. Temporary read-only checkout access and the bootstrap branch were removed after publication. Inputs are passed through environment variables and validated before use.
+Running the workflows in a fork requires these repository secrets: `AWS_BEDROCK_ROLE` (an AWS role trusted through GitHub OIDC) and the vendor credentials above for the selected agents. Released RED binaries require no private checkout credentials. The workflow uses two-hour AWS sessions and refreshes credentials before infrastructure cleanup. Inputs are passed through environment variables and validated before use.
 
 Reference docs: [Vector HTTP](https://vector.dev/docs/reference/configuration/sources/http_server/), [Vector S3](https://vector.dev/docs/reference/configuration/sinks/aws_s3/), [Fluent Bit S3](https://docs.fluentbit.io/manual/data-pipeline/outputs/s3), [Fluent Bit Lua](https://docs.fluentbit.io/manual/data-pipeline/filters/lua).
 
@@ -188,3 +188,7 @@ Each cloud job refreshes AWS credentials and destroys its own resources even aft
 The OTLP comparison currently holds OTel Collector at 0.162.0 and Bindplane at 1.110.1 for continuity with the saved ladders. Their actual versions are recorded in every run. Rust follows the qualified candidate channel shared by all three signals.
 
 The [Ladder page](https://edgedelta.github.io/pipeline-performance-bench/ladder/) shows one load-ladder chart per scenario for logs, metrics and traces. It uses the same published datasets as the signal pages, with vendor markers, load-shortfall indicators and light/dark themes. Pages builds refresh it automatically; no additional benchmark run is needed.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE). Copyright 2026 Edge Delta, Inc.
