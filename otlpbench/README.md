@@ -28,7 +28,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory /tmp/otlp-preview
 
 `OTLP_SIGNALS=metrics` or `traces` runs a signal independently; `OTLP_SCENARIOS` selects comma-separated scenarios. Run each cloud shard from a separate checkout so Terraform state is isolated. Every shard destroys its temporary infrastructure on exit. JSON records the benchmark commit, binary hash and version. Charts embed the data and work offline.
 
-The optional Actions workflow is artifact-only. Its existing AWS role currently trusts only main, so PR cloud runs use existing local AWS credentials without widening shared IAM. Keep the PR unmerged until reviewed. The public Pages URL and log results are unchanged.
+The optional Actions workflow is artifact-only and requires the repository's AWS role; otherwise run cloud shards with your own AWS credentials.
 
 ## High request-rate Pass-Through
 

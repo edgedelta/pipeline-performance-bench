@@ -61,7 +61,7 @@ const data=__DATA__;
 const names={red:'Edge Delta (Rust)',otelcol:'OpenTelemetry Collector',bindplane:'Bindplane (Dynatrace)'};
 const colors={red:'#00DA63',otelcol:'#9F4FFF',bindplane:'#EF4444'};
 const labels={'pass-through':'Pass-Through',filter:'Filter',aggregate:'Aggregate',rollup:'Rollup',combined:'Combined',mask:'Mask',sample:'Sample',tail:'Tail'};
-const versions=data.versions??{red:'PR #21 · '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
+const versions=data.versions??{red:'build '+data.source_commit.slice(0,7),otelcol:'0.162.0',bindplane:'1.110.1'};
 let mode='tier',rate=Math.max(...data.rates),metric='efficiency',scenario='pass-through';
 const el=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('en-US',{notation:n>=10000?'compact':'standard',maximumFractionDigits:2}).format(n);

@@ -1,6 +1,6 @@
 # Metric request-rate ladder
 
-[Interactive chart](https://github.com/edgedelta/pipeline-performance-bench/blob/3efd3f6c749f2309a877632d40ab5c1792a85cef/previews/otlp/2026-10-17/metrics-ladder/index.html) · [Raw measurements](results.json) · [Rust PR #21](https://github.com/edgedelta/red/pull/21)
+[Interactive chart](https://github.com/edgedelta/pipeline-performance-bench/blob/3efd3f6c749f2309a877632d40ab5c1792a85cef/previews/otlp/2026-10-17/metrics-ladder/index.html) · [Raw measurements](results.json)
 
 The ladder covers **Pass-Through, Filter, Aggregate, Rollup and Combined** at **1,000, 2,000, 4,000 and 8,000 requests/sec**, with **512 points/request**. Enrich is excluded. Rust e12daf8, OTel Collector 0.162.0 and Bindplane 1.110.1 use the same isolated agent host; Rust load generator and sink run on separate c8i.8xlarge hosts. All tiers are measured independently, even after a lower-tier shortfall. OTLP/gRPC input, uncompressed OTLP/HTTP output, 64 connections, up to 1,024 in-flight requests, 64 recurring resource groups and 64 host series. Source commit and binary hashes are recorded in source.json and each raw measurement.
 
@@ -74,7 +74,7 @@ CPU seconds through final delivery divided by input-window duration; lower is be
 
 Pass-Through preserves 512 output points/request; Filter removes health-route points and verifies 384 output points/request. Aggregate reduces host cardinality; Rust sums over 10-second windows while collectors reduce labels within each batch. Rollup retains host labels with a 60-second interval. Combined combines cardinality reduction and a 60-second interval. Native window boundaries and output volumes differ; these are not equal-output-work aggregation comparisons. Stateful cases start fresh without warm-up and include final delivery flush in CPU cost. The fixture contains one metric with 512 points per request; mixed-metadata correctness is covered separately, not throughput-tested here.
 
-Every raw scenario directory contains configuration YAML, protobuf fixtures, calibration, versions, hashes, resource measurements and delivery counters. The reusable renderer rejects missing/duplicate cases and mismatched Rust hashes; its unit tests and all chart control combinations were checked. No agent behavior changed for this run. Both PRs remain unmerged and the public Pages site is unchanged.
+Every raw scenario directory contains configuration YAML, protobuf fixtures, calibration, versions, hashes, resource measurements and delivery counters. The reusable renderer rejects missing/duplicate cases and mismatched Rust hashes; its unit tests and all chart control combinations were checked. Rust is a development build identified by its source commit and binary hash.
 
 The 60-second generator runs have measured input windows of 61.507–65.732 seconds including SSH control overhead, following the existing harness normalization. All seven cloud resources were destroyed and Terraform state contains no resources.
 

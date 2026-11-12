@@ -61,7 +61,7 @@ The sink verifies payload fields, parent/child counts and matching trace-ID fing
 
 Tail starts with a fresh agent without warm-up. Other scenarios have a five-second warm-up excluded from measurements. CPU includes processing through final delivery, normalized to the offered-load window. Raw counters named points count spans for these trace runs.
 
-Draft PRs remain unmerged; public Pages is unchanged.
+Rust is a development build identified by its source commit and binary hash.
 
 Temporary benchmark infrastructure was destroyed after completion: seven resources removed, zero resources remaining in Terraform state.
 
