@@ -614,6 +614,7 @@ mod tests {
                                 "00000000000000000000".into(),
                             )),
                         }),
+                        ..Default::default()
                     }],
                     ..Default::default()
                 }),
